@@ -5,22 +5,23 @@ This module provides a Tool implementation for making HTTP requests
 to APIs based on OpenAPI-like specifications.
 """
 
-from typing import Dict, Any, Optional, List, Literal
 import json
+from typing import Any, Dict, List, Literal, Optional
+
 import requests
 from loguru import logger
 
-from ..agent.tools import Tool
 from ..agent.exceptions import ToolExecutionError
+from ..agent.tools import Tool
 
 
 class RequestsTool(Tool):
     """
     A tool for making HTTP requests to APIs.
-    
+
     This tool allows the agent to call HTTP endpoints with specified methods,
     headers, query parameters, and body data.
-    
+
     Example:
         ```python
         # Create a tool for a specific API endpoint
@@ -34,12 +35,12 @@ class RequestsTool(Tool):
                 "units": {"type": "string", "description": "Temperature units", "enum": ["celsius", "fahrenheit"]}
             }
         )
-        
+
         # Execute the tool
         result = tool.execute({"city": "London", "units": "celsius"})
         ```
     """
-    
+
     def __init__(
         self,
         name: str,
@@ -51,11 +52,11 @@ class RequestsTool(Tool):
         body_schema: Optional[Dict[str, Any]] = None,
         path_params: Optional[List[str]] = None,
         timeout: int = 30,
-        auth: Optional[tuple] = None
+        auth: Optional[tuple] = None,
     ):
         """
         Initialize the RequestsTool.
-        
+
         Args:
             name: Unique name for the tool
             description: Human-readable description of what the API does
@@ -77,17 +78,17 @@ class RequestsTool(Tool):
         self.path_params = path_params or []
         self.timeout = timeout
         self.auth = auth
-    
+
     def execute(self, parameters: Dict[str, Any]) -> str:
         """
         Execute the HTTP request with given parameters.
-        
+
         Args:
             parameters: Dictionary containing path params, query params, and/or body data
-            
+
         Returns:
             JSON response as a string
-            
+
         Raises:
             ToolExecutionError: If the request fails
         """
@@ -98,14 +99,14 @@ class RequestsTool(Tool):
             for param in self.path_params:
                 if param in parameters:
                     path_params[param] = parameters[param]
-            
+
             if path_params:
                 url = url.format(**path_params)
-            
+
             # Separate query params and body data
             query_params = {}
             body_data = {}
-            
+
             for key, value in parameters.items():
                 if key in self.path_params:
                     continue  # Already used for URL
@@ -113,12 +114,12 @@ class RequestsTool(Tool):
                     query_params[key] = value
                 elif key in self.body_schema.get("properties", {}):
                     body_data[key] = value
-            
+
             # Make the request
             logger.debug(f"Making {self.method} request to {url}")
             logger.debug(f"Query params: {query_params}")
             logger.debug(f"Body data: {body_data}")
-            
+
             response = requests.request(
                 method=self.method,
                 url=url,
@@ -126,12 +127,12 @@ class RequestsTool(Tool):
                 json=body_data if body_data and self.method in ["POST", "PUT", "PATCH"] else None,
                 headers=self.headers,
                 auth=self.auth,
-                timeout=self.timeout
+                timeout=self.timeout,
             )
-            
+
             # Raise exception for bad status codes
             response.raise_for_status()
-            
+
             # Return response
             try:
                 # Try to return JSON response
@@ -139,35 +140,32 @@ class RequestsTool(Tool):
             except ValueError:
                 # If not JSON, return text
                 return response.text
-                
+
         except requests.exceptions.RequestException as e:
             logger.error(f"Request failed: {e}")
             raise ToolExecutionError(self.name, str(e))
         except Exception as e:
             logger.error(f"Unexpected error in RequestsTool: {e}")
             raise ToolExecutionError(self.name, str(e))
-    
+
     def get_schema(self) -> Dict[str, Any]:
         """
         Return the tool's parameter schema.
-        
+
         Combines path parameters, query parameters, and body schema into
         a single JSON Schema.
-        
+
         Returns:
             JSON Schema describing all parameters
         """
         properties = {}
         required = []
-        
+
         # Add path parameters
         for param in self.path_params:
-            properties[param] = {
-                "type": "string",
-                "description": f"Path parameter: {param}"
-            }
+            properties[param] = {"type": "string", "description": f"Path parameter: {param}"}
             required.append(param)
-        
+
         # Add query parameters
         for param_name, param_schema in self.query_params_schema.items():
             properties[param_name] = param_schema.copy()
@@ -175,20 +173,20 @@ class RequestsTool(Tool):
                 required.append(param_name)
                 # Remove 'required' from individual param schema
                 properties[param_name].pop("required", None)
-        
+
         # Add body parameters
         if self.body_schema.get("properties"):
             for param_name, param_schema in self.body_schema["properties"].items():
                 properties[param_name] = param_schema.copy()
-            
+
             # Add body required fields
             if "required" in self.body_schema:
                 required.extend(self.body_schema["required"])
-        
+
         return {
             "type": "object",
             "properties": properties,
-            "required": required if required else []
+            "required": required if required else [],
         }
 
 
@@ -199,11 +197,11 @@ def create_api_tool(
     method: str = "GET",
     headers: Optional[Dict[str, str]] = None,
     parameters: Optional[Dict[str, Any]] = None,
-    body_schema: Optional[Dict[str, Any]] = None
+    body_schema: Optional[Dict[str, Any]] = None,
 ) -> RequestsTool:
     """
     Factory function to quickly create a RequestsTool for an API endpoint.
-    
+
     Args:
         name: Tool name
         description: Tool description
@@ -212,10 +210,10 @@ def create_api_tool(
         headers: Request headers
         parameters: Query parameters schema
         body_schema: Request body schema
-        
+
     Returns:
         Configured RequestsTool instance
-        
+
     Example:
         ```python
         tool = create_api_tool(
@@ -245,5 +243,5 @@ def create_api_tool(
         url_template=endpoint,
         headers=headers,
         query_params_schema=parameters,
-        body_schema=body_schema
+        body_schema=body_schema,
     )

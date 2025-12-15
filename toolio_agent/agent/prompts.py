@@ -6,16 +6,17 @@ including response format instructions and schema definitions.
 """
 
 import json
-from .models import AgentPlan, AgentStep, AgentFinalResponse
+
+from .models import AgentFinalResponse, AgentPlan, AgentStep
 
 
 def build_system_prompt(custom_instructions: str = None) -> str:
     """
     Build the complete system prompt with custom instructions and auto-generated schemas.
-    
+
     Args:
         custom_instructions: Optional custom instructions to prepend
-        
+
     Returns:
         Complete system prompt with schemas
     """
@@ -23,18 +24,19 @@ def build_system_prompt(custom_instructions: str = None) -> str:
     plan_schema = json.dumps(AgentPlan.model_json_schema(), indent=2)
     step_schema = json.dumps(AgentStep.model_json_schema(), indent=2)
     final_schema = json.dumps(AgentFinalResponse.model_json_schema(), indent=2)
-    
+
     # Start with custom instructions if provided, otherwise use default
     prompt_parts = []
     if custom_instructions:
         prompt_parts.append(custom_instructions)
     else:
         prompt_parts.append("You are a helpful AI agent with access to tools.")
-    
+
     prompt_parts.append("\n" + "=" * 60 + "\n")
-    
+
     # Add the standard instructions
-    prompt_parts.append(f"""RESPONSE FORMAT INSTRUCTIONS:
+    prompt_parts.append(
+        f"""RESPONSE FORMAT INSTRUCTIONS:
 
 You MUST ALWAYS respond with valid JSON wrapped in a markdown code block. No exceptions.
 
@@ -98,16 +100,19 @@ CRITICAL RULES:
 8. The "final_answer" field MUST be a STRING containing your complete answer to the user
 9. DO NOT put structured data (dicts/objects) in final_answer - format it as readable text
 
-Available tools will be listed below.""")
-    
+Available tools will be listed below."""
+    )
+
     return "\n".join(prompt_parts)
 
 
 def get_default_system_prompt() -> str:
     """
     Generate the default system prompt with auto-injected schemas.
-    
+
     Returns:
         Default system prompt
     """
-    return build_system_prompt(custom_instructions="You are a helpful AI agent with access to tools.")
+    return build_system_prompt(
+        custom_instructions="You are a helpful AI agent with access to tools."
+    )
