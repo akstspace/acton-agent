@@ -36,16 +36,15 @@ PARTIAL_UNICODE_PATTERN = re.compile(r"\\u[0-9a-fA-F]{0,3}$")
 
 def parse_partial_json(json_str: str) -> Any:
     """
-    Parse partial/incomplete JSON string.
-
-    This handles JSON strings that may be truncated mid-way, which is common
-    during streaming. It tries to parse as much as possible.
-
-    Args:
-        json_str: Potentially incomplete JSON string
-
+    Parse a possibly truncated JSON string and return a best-effort Python object.
+    
+    This function recovers partial/incomplete JSON commonly seen in streaming outputs by attempting a series of safe, observable recoveries: trimming a trailing unescaped quote or single backslash, removing a trailing incomplete Unicode escape, attempting a partial-parse fast path when available, and finally trying to balance and close unclosed braces or brackets before a final parse attempt. If parsing cannot be recovered, an empty dict is returned.
+    
+    Parameters:
+        json_str (str): The JSON text to parse, which may be incomplete or truncated.
+    
     Returns:
-        Parsed object (dict, list, str, etc.) or empty dict if unparseable
+        The parsed Python object (e.g., dict, list, str) when parsing succeeds, or `{}` if the input cannot be parsed or recovered.
     """
     if not json_str.strip():
         return {}
@@ -102,13 +101,15 @@ def parse_partial_json(json_str: str) -> Any:
 
 def extract_json_from_markdown(text: str) -> Optional[str]:
     """
-    Extract JSON from markdown code block.
-
-    Args:
-        text: Text potentially containing ```json ... ``` block
-
+    Extract a JSON string embedded in a Markdown fenced code block.
+    
+    Searches for the first fenced code block that begins with ```json or ``` and returns its inner content trimmed of surrounding whitespace. If no fenced code block is found, returns None.
+    
+    Parameters:
+        text: Text that may contain a Markdown fenced code block.
+    
     Returns:
-        Extracted JSON string or None
+        The extracted JSON string without the surrounding fences and trimmed of whitespace, or None if no code block is present.
     """
     # Look for ```json or ```
     pattern = r"```(?:json)?\s*\n?(.*?)(?:```|$)"
@@ -127,6 +128,15 @@ class StreamingResponseParser:
     """
 
     def __init__(self):
+        """
+        Initialize parser state for incrementally parsing partial JSON from streaming text.
+        
+        Attributes:
+            buffer (StringIO): Accumulates incoming text chunks.
+            in_code_block (bool): Whether the parser is currently inside a Markdown code block.
+            json_content (str): Most recently extracted JSON string from the buffer.
+            last_parsed (dict | list | Any): Most recent successfully parsed JSON object (empty if none).
+        """
         self.buffer = StringIO()
         self.in_code_block = False
         self.json_content = ""
@@ -134,13 +144,13 @@ class StreamingResponseParser:
 
     def push(self, chunk: str) -> Optional[Dict[str, Any]]:
         """
-        Push a new chunk of text and attempt to parse.
-
-        Args:
-            chunk: New text chunk from stream
-
+        Ingest a streaming text chunk and return a newly parsed JSON object when the accumulated content produces a different parse.
+        
+        Parameters:
+            chunk (str): Text chunk to append to the internal buffer.
+        
         Returns:
-            Parsed object if parsing succeeds, None otherwise
+            dict | list | Any | None: The parsed JSON value (e.g., dict or list) if parsing succeeds and differs from the previous result, `None` otherwise.
         """
         self.buffer.write(chunk)
         full_text = self.buffer.getvalue()
@@ -158,11 +168,20 @@ class StreamingResponseParser:
         return None
 
     def get_current(self) -> Dict[str, Any]:
-        """Get the current parsed state."""
+        """
+        Return the most recent successfully parsed JSON-compatible value extracted from received chunks.
+        
+        Returns:
+            last_parsed (Dict[str, Any]): The last parsed object (JSON-compatible dict/list/etc.); an empty dict if no successful parse exists.
+        """
         return self.last_parsed
 
     def reset(self):
-        """Reset the parser state."""
+        """
+        Reset the parser to its initial empty state.
+        
+        Clears the internal text buffer and resets the stored JSON content and last parsed result.
+        """
         self.buffer = StringIO()
         self.json_content = ""
         self.last_parsed = {}
@@ -172,46 +191,23 @@ def stream_with_partial_json(
     agent_run_generator: Generator,
 ) -> Generator[StreamingEvent, None, None]:
     """
-    Wrap agent.run() generator to provide partial JSON parsing with Pydantic models.
-
-    This helper function intercepts streaming tokens, accumulates them,
-    and parses partial JSON objects (AgentPlan, AgentStep, AgentFinalResponse)
-    as they're being streamed. It provides structured Pydantic events even when the
-    JSON is incomplete.
-
-    Yields Pydantic models:
-    - AgentStreamStart: Stream started
-    - AgentToken: Individual token
-    - AgentStreamEnd: Stream ended
-    - AgentStepUpdate: Partial JSON parsing update (for any type)
-    - AgentPlanEvent: Complete plan
-    - AgentStepEvent: Complete step with tool calls
-    - AgentToolResultsEvent: Tool execution results
-    - AgentFinalResponseEvent: Final response
-
-    Args:
-        agent_run_generator: The generator from agent.run()
-
+    Wrap an agent.run() generator to emit structured streaming events and partial JSON updates.
+    
+    Accumulates streaming tokens, extracts JSON embedded in streamed Markdown, and yields high-level events as the agent produces tokens and structured responses.
+    
+    Parameters:
+        agent_run_generator (Generator): Generator produced by agent.run() that yields streaming steps and structured response objects.
+    
     Yields:
-        Pydantic StreamingEvent models
-
-    Example:
-        ```python
-        agent = Agent(llm_client=client, stream=True)
-
-        for event in stream_with_partial_json(agent.run("query")):
-            if isinstance(event, AgentStepUpdate):
-                if "thought" in event.data:
-                    print(f"Thinking: {event.data['thought']}")
-                if "final_answer" in event.data:
-                    print(f"Answer: {event.data['final_answer']}")
-
-            elif isinstance(event, AgentPlanEvent):
-                print(f"Plan: {event.plan.plan}")
-
-            elif isinstance(event, AgentFinalResponseEvent):
-                print(f"Final: {event.response.final_answer}")
-        ```
+        StreamingEvent: One of the streaming event models:
+            - AgentStreamStart: emitted when a stream starts.
+            - AgentToken: emitted for each raw token.
+            - AgentStreamEnd: emitted when a stream ends.
+            - AgentStepUpdate: emitted when partial or complete JSON is parsed from the current stream; `complete` indicates whether parsing finished.
+            - AgentToolResultsEvent: emitted when tool results are produced.
+            - AgentPlanEvent: emitted for a complete AgentPlan.
+            - AgentStepEvent: emitted for a complete AgentStep.
+            - AgentFinalResponseEvent: emitted for a complete AgentFinalResponse.
     """
     parser = StreamingResponseParser()
     steps_log = []

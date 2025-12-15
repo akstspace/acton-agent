@@ -20,16 +20,16 @@ class LLMClient(Protocol):
 
     def call(self, messages: List[Message], **kwargs) -> str:
         """
-        Make a synchronous call to the LLM.
-
-        Args:
-            messages: List of conversation messages
-            **kwargs: Additional LLM-specific parameters
-
+        Invoke the language model with a sequence of conversation messages and return its reply.
+        
+        Parameters:
+            messages (List[Message]): Conversation messages representing the prompt and context.
+            **kwargs: Additional, implementation-specific parameters forwarded to the LLM.
+        
         Returns:
-            The LLM's response as a string
-
+            str: The LLM's response as a string.
+        
         Raises:
-            Exception: If the LLM call fails
+            Exception: If the LLM invocation fails.
         """
         ...

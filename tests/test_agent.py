@@ -15,12 +15,29 @@ class SimpleCalculatorTool(Tool):
     """Simple calculator tool for testing."""
 
     def __init__(self):
+        """
+        Initialize the SimpleCalculatorTool and set its registered name and description.
+        
+        Sets the tool's name to "calculator" and its description to "Perform basic arithmetic operations".
+        """
         super().__init__(
             name="calculator", description="Perform basic arithmetic operations"
         )
 
     def execute(self, parameters: dict) -> str:
-        """Execute calculation."""
+        """
+        Perform a basic arithmetic operation described by the provided parameters.
+        
+        Parameters:
+            parameters (dict): Mapping with keys:
+                - "a" (int|float): First operand (defaults to 0).
+                - "b" (int|float): Second operand (defaults to 0).
+                - "operation" (str): One of "add", "subtract", "multiply", or "divide" (defaults to "add").
+        
+        Returns:
+            str: The numeric result converted to a string for successful operations, or an error message
+            such as "Error: Division by zero" or "Error: Unknown operation {operation}".
+        """
         a = parameters.get("a", 0)
         b = parameters.get("b", 0)
         operation = parameters.get("operation", "add")
@@ -41,7 +58,15 @@ class SimpleCalculatorTool(Tool):
         return str(result)
 
     def get_schema(self) -> dict:
-        """Return schema."""
+        """
+        JSON schema describing the tool's input parameters.
+        
+        Returns:
+            dict: A JSON Schema object with properties:
+                - a (number): First operand (required).
+                - b (number): Second operand (required).
+                - operation (string): Arithmetic operation to perform; one of "add", "subtract", "multiply", "divide".
+        """
         return {
             "type": "object",
             "properties": {

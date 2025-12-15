@@ -12,13 +12,13 @@ from .models import AgentFinalResponse, AgentPlan, AgentStep
 
 def build_system_prompt(custom_instructions: str = None) -> str:
     """
-    Build the complete system prompt with custom instructions and auto-generated schemas.
-
-    Args:
-        custom_instructions: Optional custom instructions to prepend
-
+    Construct the system prompt used by the Agent, embedding response format instructions, examples, critical rules, and the JSON schemas for response types.
+    
+    Parameters:
+        custom_instructions (str | None): Optional text to place at the top of the prompt; if omitted a default instruction ("You are a helpful AI agent with access to tools.") is used.
+    
     Returns:
-        Complete system prompt with schemas
+        system_prompt (str): The complete system prompt text with injected, pretty-printed JSON schemas for AgentPlan, AgentStep, and AgentFinalResponse.
     """
     # Get JSON schemas for the response types
     plan_schema = json.dumps(AgentPlan.model_json_schema(), indent=2)
@@ -108,10 +108,10 @@ Available tools will be listed below."""
 
 def get_default_system_prompt() -> str:
     """
-    Generate the default system prompt with auto-injected schemas.
-
+    Default system prompt that includes injected JSON schemas for AgentPlan, AgentStep, and AgentFinalResponse.
+    
     Returns:
-        Default system prompt
+        str: The complete system prompt string containing response format instructions, examples, critical rules, and the embedded JSON schemas.
     """
     return build_system_prompt(
         custom_instructions="You are a helpful AI agent with access to tools."

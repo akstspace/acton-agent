@@ -42,7 +42,11 @@ class TestBuildSystemPrompt:
         assert "final_answer" in prompt
 
     def test_prompt_contains_examples(self):
-        """Test that prompt contains examples."""
+        """
+        Verify the generated system prompt includes JSON example blocks and an examples section.
+        
+        Checks that the prompt contains at least one '```json' code block and either the string 'EXAMPLES' or the word 'example' (case-insensitive).
+        """
         prompt = build_system_prompt()
 
         assert "```json" in prompt
@@ -94,7 +98,11 @@ class TestPromptFormat:
         assert "tool" in prompt.lower() or "TOOL" in prompt
 
     def test_json_examples_valid(self):
-        """Test that JSON examples in prompt are valid JSON."""
+        """
+        Checks that any JSON code blocks included in the built system prompt parse as valid JSON.
+        
+        Fails the test if any JSON block in the prompt is not valid JSON, reporting the parse error and the offending block.
+        """
         prompt = build_system_prompt()
 
         # Extract JSON code blocks
