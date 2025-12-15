@@ -71,7 +71,12 @@ class ToolResult(BaseModel):
 
     @property
     def success(self) -> bool:
-        """Check if tool execution was successful."""
+        """
+        Determine whether the tool execution succeeded.
+        
+        Returns:
+            bool: `True` if the tool produced no error, `False` otherwise.
+        """
         return self.error is None
 
 
@@ -110,7 +115,12 @@ class AgentStep(BaseModel):
 
     @property
     def has_tool_calls(self) -> bool:
-        """Check if this step has tool calls."""
+        """
+        Return whether the step contains any tool calls.
+        
+        Returns:
+            True if the step contains one or more tool calls, False otherwise.
+        """
         return len(self.tool_calls) > 0
 
 
@@ -155,19 +165,37 @@ class AgentResponse(BaseModel):
     @field_validator("thought", mode="before")
     @classmethod
     def validate_thought(cls, v):
-        """Convert string thought to AgentThought object."""
+        """
+        Normalize a thought value into an AgentThought instance.
+        
+        Parameters:
+            v: The incoming thought value; may be a string or an AgentThought.
+        
+        Returns:
+            An `AgentThought` instance when `v` is a string, otherwise the original value.
+        """
         if isinstance(v, str):
             return AgentThought(content=v)
         return v
 
     @property
     def has_tool_calls(self) -> bool:
-        """Check if response contains tool calls."""
+        """
+        Determines whether this response includes any tool calls.
+        
+        Returns:
+            True if there is at least one ToolCall in `tool_calls`, False otherwise.
+        """
         return len(self.tool_calls) > 0
 
     @property
     def is_final(self) -> bool:
-        """Check if this is a final response."""
+        """
+        Indicates whether this response is final.
+        
+        Returns:
+            `true` if `final_answer` is not None, `false` otherwise.
+        """
         return self.final_answer is not None
 
 

@@ -41,13 +41,13 @@ class RetryConfig(BaseModel):
 
     def create_retry_decorator(self, exception_types: tuple = (Exception,)):
         """
-        Create a tenacity retry decorator with this configuration.
-
-        Args:
-            exception_types: Tuple of exception types to retry on
-
+        Create a tenacity retry decorator configured from this RetryConfig.
+        
+        Parameters:
+            exception_types (tuple): Exception classes that should trigger a retry.
+        
         Returns:
-            A tenacity retry decorator
+            A tenacity retry decorator that retries on the given exception types, uses exponential backoff with this instance's multiplier/min/max, stops after this instance's max_attempts, and re-raises the final exception when retries are exhausted.
         """
         return retry(
             stop=stop_after_attempt(self.max_attempts),
@@ -62,14 +62,14 @@ class RetryConfig(BaseModel):
         self, func: Callable, exception_types: tuple = (Exception,)
     ) -> Callable:
         """
-        Wrap a function with retry logic.
-
-        Args:
-            func: Function to wrap
-            exception_types: Tuple of exception types to retry on
-
+        Wraps a callable with retry behavior based on this configuration.
+        
+        Parameters:
+            func (Callable): The function or callable to wrap.
+            exception_types (tuple): Exception classes that trigger a retry; defaults to (Exception,).
+        
         Returns:
-            Wrapped function with retry logic
+            Callable: The input callable wrapped with the configured tenacity retry decorator.
         """
         decorator = self.create_retry_decorator(exception_types)
         return decorator(func)

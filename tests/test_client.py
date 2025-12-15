@@ -24,6 +24,16 @@ class TestLLMClientProtocol:
 
         class SimpleClient:
             def call(self, messages: List[Message], **kwargs) -> str:
+                """
+                Provide a fixed response for the given messages.
+                
+                Parameters:
+                	messages (List[Message]): Messages to be processed by the client.
+                	**kwargs: Additional keyword arguments accepted but ignored.
+                
+                Returns:
+                	response (str): The constant string "response".
+                """
                 return "response"
 
         client = SimpleClient()
@@ -43,9 +53,24 @@ class TestClientImplementation:
 
         class CustomClient:
             def __init__(self):
+                """
+                Initialize the client instance and set its internal call counter to zero.
+                """
                 self.call_count = 0
 
             def call(self, messages: List[Message], **kwargs) -> str:
+                """
+                Return a response string that reflects how many times the client has been called.
+                
+                This method increments the instance's `call_count` and returns "Response #<n>" where `<n>` is the updated count.
+                
+                Parameters:
+                    messages (List[Message]): Sequence of messages provided to the client.
+                    **kwargs: Additional keyword arguments; ignored by this implementation.
+                
+                Returns:
+                    str: A response string formatted as "Response #<n>" with the current call count.
+                """
                 self.call_count += 1
                 return f"Response #{self.call_count}"
 

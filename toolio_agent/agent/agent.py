@@ -59,14 +59,14 @@ class Agent:
         stream: bool = False,
     ):
         """
-        Initialize the agent.
-
-        Args:
-            llm_client: LLM client implementing the LLMClient protocol
-            system_prompt: Optional custom instructions to prepend to the auto-generated prompt
-            max_iterations: Maximum number of reasoning iterations
-            retry_config: Configuration for retry logic
-            stream: Enable streaming responses (yields tokens as they arrive)
+        Create an Agent configured to orchestrate LLM calls, tool execution, and conversation state.
+        
+        Parameters:
+            llm_client (LLMClient): The LLM client used for generating responses.
+            system_prompt (Optional[str]): Optional custom instructions that are embedded into the agent's system prompt.
+            max_iterations (int): Maximum number of reasoning iterations the agent will perform before raising an error.
+            retry_config (Optional[RetryConfig]): Retry behavior for LLM and tool calls; a default RetryConfig is created when omitted.
+            stream (bool): If true, enables streaming responses from the LLM (tokens yielded as they arrive).
         """
         self.llm_client = llm_client
         self.custom_instructions = system_prompt  # Store custom instructions separately
@@ -83,22 +83,22 @@ class Agent:
 
     def register_tool(self, tool: Tool) -> None:
         """
-        Register a tool with the agent.
-
-        Args:
-            tool: Tool instance to register
+        Register a Tool with the agent, making it available for use in tool calls.
+        
+        Parameters:
+            tool (Tool): The tool instance to register with the agent's tool registry.
         """
         self.tool_registry.register(tool)
 
     def unregister_tool(self, tool_name: str) -> None:
         """
-        Unregister a tool from the agent.
-
-        Args:
-            tool_name: Name of the tool to unregister
-
+        Remove a registered tool from the agent's tool registry.
+        
+        Parameters:
+            tool_name (str): Name of the tool to remove.
+        
         Raises:
-            ToolNotFoundError: If tool doesn't exist
+            ToolNotFoundError: If no tool with the given name is registered.
         """
         self.tool_registry.unregister(tool_name)
 
@@ -113,10 +113,12 @@ class Agent:
 
     def _build_messages(self) -> List[Message]:
         """
-        Build the full message list for LLM.
-
+        Compose the sequence of messages to send to the LLM.
+        
+        Creates a system message that contains the agent's system prompt followed by the tool registry formatted for inclusion in prompts, then appends the current conversation history in order.
+        
         Returns:
-            List of messages including system prompt and conversation history
+            messages (List[Message]): Ordered list of Message objects starting with the system message and followed by the conversation history.
         """
         messages = [
             Message(
@@ -129,20 +131,26 @@ class Agent:
 
     def _execute_single_tool(self, tool: Tool, parameters: dict) -> str:
         """
-        Execute a single tool with retry logic.
-
-        Args:
-            tool: Tool to execute
-            parameters: Parameters to pass to the tool
-
+        Execute the given tool with configured retry behavior and return its result.
+        
+        Parameters:
+            tool (Tool): The tool to invoke.
+            parameters (dict): Parameters to pass to the tool's `execute` method.
+        
         Returns:
-            Tool execution result
-
+            result_text (str): The tool's execution result.
+        
         Raises:
-            ToolExecutionError: If tool execution fails after retries
+            ToolExecutionError: If the tool fails after the configured retry attempts; wraps the original exception.
         """
 
         def _execute():
+            """
+            Invoke the current tool with the provided parameters and return its execution result.
+            
+            Returns:
+                The value returned by the tool's `execute` method.
+            """
             logger.debug(f"Executing tool: {tool.name} with parameters: {parameters}")
             result = tool.execute(parameters)
             logger.debug(f"Tool {tool.name} execution completed")
@@ -160,13 +168,15 @@ class Agent:
 
     def _execute_tool_calls(self, tool_calls: List[ToolCall]) -> List[ToolResult]:
         """
-        Execute multiple tool calls and return results.
-
-        Args:
-            tool_calls: List of tool calls to execute
-
+        Execute a sequence of tool calls and produce corresponding ToolResult entries.
+        
+        For each ToolCall in the input list, the agent attempts to locate and invoke the named tool, producing a ToolResult that records the tool_call id, tool name, returned text, and any error.
+        
+        Parameters:
+            tool_calls (List[ToolCall]): Tool calls to execute in order.
+        
         Returns:
-            List of tool results
+            List[ToolResult]: A list of ToolResult objects in the same order as the input ToolCall list. If a tool is not registered the corresponding ToolResult contains an error message "Tool '<name>' not found". If a tool's execution output begins with "Error", that text is recorded in the `error` field and the `result` is set to an empty string. If execution raises a ToolExecutionError, the exception string is recorded in the `error` field and the `result` is an empty string.
         """
         results = []
 
@@ -223,13 +233,13 @@ class Agent:
 
     def _format_tool_results(self, results: List[ToolResult]) -> str:
         """
-        Format tool results for conversation history.
-
-        Args:
-            results: List of tool results
-
+        Create a human-readable string representation of multiple tool execution results for appending to conversation history.
+        
+        Parameters:
+            results (List[ToolResult]): Tool execution outcomes to format; each entry's `tool_name`, `tool_call_id`, and either `result` (on success) or `error` (on failure) are included.
+        
         Returns:
-            Formatted string representation of results
+            str: Multi-line string that lists each tool's name and call ID, followed by either "Success: <result>" or "Error: <error>" for that call.
         """
         results_text = "Tool Results:\n"
         for result in results:
@@ -242,19 +252,25 @@ class Agent:
 
     def _call_llm_with_retry(self, messages: List[Message]) -> str:
         """
-        Call LLM with retry logic.
-
-        Args:
-            messages: Messages to send to LLM
-
+        Invoke the configured LLM client with retry handling.
+        
+        Parameters:
+            messages (List[Message]): The message sequence to send to the LLM.
+        
         Returns:
-            LLM response text
-
+            str: The LLM's full response text.
+        
         Raises:
-            LLMCallError: If LLM call fails after retries
+            LLMCallError: If the LLM call fails after the configured number of retry attempts.
         """
 
         def _call():
+            """
+            Invoke the configured LLM client with the assembled messages and return its response.
+            
+            Returns:
+                The response returned by the LLM client.
+            """
             logger.debug("Calling LLM...")
             result = self.llm_client.call(messages)
             logger.debug("LLM call completed")
@@ -274,22 +290,31 @@ class Agent:
         self, messages: List[Message]
     ) -> Generator[str, None, str]:
         """
-        Call LLM with retry logic and streaming support.
-
-        Args:
-            messages: Messages to send to LLM
-
-        Yields:
-            Token chunks as they arrive
-
+        Stream tokens from the LLM for the provided message sequence.
+        
+        Yields token chunks as they arrive from the LLM. The generator's final return value (accessible via StopIteration.value) is the complete accumulated response string.
+        
         Returns:
-            Complete accumulated response
-
+            The complete accumulated response string produced by the LLM.
+        
         Raises:
-            LLMCallError: If LLM call fails after retries
+            AttributeError: If the LLM client does not implement `call_stream()`.
+            LLMCallError: If the streaming call fails after retry handling.
         """
 
         def _call_stream():
+            """
+            Stream tokens from the LLM client and yield each received chunk.
+            
+            Yields:
+                str: Each chunk of text produced by the LLM as it becomes available.
+            
+            Returns:
+                final_text (str): The full concatenated text of all yielded chunks when the stream completes.
+            
+            Raises:
+                AttributeError: If the configured LLM client does not implement a `call_stream` method.
+            """
             logger.debug("Calling LLM (streaming)...")
             # Check if client has call_stream method
             if not hasattr(self.llm_client, "call_stream"):
@@ -316,34 +341,23 @@ class Agent:
         self, user_input: str
     ) -> Generator[Union[AgentPlan, AgentStep, AgentFinalResponse, dict], None, None]:
         """
-        Run the agent on a user input as a generator, yielding each step.
-
-        This method allows streaming of agent execution steps. The agent will:
-        1. Add the user input to conversation history
-        2. Call the LLM to get a response
-        3. Yield AgentPlan, AgentStep, or AgentFinalResponse at each iteration
-        4. Execute any requested tools (for AgentStep)
-        5. Repeat until a final answer is produced or max iterations reached
-
-        Args:
-            user_input: The user's question or request
-
+        Stream the agent's execution for a single user input, yielding plans, steps, intermediate tool results, streaming tokens, and the final response.
+        
+        Parameters:
+            user_input (str): The user's question or request to process.
+        
         Yields:
-            AgentPlan, AgentStep, or AgentFinalResponse objects, or error dict
-
+            AgentPlan: A multi-step plan the agent intends to follow.
+            AgentStep: A single step containing one or more tool calls to execute.
+            AgentFinalResponse: The final answer produced by the agent.
+            dict: Event or progress objects, including:
+                - {"type": "stream_start" | "stream_end"} for streaming boundaries,
+                - {"type": "token", "content": <str>} for streaming tokens,
+                - {"type": "tool_results", "results": <List[ToolResult]>} for executed tool outputs,
+                - error dictionaries when LLM or tool execution fails.
+        
         Raises:
-            MaxIterationsError: If max iterations reached without final answer
-
-        Example:
-            ```python
-            for step in agent.run_stream("What is the weather?"):
-                if isinstance(step, AgentPlan):
-                    print(f"Plan: {step.plan}")
-                elif isinstance(step, AgentStep):
-                    print(f"Executing {len(step.tool_calls)} tools")
-                elif isinstance(step, AgentFinalResponse):
-                    print(f"Final: {step.final_answer}")
-            ```
+            MaxIterationsError: If the agent exhausts max_iterations without producing a final response.
         """
         logger.info(f"Agent starting run with input: {user_input[:100]}...")
         self.conversation_history.append(Message(role="user", content=user_input))
@@ -464,28 +478,16 @@ class Agent:
 
     def run(self, user_input: str) -> str:
         """
-        Run the agent on a user input and return the final answer.
-
-        This is the main entry point for agent execution. The agent will:
-        1. Add the user input to conversation history
-        2. Call the LLM to get a response
-        3. Execute any requested tools
-        4. Repeat until a final answer is produced or max iterations reached
-
-        Args:
-            user_input: The user's question or request
-
+        Run the agent on user input and produce the conversation's final answer.
+        
+        Parameters:
+            user_input (str): The user's prompt or request.
+        
         Returns:
-            The final answer string from the agent
-
+            str: The agent's final answer.
+        
         Raises:
-            MaxIterationsError: If max iterations reached without final answer
-
-        Example:
-            ```python
-            result = agent.run("What is the weather?")
-            print(result)  # "The weather is sunny."
-            ```
+            MaxIterationsError: If no final answer is produced within the configured max_iterations.
         """
         final_answer = None
         for step in self.run_stream(user_input):
@@ -505,35 +507,38 @@ class Agent:
 
     def reset(self) -> None:
         """
-        Clear conversation history.
-
-        Use this to start a fresh conversation with the agent.
+        Clear the agent's conversation history.
         """
         self.conversation_history = []
         logger.info("Agent conversation history reset")
 
     def get_conversation_history(self) -> List[Message]:
         """
-        Get the current conversation history.
-
+        Return a copy of the agent's conversation history.
+        
         Returns:
-            List of messages in the conversation
+            List[Message]: A copy of the conversation history as a list of Message objects.
         """
         return self.conversation_history.copy()
 
     def set_system_prompt(self, prompt: str) -> None:
         """
-        Update the custom instructions portion of the system prompt.
-        The schemas will be automatically re-generated and appended.
-
-        Args:
-            prompt: New custom instructions
+        Update the agent's custom instruction portion and rebuild the full system prompt.
+        
+        Parameters:
+            prompt (str): New custom instructions to embed into the agent's system prompt.
         """
         self.custom_instructions = prompt
         self.system_prompt = build_system_prompt(prompt)
         logger.info("System prompt updated")
 
     def __repr__(self) -> str:
+        """
+        Return a compact string summarizing the agent's tool count, conversation history length, and max iterations.
+        
+        Returns:
+            str: A representation like "Agent(tools=<n>, history=<m>, max_iterations=<k>)" where `<n>` is the number of registered tools, `<m>` is the number of messages in conversation history, and `<k>` is the configured maximum iterations.
+        """
         return (
             f"Agent(tools={len(self.tool_registry)}, "
             f"history={len(self.conversation_history)}, "

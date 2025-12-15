@@ -14,15 +14,33 @@ class SimpleTool(Tool):
     """Simple test tool."""
 
     def __init__(self):
+        """
+        Initialize the SimpleTool with its default name and description.
+        
+        Sets the tool's name to "simple" and its description to "A simple test tool".
+        """
         super().__init__(name="simple", description="A simple test tool")
 
     def execute(self, parameters: dict) -> str:
-        """Execute the tool."""
+        """
+        Run the tool with the provided parameters.
+        
+        Parameters:
+            parameters (dict): Input parameters; the key "value" (optional) is used as the output value and defaults to "default" if absent.
+        
+        Returns:
+            Formatted result string in the form "Result: {value}" where {value} is the resolved parameter.
+        """
         value = parameters.get("value", "default")
         return f"Result: {value}"
 
     def get_schema(self) -> dict:
-        """Return schema."""
+        """
+        Return the JSON Schema describing this tool's expected input.
+        
+        Returns:
+            dict: A JSON Schema object with "type": "object" and a "value" property (type "string") that includes a description.
+        """
         return {
             "type": "object",
             "properties": {"value": {"type": "string", "description": "Input value"}},
@@ -73,7 +91,9 @@ class TestToolRegistry:
         assert result is None
 
     def test_unregister_tool(self):
-        """Test unregistering a tool."""
+        """
+        Ensure a registered tool can be removed from the registry. After unregistering, the tool is no longer present.
+        """
         registry = ToolRegistry()
         tool = SimpleTool()
         registry.register(tool)
@@ -146,6 +166,12 @@ class TestFunctionTool:
         """Test creating a function tool."""
 
         def add(a: int, b: int) -> int:
+            """
+            Compute the sum of two integers.
+            
+            Returns:
+                The sum of `a` and `b` as an int.
+            """
             return a + b
 
         schema = {
@@ -165,6 +191,12 @@ class TestFunctionTool:
         """Test executing a function tool."""
 
         def multiply(a: int, b: int) -> int:
+            """
+            Multiply two integers.
+            
+            Returns:
+                int: Product of the two input integers.
+            """
             return a * b
 
         schema = {
@@ -186,6 +218,15 @@ class TestFunctionTool:
         """Test function tool that returns a string."""
 
         def greet(name: str) -> str:
+            """
+            Create a greeting for the given person.
+            
+            Parameters:
+                name (str): Recipient's name.
+            
+            Returns:
+                str: Greeting in the form "Hello, {name}!".
+            """
             return f"Hello, {name}!"
 
         schema = {"type": "object", "properties": {"name": {"type": "string"}}}
@@ -201,6 +242,17 @@ class TestFunctionTool:
         """Test function tool that returns a dict."""
 
         def get_info(id: int) -> dict:
+            """
+            Return information for the given identifier.
+            
+            Parameters:
+                id (int): Identifier to retrieve information for.
+            
+            Returns:
+                info (dict): Dictionary with keys:
+                    - "id": the provided identifier (int)
+                    - "status": the string "active"
+            """
             return {"id": id, "status": "active"}
 
         schema = {"type": "object", "properties": {"id": {"type": "number"}}}
@@ -215,9 +267,18 @@ class TestFunctionTool:
         assert result_dict["status"] == "active"
 
     def test_invalid_schema_not_dict(self):
-        """Test that invalid schema (not dict) raises error."""
+        """
+        Ensure FunctionTool raises InvalidToolSchemaError when provided a schema that is not a dict.
+        
+        Attempts to construct a FunctionTool with a non-dict schema value and expects InvalidToolSchemaError to be raised.
+        """
 
         def dummy():
+            """
+            No-op placeholder function.
+            
+            This function intentionally performs no action and returns None.
+            """
             pass
 
         with pytest.raises(InvalidToolSchemaError):
@@ -232,6 +293,11 @@ class TestFunctionTool:
         """Test that schema without type raises error."""
 
         def dummy():
+            """
+            No-op placeholder function.
+            
+            This function intentionally performs no action and returns None.
+            """
             pass
 
         with pytest.raises(InvalidToolSchemaError):
@@ -246,6 +312,11 @@ class TestFunctionTool:
         """Test that schema with non-object type raises error."""
 
         def dummy():
+            """
+            No-op placeholder function.
+            
+            This function intentionally performs no action and returns None.
+            """
             pass
 
         with pytest.raises(InvalidToolSchemaError):

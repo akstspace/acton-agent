@@ -55,19 +55,19 @@ class RequestsTool(Tool):
         auth: Optional[tuple] = None,
     ):
         """
-        Initialize the RequestsTool.
-
-        Args:
-            name: Unique name for the tool
-            description: Human-readable description of what the API does
-            method: HTTP method (GET, POST, PUT, DELETE, PATCH)
-            url_template: URL template with optional {param} placeholders
-            headers: Default headers to include in requests
-            query_params_schema: Schema defining query parameters
-            body_schema: Schema defining request body structure (for POST/PUT/PATCH)
-            path_params: List of path parameter names in url_template
-            timeout: Request timeout in seconds
-            auth: Optional tuple of (username, password) for basic auth
+        Configure a RequestsTool for making HTTP API calls to a templated endpoint.
+        
+        Parameters:
+            name: Unique tool identifier.
+            description: Human-readable description of the API.
+            method: HTTP method to use (GET, POST, PUT, DELETE, PATCH).
+            url_template: URL template that may include `{param}` placeholders for path parameters.
+            headers: Default headers to include with every request.
+            query_params_schema: JSON Schema describing supported query parameters.
+            body_schema: JSON Schema describing the request body structure for methods that send a body.
+            path_params: List of path parameter names that correspond to placeholders in `url_template`.
+            timeout: Request timeout in seconds.
+            auth: Optional (username, password) tuple for basic authentication.
         """
         super().__init__(name, description)
         self.method = method.upper()
@@ -81,16 +81,16 @@ class RequestsTool(Tool):
 
     def execute(self, parameters: Dict[str, Any]) -> str:
         """
-        Execute the HTTP request with given parameters.
-
-        Args:
-            parameters: Dictionary containing path params, query params, and/or body data
-
+        Execute the configured HTTP request using the provided parameters and return the response body.
+        
+        Parameters:
+            parameters (Dict[str, Any]): Mapping of parameter names to values. Values matching configured path parameters are substituted into the URL template; values matching the query parameters schema are sent as query string parameters; values matching the body schema's properties are sent as a JSON body for POST/PUT/PATCH requests.
+        
         Returns:
-            JSON response as a string
-
+            str: Pretty-printed JSON string if the response is JSON, otherwise the raw response text.
+        
         Raises:
-            ToolExecutionError: If the request fails
+            ToolExecutionError: If the HTTP request fails or an unexpected error occurs while executing the request.
         """
         try:
             # Build the URL with path parameters
@@ -152,13 +152,12 @@ class RequestsTool(Tool):
 
     def get_schema(self) -> Dict[str, Any]:
         """
-        Return the tool's parameter schema.
-
-        Combines path parameters, query parameters, and body schema into
-        a single JSON Schema.
-
+        Builds a combined JSON Schema describing the tool's path, query, and body parameters.
+        
+        Path parameters are added as string properties and marked required. If a query parameter schema includes `"required": True`, that name is added to the top-level required list and the flag is removed from the individual schema. Body schema properties and any body-level required list are merged into the resulting properties and required list.
+        
         Returns:
-            JSON Schema describing all parameters
+            dict: JSON Schema object with "type": "object", "properties" mapping parameter names to their schemas, and a "required" list of parameter names (empty list if none).
         """
         properties = {}
         required = []
@@ -205,41 +204,19 @@ def create_api_tool(
     body_schema: Optional[Dict[str, Any]] = None,
 ) -> RequestsTool:
     """
-    Factory function to quickly create a RequestsTool for an API endpoint.
-
-    Args:
-        name: Tool name
-        description: Tool description
-        endpoint: API endpoint URL
-        method: HTTP method
-        headers: Request headers
-        parameters: Query parameters schema
-        body_schema: Request body schema
-
+    Create a configured RequestsTool for a single API endpoint.
+    
+    Parameters:
+        name: Tool identifier shown in tooling UIs.
+        description: Short human-readable description of the tool's purpose.
+        endpoint: URL template for the API endpoint (may include `{param}` placeholders).
+        method: HTTP method to use (e.g., "GET", "POST").
+        headers: Default request headers to include.
+        parameters: JSON Schema describing query parameters.
+        body_schema: JSON Schema describing the request body.
+    
     Returns:
-        Configured RequestsTool instance
-
-    Example:
-        ```python
-        tool = create_api_tool(
-            name="search_repos",
-            description="Search GitHub repositories",
-            endpoint="https://api.github.com/search/repositories",
-            method="GET",
-            parameters={
-                "q": {
-                    "type": "string",
-                    "description": "Search query",
-                    "required": True
-                },
-                "sort": {
-                    "type": "string",
-                    "description": "Sort field",
-                    "enum": ["stars", "forks", "updated"]
-                }
-            }
-        )
-        ```
+        A RequestsTool instance configured with the provided endpoint, method, headers, query parameters schema, and body schema.
     """
     return RequestsTool(
         name=name,

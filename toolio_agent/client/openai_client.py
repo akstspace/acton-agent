@@ -44,17 +44,17 @@ class OpenAIClient:
         default_headers: Optional[dict] = None,
     ):
         """
-        Initialize the OpenAI client.
-
-        Args:
-            api_key: Your OpenAI API key (reads from OPENAI_API_KEY env var if not provided)
-            model: The model to use (e.g., "gpt-4o", "gpt-3.5-turbo")
-            base_url: API base URL (default: https://api.openai.com/v1)
-            organization: Optional organization ID
-            default_headers: Optional default headers to include in all requests
-
+        Create an OpenAI client configured with the provided API key and connection settings.
+        
+        Parameters:
+            api_key (Optional[str]): OpenAI API key; if omitted, read from OPENAI_API_KEY environment variable.
+            model (str): Model identifier to use for requests (e.g., "gpt-4o", "gpt-3.5-turbo").
+            base_url (str): Base URL for the OpenAI-compatible API.
+            organization (Optional[str]): Optional organization ID to include with requests.
+            default_headers (Optional[dict]): Optional default HTTP headers to include on all requests.
+        
         Raises:
-            ValueError: If no API key is provided and OPENAI_API_KEY env var is not set
+            ValueError: If no API key is provided and OPENAI_API_KEY environment variable is not set.
         """
         # Get API key from parameter or environment variable
         final_api_key = api_key or os.environ.get("OPENAI_API_KEY")
@@ -75,17 +75,14 @@ class OpenAIClient:
 
     def call(self, messages: List[Message], **kwargs) -> str:
         """
-        Make a synchronous call to the LLM.
-
-        Args:
-            messages: List of conversation messages
-            **kwargs: Additional parameters to pass to the API (e.g., temperature, max_tokens)
-
+        Request a chat completion from the configured model and return the assistant's reply.
+        
+        Parameters:
+            messages (List[Message]): Conversation messages in order (each with `role` and `content`).
+            **kwargs: Additional request parameters forwarded to the underlying API (e.g., `temperature`, `max_tokens`).
+        
         Returns:
-            The LLM's response as a string
-
-        Raises:
-            Exception: If the LLM call fails
+            str: The assistant's response text from the first completion choice.
         """
         message_dicts = [{"role": msg.role, "content": msg.content} for msg in messages]
 
@@ -99,17 +96,14 @@ class OpenAIClient:
         self, messages: List[Message], **kwargs
     ) -> Generator[str, None, None]:
         """
-        Make a streaming call to the LLM, yielding tokens as they arrive.
-
-        Args:
-            messages: List of conversation messages
-            **kwargs: Additional parameters to pass to the API (e.g., temperature, max_tokens)
-
+        Yield token chunks from a streaming LLM completion for the given conversation.
+        
+        Parameters:
+            messages (List[Message]): Conversation messages in order.
+            **kwargs: Additional parameters forwarded to the API (for example, temperature or max_tokens).
+        
         Yields:
-            Token chunks as they arrive from the API
-
-        Raises:
-            Exception: If the LLM call fails
+            str: Content chunks emitted by the model as they arrive.
         """
         message_dicts = [{"role": msg.role, "content": msg.content} for msg in messages]
 

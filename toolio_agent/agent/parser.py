@@ -27,28 +27,14 @@ class ResponseParser:
         response_text: str,
     ) -> Union[AgentPlan, AgentStep, AgentFinalResponse, AgentResponse]:
         """
-        Parse LLM response into appropriate response model.
-
-        The parser detects the type of response based on the fields present:
-        - AgentPlan: has 'plan' field
-        - AgentStep: has 'tool_calls' field (without 'plan' or 'final_answer')
-        - AgentFinalResponse: has 'final_answer' field (without 'plan' or 'tool_calls')
-        - AgentResponse: legacy format fallback
-
-        Process:
-        1. Extract JSON from markdown code block (```json ... ```)
-        2. Parse the extracted JSON
-        3. Detect response type and create appropriate model
-        4. Fallback to treating as final answer if parsing fails
-
-        Args:
-            response_text: Raw text response from the LLM
-
+        Parse LLM response text into a structured Agent response model.
+        
+        Parameters:
+            response_text (str): Raw text from the LLM, optionally containing JSON inside markdown code fences.
+        
         Returns:
-            Parsed response object (AgentPlan, AgentStep, AgentFinalResponse, or AgentResponse)
-
-        Raises:
-            ResponseParseError: If parsing fails critically (should be rare)
+            Union[AgentPlan, AgentStep, AgentFinalResponse, AgentResponse]: An instantiated response model inferred from the parsed JSON.
+            If JSON parsing fails or an error occurs, returns an AgentFinalResponse containing the raw response text or an error message.
         """
         try:
             response_text = response_text.strip()
@@ -96,16 +82,15 @@ class ResponseParser:
     @staticmethod
     def _extract_json_from_markdown(text: str) -> str:
         """
-        Extract JSON content from markdown code block.
-
-        Looks for ```json ... ``` or ``` ... ``` blocks and extracts the content.
-        If no code block is found, returns the original text.
-
-        Args:
-            text: Text potentially containing markdown code blocks
-
+        Extract JSON content from a Markdown code block if present.
+        
+        Searches the input for a fenced code block that begins with ```json or ``` and returns the inner content trimmed of surrounding whitespace and fences. If no such code block is found, returns the original input trimmed.
+        
+        Parameters:
+            text (str): Text that may contain a Markdown fenced code block with JSON.
+        
         Returns:
-            Extracted JSON text (without code block markers)
+            str: The JSON text extracted from the code block, or the original trimmed text if no code block is found.
         """
         text = text.strip()
 
@@ -138,13 +123,19 @@ class ResponseParser:
         response: Union[AgentPlan, AgentStep, AgentFinalResponse, AgentResponse],
     ) -> bool:
         """
-        Validate that a response is well-formed.
-
-        Args:
-            response: Response object to validate
-
+        Check whether a parsed agent response object satisfies the required structure for its specific response type.
+        
+        Validation rules:
+        - AgentPlan: must have a non-empty `plan`.
+        - AgentStep: must have `tool_calls`; each tool call must include `id` and `tool_name`.
+        - AgentFinalResponse: must have a non-empty `final_answer`.
+        - AgentResponse (legacy): must have either `tool_calls` or `final_answer`; if `tool_calls` are present, each must include `id` and `tool_name`.
+        
+        Parameters:
+            response (AgentPlan | AgentStep | AgentFinalResponse | AgentResponse): The parsed response object to validate.
+        
         Returns:
-            True if response is valid, False otherwise
+            bool: `True` if the response meets the validation rules for its type, `False` otherwise.
         """
         # AgentPlan must have plan
         if isinstance(response, AgentPlan):
@@ -192,13 +183,15 @@ class ResponseParser:
         response: Union[AgentPlan, AgentStep, AgentFinalResponse, AgentResponse],
     ) -> Optional[str]:
         """
-        Extract thought content from response.
-
-        Args:
-            response: Response object to extract from
-
+        Retrieve the thought text from a response object.
+        
+        For AgentPlan, AgentStep, and AgentFinalResponse, returns the object's `thought` attribute if present. For legacy AgentResponse, returns `None` if `thought` is `None`, returns the string if `thought` is a string, or returns `thought.content` for structured thought objects.
+        
+        Parameters:
+            response (Union[AgentPlan, AgentStep, AgentFinalResponse, AgentResponse]): The response to extract thought from.
+        
         Returns:
-            Thought content as string, or None if no thought
+            Optional[str]: The thought text if available, `None` otherwise.
         """
         if isinstance(response, (AgentPlan, AgentStep, AgentFinalResponse)):
             return getattr(response, "thought", None)

@@ -48,16 +48,16 @@ class OpenRouterClient(OpenAIClient):
     ):
         """
         Initialize the OpenRouter client.
-
-        Args:
-            api_key: Your OpenRouter API key (reads from OPENROUTER_API_KEY env var if not provided)
-            model: The model to use (e.g., "openai/gpt-4o", "anthropic/claude-3-opus")
-            site_url: Optional site URL for rankings on openrouter.ai
-            site_name: Optional site name for rankings on openrouter.ai
-            base_url: OpenRouter API base URL (default: https://openrouter.ai/api/v1)
-
+        
+        Parameters:
+            api_key (Optional[str]): OpenRouter API key; if omitted the OPENROUTER_API_KEY environment variable is used.
+            model (str): Model identifier to use (e.g., "openai/gpt-4o", "anthropic/claude-3-opus").
+            site_url (Optional[str]): Optional site URL sent as the "HTTP-Referer" header for OpenRouter ranking.
+            site_name (Optional[str]): Optional site name sent as the "X-Title" header for OpenRouter ranking.
+            base_url (str): OpenRouter API base URL.
+        
         Raises:
-            ValueError: If no API key is provided and OPENROUTER_API_KEY env var is not set
+            ValueError: If no API key is provided via parameter or the OPENROUTER_API_KEY environment variable.
         """
         # Get API key from parameter or environment variable
         final_api_key = api_key or os.environ.get("OPENROUTER_API_KEY")

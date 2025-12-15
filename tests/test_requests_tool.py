@@ -174,7 +174,11 @@ class TestRequestsTool:
 
     @patch("toolio_agent.tools.requests_tool.requests.request")
     def test_execute_request_failure(self, mock_request):
-        """Test handling request failure."""
+        """
+        Verify that RequestsTool raises ToolExecutionError when the HTTP request fails.
+        
+        Asserts that calling execute results in a ToolExecutionError if the underlying HTTP response's raise_for_status raises an exception (simulating an error status like 404).
+        """
         mock_response = Mock()
         mock_response.status_code = 404
         mock_response.raise_for_status.side_effect = Exception("Not found")
