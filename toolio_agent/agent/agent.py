@@ -200,9 +200,13 @@ class Agent:
                     )
 
                     if result.success:
-                        logger.success(f"Tool {tool_call.tool_name} executed successfully")
+                        logger.success(
+                            f"Tool {tool_call.tool_name} executed successfully"
+                        )
                     else:
-                        logger.warning(f"Tool {tool_call.tool_name} returned error: {error}")
+                        logger.warning(
+                            f"Tool {tool_call.tool_name} returned error: {error}"
+                        )
 
                 except ToolExecutionError as e:
                     logger.error(f"Tool {tool_call.tool_name} execution failed: {e}")
@@ -261,10 +265,14 @@ class Agent:
             wrapped_func = self.retry_config.wrap_function(_call)
             return wrapped_func()
         except Exception as e:
-            logger.error(f"LLM call failed after {self.retry_config.max_attempts} attempts: {e}")
+            logger.error(
+                f"LLM call failed after {self.retry_config.max_attempts} attempts: {e}"
+            )
             raise LLMCallError(e, self.retry_config.max_attempts)
 
-    def _call_llm_with_retry_stream(self, messages: List[Message]) -> Generator[str, None, str]:
+    def _call_llm_with_retry_stream(
+        self, messages: List[Message]
+    ) -> Generator[str, None, str]:
         """
         Call LLM with retry logic and streaming support.
 
@@ -371,7 +379,9 @@ class Agent:
             agent_response = self.response_parser.parse(llm_response_text)
 
             # Add to history
-            self.conversation_history.append(Message(role="assistant", content=llm_response_text))
+            self.conversation_history.append(
+                Message(role="assistant", content=llm_response_text)
+            )
 
             # Handle different response types
             if isinstance(agent_response, AgentPlan):
@@ -388,7 +398,9 @@ class Agent:
                 tool_results = self._execute_tool_calls(agent_response.tool_calls)
                 results_text = self._format_tool_results(tool_results)
 
-                self.conversation_history.append(Message(role="user", content=results_text))
+                self.conversation_history.append(
+                    Message(role="user", content=results_text)
+                )
 
                 # Yield tool results info
                 yield {"type": "tool_results", "results": tool_results}
@@ -404,12 +416,15 @@ class Agent:
             elif isinstance(agent_response, AgentResponse):
                 # Handle tool calls
                 if agent_response.has_tool_calls:
-                    logger.info(f"Executing {len(agent_response.tool_calls)} tool call(s)")
+                    logger.info(
+                        f"Executing {len(agent_response.tool_calls)} tool call(s)"
+                    )
 
                     # Convert to AgentStep for consistency
                     step = AgentStep(
                         thought=agent_response.thought.content
-                        if agent_response.thought and hasattr(agent_response.thought, "content")
+                        if agent_response.thought
+                        and hasattr(agent_response.thought, "content")
                         else None,
                         tool_calls=agent_response.tool_calls,
                     )
@@ -418,7 +433,9 @@ class Agent:
                     tool_results = self._execute_tool_calls(agent_response.tool_calls)
                     results_text = self._format_tool_results(tool_results)
 
-                    self.conversation_history.append(Message(role="user", content=results_text))
+                    self.conversation_history.append(
+                        Message(role="user", content=results_text)
+                    )
 
                     # Yield tool results info
                     yield {"type": "tool_results", "results": tool_results}

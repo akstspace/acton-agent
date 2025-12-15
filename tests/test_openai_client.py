@@ -155,7 +155,9 @@ class TestOpenRouterClient:
         mock_client = Mock()
         mock_openai_class.return_value = mock_client
 
-        OpenRouterClient(api_key="test-key", site_url="https://myapp.com", site_name="My App")
+        OpenRouterClient(
+            api_key="test-key", site_url="https://myapp.com", site_name="My App"
+        )
 
         # Check that OpenAI was initialized with custom headers
         call_kwargs = mock_openai_class.call_args[1]

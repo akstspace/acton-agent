@@ -51,7 +51,11 @@ def parse_partial_json(json_str: str) -> Any:
         return {}
 
     # Clean up trailing issues
-    if json_str.endswith('"') and not json_str.endswith('\\"') and not json_str.endswith(':"'):
+    if (
+        json_str.endswith('"')
+        and not json_str.endswith('\\"')
+        and not json_str.endswith(':"')
+    ):
         json_str = json_str[:-1]
     elif json_str.endswith("\\") and not json_str.endswith("\\\\"):
         json_str = json_str[:-1]
@@ -65,7 +69,9 @@ def parse_partial_json(json_str: str) -> Any:
     if HAS_JITER:
         try:
             return jiter.from_json(
-                json_str.encode("utf-8"), cache_mode="keys", partial_mode="trailing-strings"
+                json_str.encode("utf-8"),
+                cache_mode="keys",
+                partial_mode="trailing-strings",
             )
         except Exception:
             pass
@@ -234,7 +240,9 @@ def stream_with_partial_json(
                         # We have something parseable - yield updates for any type
                         # The parsed dict can contain fields from AgentPlan, AgentStep, or AgentFinalResponse
                         yield AgentStepUpdate(
-                            data=parsed, complete=False, tokens=current_step_tokens.copy()
+                            data=parsed,
+                            complete=False,
+                            tokens=current_step_tokens.copy(),
                         )
 
                 # Also pass through the raw token

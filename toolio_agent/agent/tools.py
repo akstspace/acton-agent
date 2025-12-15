@@ -229,7 +229,9 @@ class FunctionTool(Tool):
     without having to create a custom Tool subclass.
     """
 
-    def __init__(self, name: str, description: str, func: Callable, schema: Dict[str, Any]):
+    def __init__(
+        self, name: str, description: str, func: Callable, schema: Dict[str, Any]
+    ):
         """
         Initialize a function tool.
 

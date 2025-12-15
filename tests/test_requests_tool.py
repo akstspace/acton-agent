@@ -34,7 +34,11 @@ class TestRequestsTool:
             method="GET",
             url_template="https://api.example.com/search",
             query_params_schema={
-                "query": {"type": "string", "description": "Search query", "required": True},
+                "query": {
+                    "type": "string",
+                    "description": "Search query",
+                    "required": True,
+                },
                 "limit": {"type": "number", "description": "Result limit"},
             },
         )
@@ -232,7 +236,9 @@ class TestCreateApiTool:
             description="Search",
             endpoint="https://api.example.com/search",
             method="GET",
-            parameters={"q": {"type": "string", "description": "Query", "required": True}},
+            parameters={
+                "q": {"type": "string", "description": "Query", "required": True}
+            },
         )
 
         schema = tool.get_schema()

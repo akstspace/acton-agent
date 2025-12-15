@@ -46,7 +46,9 @@ class ToolCall(BaseModel):
 
     id: str = Field(..., description="Unique identifier for this tool call")
     tool_name: str = Field(..., description="Name of the tool to call")
-    parameters: Dict[str, Any] = Field(default_factory=dict, description="Tool parameters")
+    parameters: Dict[str, Any] = Field(
+        default_factory=dict, description="Tool parameters"
+    )
 
 
 class ToolResult(BaseModel):
@@ -63,7 +65,9 @@ class ToolResult(BaseModel):
     tool_call_id: str = Field(..., description="ID of the tool call this result is for")
     tool_name: str = Field(..., description="Name of the tool that was called")
     result: str = Field(..., description="Result from the tool execution")
-    error: Optional[str] = Field(None, description="Error message if tool execution failed")
+    error: Optional[str] = Field(
+        None, description="Error message if tool execution failed"
+    )
 
     @property
     def success(self) -> bool:
@@ -84,7 +88,9 @@ class AgentPlan(BaseModel):
     """
 
     thought: str = Field(..., description="Agent's reasoning about the task")
-    plan: List[str] = Field(..., description="List of planned steps to accomplish the task")
+    plan: List[str] = Field(
+        ..., description="List of planned steps to accomplish the task"
+    )
 
 
 class AgentStep(BaseModel):
@@ -120,7 +126,9 @@ class AgentFinalResponse(BaseModel):
     """
 
     thought: Optional[str] = Field(None, description="Agent's final reasoning")
-    final_answer: str = Field(..., description="The complete answer to the user's request")
+    final_answer: str = Field(
+        ..., description="The complete answer to the user's request"
+    )
 
 
 class AgentResponse(BaseModel):
@@ -136,8 +144,12 @@ class AgentResponse(BaseModel):
         final_answer: Final answer to the user (optional)
     """
 
-    thought: Optional[Union[AgentThought, str]] = Field(None, description="Agent's reasoning")
-    tool_calls: List[ToolCall] = Field(default_factory=list, description="Tools to call")
+    thought: Optional[Union[AgentThought, str]] = Field(
+        None, description="Agent's reasoning"
+    )
+    tool_calls: List[ToolCall] = Field(
+        default_factory=list, description="Tools to call"
+    )
     final_answer: Optional[str] = Field(None, description="Final answer to the user")
 
     @field_validator("thought", mode="before")
@@ -187,7 +199,9 @@ class AgentStepUpdate(BaseModel):
     type: Literal["step_update"] = "step_update"
     data: Dict[str, Any] = Field(..., description="Partially parsed JSON data")
     complete: bool = Field(..., description="Whether this step is complete")
-    tokens: Optional[List[str]] = Field(None, description="Accumulated tokens for this step")
+    tokens: Optional[List[str]] = Field(
+        None, description="Accumulated tokens for this step"
+    )
 
 
 class AgentToolResultsEvent(BaseModel):

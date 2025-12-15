@@ -44,7 +44,9 @@ class TestToolCall:
 
     def test_create_tool_call(self):
         """Test creating a tool call."""
-        tool_call = ToolCall(id="call_123", tool_name="calculator", parameters={"a": 1, "b": 2})
+        tool_call = ToolCall(
+            id="call_123", tool_name="calculator", parameters={"a": 1, "b": 2}
+        )
         assert tool_call.id == "call_123"
         assert tool_call.tool_name == "calculator"
         assert tool_call.parameters == {"a": 1, "b": 2}
@@ -70,7 +72,10 @@ class TestToolResult:
     def test_failed_tool_result(self):
         """Test creating a failed tool result."""
         result = ToolResult(
-            tool_call_id="call_123", tool_name="calculator", result="", error="Division by zero"
+            tool_call_id="call_123",
+            tool_name="calculator",
+            result="",
+            error="Division by zero",
         )
         assert not result.success
         assert result.error == "Division by zero"
@@ -81,7 +86,9 @@ class TestAgentPlan:
 
     def test_create_plan(self):
         """Test creating an agent plan."""
-        plan = AgentPlan(thought="Let me plan the solution", plan=["Step 1", "Step 2", "Step 3"])
+        plan = AgentPlan(
+            thought="Let me plan the solution", plan=["Step 1", "Step 2", "Step 3"]
+        )
         assert plan.thought == "Let me plan the solution"
         assert len(plan.plan) == 3
 
@@ -115,7 +122,9 @@ class TestAgentFinalResponse:
 
     def test_create_final_response(self):
         """Test creating a final response."""
-        response = AgentFinalResponse(thought="I have the answer", final_answer="The answer is 42")
+        response = AgentFinalResponse(
+            thought="I have the answer", final_answer="The answer is 42"
+        )
         assert response.thought == "I have the answer"
         assert response.final_answer == "The answer is 42"
 
@@ -192,9 +201,13 @@ class TestStreamingModels:
         assert plan_event.type == "agent_plan"
 
         step_event = AgentStepEvent(
-            step=AgentStep(thought="test", tool_calls=[ToolCall(id="1", tool_name="test")])
+            step=AgentStep(
+                thought="test", tool_calls=[ToolCall(id="1", tool_name="test")]
+            )
         )
         assert step_event.type == "agent_step"
 
-        final_event = AgentFinalResponseEvent(response=AgentFinalResponse(final_answer="done"))
+        final_event = AgentFinalResponseEvent(
+            response=AgentFinalResponse(final_answer="done")
+        )
         assert final_event.type == "final_response"

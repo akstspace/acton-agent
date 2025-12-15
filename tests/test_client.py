@@ -2,7 +2,6 @@
 Tests for the client module.
 """
 
-
 from toolio_agent.agent.client import LLMClient
 from toolio_agent.agent.models import Message
 

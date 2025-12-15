@@ -35,7 +35,9 @@ class LLMCallError(AgentError):
     def __init__(self, original_error: Exception, retry_count: int = 0):
         self.original_error = original_error
         self.retry_count = retry_count
-        super().__init__(f"LLM call failed after {retry_count} retries: {str(original_error)}")
+        super().__init__(
+            f"LLM call failed after {retry_count} retries: {str(original_error)}"
+        )
 
 
 class ResponseParseError(AgentError):

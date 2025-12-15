@@ -23,7 +23,9 @@ class ResponseParser:
     """
 
     @staticmethod
-    def parse(response_text: str) -> Union[AgentPlan, AgentStep, AgentFinalResponse, AgentResponse]:
+    def parse(
+        response_text: str,
+    ) -> Union[AgentPlan, AgentStep, AgentFinalResponse, AgentResponse]:
         """
         Parse LLM response into appropriate response model.
 
@@ -78,7 +80,9 @@ class ResponseParser:
             return response
 
         except json.JSONDecodeError as e:
-            logger.warning(f"Failed to parse JSON response, treating as final answer: {e}")
+            logger.warning(
+                f"Failed to parse JSON response, treating as final answer: {e}"
+            )
             logger.debug(f"Raw response text: {response_text[:200]}...")
             # Fallback: treat entire response as final answer
             return AgentFinalResponse(final_answer=response_text)
@@ -169,7 +173,9 @@ class ResponseParser:
         elif isinstance(response, AgentResponse):
             # Response must have either tool_calls or final_answer
             if not response.has_tool_calls and not response.is_final:
-                logger.warning("Invalid response: must have either tool_calls or final_answer")
+                logger.warning(
+                    "Invalid response: must have either tool_calls or final_answer"
+                )
                 return False
 
             # If has tool calls, validate each one

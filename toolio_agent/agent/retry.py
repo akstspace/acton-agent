@@ -7,7 +7,12 @@ This module provides configuration for retry logic using the tenacity library.
 from typing import Callable
 
 from pydantic import BaseModel, Field
-from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 
 class RetryConfig(BaseModel):
@@ -21,12 +26,18 @@ class RetryConfig(BaseModel):
         wait_max: Maximum wait time in seconds
     """
 
-    max_attempts: int = Field(default=3, ge=1, description="Maximum number of retry attempts")
+    max_attempts: int = Field(
+        default=3, ge=1, description="Maximum number of retry attempts"
+    )
     wait_multiplier: float = Field(
         default=1.0, ge=0, description="Multiplier for exponential backoff"
     )
-    wait_min: float = Field(default=1.0, ge=0, description="Minimum wait time in seconds")
-    wait_max: float = Field(default=10.0, ge=0, description="Maximum wait time in seconds")
+    wait_min: float = Field(
+        default=1.0, ge=0, description="Minimum wait time in seconds"
+    )
+    wait_max: float = Field(
+        default=10.0, ge=0, description="Maximum wait time in seconds"
+    )
 
     def create_retry_decorator(self, exception_types: tuple = (Exception,)):
         """
@@ -47,7 +58,9 @@ class RetryConfig(BaseModel):
             reraise=True,
         )
 
-    def wrap_function(self, func: Callable, exception_types: tuple = (Exception,)) -> Callable:
+    def wrap_function(
+        self, func: Callable, exception_types: tuple = (Exception,)
+    ) -> Callable:
         """
         Wrap a function with retry logic.
 

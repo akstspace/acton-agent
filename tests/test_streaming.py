@@ -2,7 +2,6 @@
 Tests for streaming functionality.
 """
 
-
 from toolio_agent.agent.agent_stream import (
     StreamingResponseParser,
     extract_json_from_markdown,

@@ -15,7 +15,9 @@ class SimpleCalculatorTool(Tool):
     """Simple calculator tool for testing."""
 
     def __init__(self):
-        super().__init__(name="calculator", description="Perform basic arithmetic operations")
+        super().__init__(
+            name="calculator", description="Perform basic arithmetic operations"
+        )
 
     def execute(self, parameters: dict) -> str:
         """Execute calculation."""
@@ -105,7 +107,9 @@ class TestToolManagement:
             func=lambda name: f"Hello, {name}!",
             schema={
                 "type": "object",
-                "properties": {"name": {"type": "string", "description": "Name to greet"}},
+                "properties": {
+                    "name": {"type": "string", "description": "Name to greet"}
+                },
                 "required": ["name"],
             },
         )
@@ -203,7 +207,9 @@ class TestAgentRun:
 }
 ```"""
 
-        client = mock_llm_client_with_responses([plan_response, tool_response, final_response])
+        client = mock_llm_client_with_responses(
+            [plan_response, tool_response, final_response]
+        )
         agent = Agent(llm_client=client)
         agent.register_tool(SimpleCalculatorTool())
 

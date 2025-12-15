@@ -154,7 +154,9 @@ class TestFunctionTool:
             "required": ["a", "b"],
         }
 
-        tool = FunctionTool(name="add", description="Add two numbers", func=add, schema=schema)
+        tool = FunctionTool(
+            name="add", description="Add two numbers", func=add, schema=schema
+        )
 
         assert tool.name == "add"
         assert tool.description == "Add two numbers"
@@ -171,7 +173,10 @@ class TestFunctionTool:
         }
 
         tool = FunctionTool(
-            name="multiply", description="Multiply two numbers", func=multiply, schema=schema
+            name="multiply",
+            description="Multiply two numbers",
+            func=multiply,
+            schema=schema,
         )
 
         result = tool.execute({"a": 5, "b": 3})
@@ -185,7 +190,9 @@ class TestFunctionTool:
 
         schema = {"type": "object", "properties": {"name": {"type": "string"}}}
 
-        tool = FunctionTool(name="greet", description="Greet someone", func=greet, schema=schema)
+        tool = FunctionTool(
+            name="greet", description="Greet someone", func=greet, schema=schema
+        )
 
         result = tool.execute({"name": "Alice"})
         assert result == "Hello, Alice!"
@@ -198,7 +205,9 @@ class TestFunctionTool:
 
         schema = {"type": "object", "properties": {"id": {"type": "number"}}}
 
-        tool = FunctionTool(name="get_info", description="Get info", func=get_info, schema=schema)
+        tool = FunctionTool(
+            name="get_info", description="Get info", func=get_info, schema=schema
+        )
 
         result = tool.execute({"id": 123})
         result_dict = json.loads(result)

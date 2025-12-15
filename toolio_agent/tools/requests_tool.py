@@ -124,7 +124,9 @@ class RequestsTool(Tool):
                 method=self.method,
                 url=url,
                 params=query_params if query_params else None,
-                json=body_data if body_data and self.method in ["POST", "PUT", "PATCH"] else None,
+                json=body_data
+                if body_data and self.method in ["POST", "PUT", "PATCH"]
+                else None,
                 headers=self.headers,
                 auth=self.auth,
                 timeout=self.timeout,
@@ -163,7 +165,10 @@ class RequestsTool(Tool):
 
         # Add path parameters
         for param in self.path_params:
-            properties[param] = {"type": "string", "description": f"Path parameter: {param}"}
+            properties[param] = {
+                "type": "string",
+                "description": f"Path parameter: {param}",
+            }
             required.append(param)
 
         # Add query parameters

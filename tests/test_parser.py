@@ -2,7 +2,6 @@
 Tests for the parser module.
 """
 
-
 from toolio_agent.agent.models import (
     AgentFinalResponse,
     AgentPlan,
@@ -131,7 +130,8 @@ class TestResponseValidation:
     def test_validate_valid_step(self):
         """Test validating a valid step."""
         step = AgentStep(
-            thought="test", tool_calls=[ToolCall(id="1", tool_name="test", parameters={})]
+            thought="test",
+            tool_calls=[ToolCall(id="1", tool_name="test", parameters={})],
         )
         assert ResponseParser.validate_response(step)
 
@@ -157,7 +157,9 @@ class TestResponseValidation:
         assert ResponseParser.validate_response(response1)
 
         # Valid with tool calls
-        response2 = AgentResponse(tool_calls=[ToolCall(id="1", tool_name="test", parameters={})])
+        response2 = AgentResponse(
+            tool_calls=[ToolCall(id="1", tool_name="test", parameters={})]
+        )
         assert ResponseParser.validate_response(response2)
 
         # Invalid (neither final answer nor tool calls)
@@ -176,7 +178,9 @@ class TestExtractThought:
 
     def test_extract_thought_from_step(self):
         """Test extracting thought from step."""
-        step = AgentStep(thought="step thought", tool_calls=[ToolCall(id="1", tool_name="test")])
+        step = AgentStep(
+            thought="step thought", tool_calls=[ToolCall(id="1", tool_name="test")]
+        )
         thought = ResponseParser.extract_thought(step)
         assert thought == "step thought"
 

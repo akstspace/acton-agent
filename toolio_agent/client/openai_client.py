@@ -95,7 +95,9 @@ class OpenAIClient:
 
         return completion.choices[0].message.content
 
-    def call_stream(self, messages: List[Message], **kwargs) -> Generator[str, None, None]:
+    def call_stream(
+        self, messages: List[Message], **kwargs
+    ) -> Generator[str, None, None]:
         """
         Make a streaming call to the LLM, yielding tokens as they arrive.
 
