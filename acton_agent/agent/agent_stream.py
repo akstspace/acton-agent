@@ -193,14 +193,15 @@ def stream_with_partial_json(
     """
     Wrap an agent.run_stream() generator to add partial JSON parsing capabilities.
     
-    Accumulates streaming tokens, extracts JSON embedded in streamed Markdown, and yields 
-    additional AgentStepUpdate events for partial parsing alongside the original events.
+    This function passes through all original streaming events from agent.run_stream() 
+    and additionally yields AgentStepUpdate events when partial or complete JSON is 
+    parsed from the token stream.
     
     Parameters:
         agent_run_generator (Generator): Generator produced by agent.run_stream() that yields StreamingEvent objects.
     
     Yields:
-        StreamingEvent: All original streaming events plus:
+        StreamingEvent: All original streaming events from agent.run_stream() plus:
             - AgentStepUpdate: emitted when partial or complete JSON is parsed from the current stream; 
               `complete` indicates whether parsing finished.
     """
