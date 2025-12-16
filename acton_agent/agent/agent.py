@@ -5,6 +5,7 @@ This module contains the core Agent class that orchestrates LLM interactions,
 tool execution, and conversation management.
 """
 
+import uuid
 from datetime import datetime
 from typing import Generator, List, Optional
 from zoneinfo import ZoneInfo
@@ -411,6 +412,8 @@ class Agent:
         for iteration in range(1, self.max_iterations + 1):
             logger.info(f"Agent iteration {iteration}/{self.max_iterations}")
 
+            step_id = str(uuid.uuid4())
+
             # Build messages
             messages = self._build_messages()
 
@@ -419,11 +422,11 @@ class Agent:
                 if self.stream:
                     # Streaming mode - yield tokens and accumulate response
                     llm_response_text = ""
-                    yield AgentStreamStart()
+                    yield AgentStreamStart(step_id=step_id)
                     for chunk in self._call_llm_with_retry_stream(messages):
                         llm_response_text += chunk
-                        yield AgentToken(content=chunk)
-                    yield AgentStreamEnd()
+                        yield AgentToken(step_id=step_id, content=chunk)
+                    yield AgentStreamEnd(step_id=step_id)
                 else:
                     # Non-streaming mode
                     llm_response_text = self._call_llm_with_retry(messages)
@@ -432,7 +435,7 @@ class Agent:
                 error_response = AgentFinalResponse(
                     final_answer=f"Error: Failed to get response from LLM - {str(e.original_error)}"
                 )
-                yield AgentFinalResponseEvent(response=error_response)
+                yield AgentFinalResponseEvent(step_id=step_id, response=error_response)
                 return
 
             # Parse response (could be AgentPlan, AgentStep, or AgentFinalResponse)
@@ -446,13 +449,13 @@ class Agent:
             # Handle different response types
             if isinstance(agent_response, AgentPlan):
                 logger.info(f"Agent created plan with {len(agent_response.plan)} steps")
-                yield AgentPlanEvent(plan=agent_response)
+                yield AgentPlanEvent(step_id=step_id, plan=agent_response)
                 # Continue to next iteration - agent should follow up with AgentStep or AgentFinalResponse
                 continue
 
             elif isinstance(agent_response, AgentStep):
                 logger.info(f"Executing {len(agent_response.tool_calls)} tool call(s)")
-                yield AgentStepEvent(step=agent_response)
+                yield AgentStepEvent(step_id=step_id, step=agent_response)
 
                 # Execute tools and add results to conversation
                 tool_results = self._execute_tool_calls(agent_response.tool_calls)
@@ -463,13 +466,13 @@ class Agent:
                 )
 
                 # Yield tool results info
-                yield AgentToolResultsEvent(results=tool_results)
+                yield AgentToolResultsEvent(step_id=step_id, results=tool_results)
 
                 continue
 
             elif isinstance(agent_response, AgentFinalResponse):
                 logger.success("Agent produced final answer")
-                yield AgentFinalResponseEvent(response=agent_response)
+                yield AgentFinalResponseEvent(step_id=step_id, response=agent_response)
                 return
 
         logger.warning("Agent reached maximum iterations without final answer")

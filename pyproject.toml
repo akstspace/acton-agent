@@ -32,6 +32,7 @@ dependencies = [
     "tenacity>=8.0.0",
     "loguru>=0.7.0",
     "requests>=2.31.0",
+    "jiter>=0.5.0",
 ]
 
 [project.optional-dependencies]
@@ -46,11 +47,11 @@ dev = [
 openai = [
     "openai>=1.0.0",
 ]
-streaming = [
-    "jiter>=0.5.0",
+groq = [
+    "groq>=0.4.0",
 ]
 all = [
-    "acton-agent[dev,openai,streaming]",
+    "acton-agent[dev,openai,groq]",
 ]
 
 [project.urls]
