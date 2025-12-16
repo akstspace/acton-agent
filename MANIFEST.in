@@ -3,7 +3,7 @@ include LICENSE
 include pyproject.toml
 include setup.py
 
-recursive-include src *.py
+recursive-include toolio_agent *.py
 recursive-include tests *.py
 
 global-exclude __pycache__
