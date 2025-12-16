@@ -5,7 +5,7 @@ Tests for the models module.
 import pytest
 from pydantic import ValidationError
 
-from toolio_agent.agent.models import (
+from acton_agent.agent.models import (
     AgentFinalResponse,
     AgentPlan,
     AgentResponse,
@@ -160,7 +160,7 @@ class TestAgentResponse:
         assert response1.thought.content == "Test thought"
 
         # Already AgentThought
-        from toolio_agent.agent.models import AgentThought
+        from acton_agent.agent.models import AgentThought
 
         response2 = AgentResponse(
             thought=AgentThought(content="Test thought"), final_answer="Answer"
@@ -186,7 +186,7 @@ class TestStreamingModels:
 
     def test_streaming_event_types(self):
         """Test that all streaming events have correct type."""
-        from toolio_agent.agent.models import (
+        from acton_agent.agent.models import (
             AgentFinalResponseEvent,
             AgentPlanEvent,
             AgentStepEvent,

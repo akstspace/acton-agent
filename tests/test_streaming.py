@@ -2,7 +2,7 @@
 Tests for streaming functionality.
 """
 
-from toolio_agent.agent.agent_stream import (
+from acton_agent.agent.agent_stream import (
     StreamingResponseParser,
     extract_json_from_markdown,
     parse_partial_json,

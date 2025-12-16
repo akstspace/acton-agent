@@ -6,7 +6,7 @@ import time
 
 import pytest
 
-from toolio_agent.agent.retry import RetryConfig
+from acton_agent.agent.retry import RetryConfig
 
 
 class TestRetryConfig:

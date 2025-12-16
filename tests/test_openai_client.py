@@ -7,9 +7,9 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from toolio_agent.agent.models import Message
-from toolio_agent.client.openai_client import OpenAIClient
-from toolio_agent.client.openrouter import OpenRouterClient
+from acton_agent.agent.models import Message
+from acton_agent.client.openai_client import OpenAIClient
+from acton_agent.client.openrouter import OpenRouterClient
 
 
 class TestOpenAIClient:
@@ -50,7 +50,7 @@ class TestOpenAIClient:
             else:
                 del os.environ["OPENAI_API_KEY"]
 
-    @patch("toolio_agent.client.openai_client.OpenAI")
+    @patch("acton_agent.client.openai_client.OpenAI")
     def test_call_method(self, mock_openai_class):
         """Test call method."""
         # Setup mock
@@ -70,7 +70,7 @@ class TestOpenAIClient:
         assert result == "Test response"
         assert mock_client.chat.completions.create.called
 
-    @patch("toolio_agent.client.openai_client.OpenAI")
+    @patch("acton_agent.client.openai_client.OpenAI")
     def test_call_stream_method(self, mock_openai_class):
         """Test call_stream method."""
         # Setup mock
@@ -137,7 +137,7 @@ class TestOpenRouterClient:
             else:
                 del os.environ["OPENROUTER_API_KEY"]
 
-    @patch("toolio_agent.client.openai_client.OpenAI")
+    @patch("acton_agent.client.openai_client.OpenAI")
     def test_openrouter_inherits_from_openai(self, mock_openai_class):
         """Test that OpenRouter inherits from OpenAI client."""
         mock_client = Mock()
@@ -149,7 +149,7 @@ class TestOpenRouterClient:
         assert hasattr(client, "call")
         assert hasattr(client, "call_stream")
 
-    @patch("toolio_agent.client.openai_client.OpenAI")
+    @patch("acton_agent.client.openai_client.OpenAI")
     def test_openrouter_custom_headers(self, mock_openai_class):
         """Test that OpenRouter sets custom headers."""
         mock_client = Mock()

@@ -1,5 +1,5 @@
 """
-Setup script for toolio-agent package.
+Setup script for acton-agent package.
 This file is maintained for backward compatibility.
 The main configuration is in pyproject.toml.
 """

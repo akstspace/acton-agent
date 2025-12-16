@@ -2,14 +2,14 @@
 Tests for the parser module.
 """
 
-from toolio_agent.agent.models import (
+from acton_agent.agent.models import (
     AgentFinalResponse,
     AgentPlan,
     AgentResponse,
     AgentStep,
     ToolCall,
 )
-from toolio_agent.agent.parser import ResponseParser
+from acton_agent.agent.parser import ResponseParser
 
 
 class TestResponseParser:

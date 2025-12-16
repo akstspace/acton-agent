@@ -6,8 +6,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from toolio_agent.agent.exceptions import ToolExecutionError
-from toolio_agent.tools.requests_tool import RequestsTool, create_api_tool
+from acton_agent.agent.exceptions import ToolExecutionError
+from acton_agent.tools.requests_tool import RequestsTool, create_api_tool
 
 
 class TestRequestsTool:
@@ -82,7 +82,7 @@ class TestRequestsTool:
         assert "name" in schema["required"]
         assert "email" in schema["required"]
 
-    @patch("toolio_agent.tools.requests_tool.requests.request")
+    @patch("acton_agent.tools.requests_tool.requests.request")
     def test_execute_get_request(self, mock_request):
         """Test executing a GET request."""
         # Setup mock response
@@ -103,7 +103,7 @@ class TestRequestsTool:
         assert "success" in result
         mock_request.assert_called_once()
 
-    @patch("toolio_agent.tools.requests_tool.requests.request")
+    @patch("acton_agent.tools.requests_tool.requests.request")
     def test_execute_post_request(self, mock_request):
         """Test executing a POST request."""
         mock_response = Mock()
@@ -128,7 +128,7 @@ class TestRequestsTool:
         call_kwargs = mock_request.call_args[1]
         assert call_kwargs["json"] == {"name": "Test Resource"}
 
-    @patch("toolio_agent.tools.requests_tool.requests.request")
+    @patch("acton_agent.tools.requests_tool.requests.request")
     def test_execute_with_query_params(self, mock_request):
         """Test executing request with query parameters."""
         mock_response = Mock()
@@ -150,7 +150,7 @@ class TestRequestsTool:
         call_kwargs = mock_request.call_args[1]
         assert call_kwargs["params"] == {"q": "test query"}
 
-    @patch("toolio_agent.tools.requests_tool.requests.request")
+    @patch("acton_agent.tools.requests_tool.requests.request")
     def test_execute_with_path_params(self, mock_request):
         """Test executing request with path parameters."""
         mock_response = Mock()
@@ -172,7 +172,7 @@ class TestRequestsTool:
         call_args = mock_request.call_args
         assert "users/123" in call_args[1]["url"]
 
-    @patch("toolio_agent.tools.requests_tool.requests.request")
+    @patch("acton_agent.tools.requests_tool.requests.request")
     def test_execute_request_failure(self, mock_request):
         """
         Verify that RequestsTool raises ToolExecutionError when the HTTP request fails.
@@ -194,7 +194,7 @@ class TestRequestsTool:
         with pytest.raises(ToolExecutionError):
             tool.execute({})
 
-    @patch("toolio_agent.tools.requests_tool.requests.request")
+    @patch("acton_agent.tools.requests_tool.requests.request")
     def test_execute_with_headers(self, mock_request):
         """Test executing request with custom headers."""
         mock_response = Mock()
