@@ -76,7 +76,7 @@ class OpenAPIToolGenerator:
     ):
         """
         Initialize the OpenAPI tool generator with a specification source and optional overrides.
-        
+
         Parameters:
             spec: OpenAPI specification as a dict, a URL (http/https) to a JSON/YAML spec, or a filesystem path to a JSON/YAML file.
             base_url: If provided, overrides the base URL derived from the spec's servers.
@@ -91,13 +91,13 @@ class OpenAPIToolGenerator:
     def _load_spec(self, spec: Union[str, Dict[str, Any]]) -> Dict[str, Any]:
         """
         Load an OpenAPI specification from a dict, an HTTP(S) URL, or a local file path.
-        
+
         Parameters:
             spec (Union[str, Dict[str, Any]]): Either a dict representing the spec, an HTTP(S) URL pointing to a JSON spec, or a filesystem path to a JSON or YAML spec file.
-        
+
         Returns:
             Dict[str, Any]: The parsed OpenAPI specification as a dictionary.
-        
+
         Raises:
             requests.HTTPError: If fetching a spec from a URL returns an HTTP error (propagated from response.raise_for_status()).
             ValueError: If the file content is YAML but PyYAML is not installed (instructs to install pyyaml).
@@ -134,17 +134,17 @@ class OpenAPIToolGenerator:
     def _get_security_headers(self, operation: Dict[str, Any]) -> Dict[str, str]:
         """
         Extract security-related headers implied by an operation's security requirements.
-        
+
         Inspects the operation-level security requirements (falling back to the global spec security)
         and referenced security schemes in components to determine which HTTP headers are expected
         for authentication (for example API key header names or indications of bearer/basic schemes).
         This method primarily documents expected header names and reads configured header values
         from the generator's stored headers when available; it does not modify the spec or perform
         authentication.
-        
+
         Parameters:
             operation (Dict[str, Any]): The OpenAPI operation object to inspect for security requirements.
-        
+
         Returns:
             Dict[str, str]: A mapping of header names to their corresponding values taken from the
             generator's configured headers when present; may be empty if no applicable headers are found.
@@ -187,9 +187,9 @@ class OpenAPIToolGenerator:
     def _extract_base_url(self) -> str:
         """
         Derive the base URL for API requests from the OpenAPI spec's servers array.
-        
+
         Uses the first server entry and substitutes any server variables with their default values. If no servers are defined, returns an empty string.
-        
+
         Returns:
             str: The resolved base URL, or an empty string if no servers are present.
         """
@@ -217,12 +217,12 @@ class OpenAPIToolGenerator:
     ) -> List[RequestsTool]:
         """
         Create RequestsTool objects for operations defined in the loaded OpenAPI specification.
-        
+
         Parameters:
             tags (Optional[List[str]]): If provided, include only operations that have at least one of these tags.
             operation_ids (Optional[List[str]]): If provided, include only operations whose `operationId` is in this list.
             max_tools (Optional[int]): If provided, stop after generating this many tools.
-        
+
         Returns:
             tools (List[RequestsTool]): List of generated RequestsTool instances.
         """
@@ -271,9 +271,9 @@ class OpenAPIToolGenerator:
     ) -> Optional[RequestsTool]:
         """
         Constructs a RequestsTool representing the given OpenAPI operation.
-        
+
         Builds a tool name from operationId (or synthesizes one from method and path), composes a human-friendly description (summary and/or description, truncated to 300 characters), and constructs the request specification including URL template, path/query/header parameter schemas, merged headers (base headers plus security-derived headers), and a body schema derived from the operation's requestBody (preferring JSON, then form/multipart, then the first available content type). Returns None if tool creation fails.
-        
+
         @returns:
             A RequestsTool configured for the operation, or None if creation failed.
         """
@@ -420,10 +420,10 @@ class OpenAPIToolGenerator:
     def _openapi_type_to_json_type(self, openapi_type: str) -> str:
         """
         Map an OpenAPI primitive type name to the corresponding JSON Schema type.
-        
+
         Parameters:
             openapi_type (str): The OpenAPI type identifier (e.g., "integer", "string", "array").
-        
+
         Returns:
             str: The JSON Schema type name (`number`, `string`, `boolean`, `array`, `object`). Returns `"string"` if the input type is unrecognized.
         """
@@ -440,12 +440,12 @@ class OpenAPIToolGenerator:
     def _convert_openapi_schema(self, schema: Dict[str, Any]) -> Dict[str, Any]:
         """
         Convert an OpenAPI schema fragment into a JSON Schema-like dictionary suitable for RequestsTool.
-        
+
         This function resolves internal `$ref` references (falling back to `{"type": "object"}` if a ref cannot be resolved), flattens `allOf` compositions by merging properties and required fields, picks the first option for `oneOf`/`anyOf`, and converts property, array, enum, default, required, and additionalProperties information into a nested JSON Schema-like structure.
-        
+
         Parameters:
             schema (Dict[str, Any]): An OpenAPI schema object (may contain `$ref`, `properties`, `allOf`, `oneOf`, `anyOf`, etc.).
-        
+
         Returns:
             Dict[str, Any]: A JSON Schema-like representation of the input schema. Returns an empty dict if `schema` is falsy.
         """
@@ -534,10 +534,10 @@ class OpenAPIToolGenerator:
     def _resolve_ref(self, ref: str) -> Optional[Dict[str, Any]]:
         """
         Resolve an internal JSON Pointer-style `$ref` within the loaded OpenAPI specification.
-        
+
         Parameters:
             ref (str): A JSON Pointer reference string starting with "#/" that targets a location inside the loaded spec.
-        
+
         Returns:
             schema (Optional[Dict[str, Any]]): The referenced schema dictionary if the pointer resolves to a dict inside the spec, `None` if the ref cannot be resolved or if it points to an unsupported external location.
         """
@@ -563,7 +563,7 @@ class OpenAPIToolGenerator:
     def get_tags(self) -> List[str]:
         """
         Retrieve all unique operation tags declared in the OpenAPI specification.
-        
+
         Returns:
             tags (List[str]): Sorted list of unique tag names found across all paths and operations.
         """
@@ -581,9 +581,9 @@ class OpenAPIToolGenerator:
     def get_operation_ids(self) -> List[str]:
         """
         Retrieve all operationId values defined on operations in the OpenAPI spec.
-        
+
         Scans the spec's paths for operations (get, post, put, delete, patch) and collects any `operationId` values in the order they are encountered.
-        
+
         Returns:
             operation_ids (List[str]): A list of operationId strings found in the spec.
         """

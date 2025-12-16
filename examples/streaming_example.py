@@ -16,7 +16,7 @@ def main():
     # Initialize the OpenAI client
     """
     Run an interactive command-line demo that showcases real-time streaming responses from an agent.
-    
+
     This function reads OPENAI_API_KEY from the environment and, if present, creates an OpenAI client and a streaming Agent, registers a sample HTTP RequestsTool, and runs three interactive examples:
     1) a simple streaming story,
     2) a streaming request that demonstrates tool usage and shows tool-related status events,

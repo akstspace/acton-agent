@@ -18,7 +18,7 @@ class ToolNotFoundError(AgentError):
     def __init__(self, tool_name: str):
         """
         Initialize a ToolNotFoundError for a missing tool in the registry.
-        
+
         Parameters:
             tool_name (str): Name of the missing tool; stored on the exception as `tool_name` and included in the exception message.
         """
@@ -32,11 +32,11 @@ class ToolExecutionError(AgentError):
     def __init__(self, tool_name: str, original_error: Exception):
         """
         Initialize the ToolExecutionError with the failing tool's name and the underlying exception.
-        
+
         Parameters:
             tool_name (str): Name of the tool that failed; stored on the instance as `tool_name`.
             original_error (Exception): The original exception raised during tool execution; stored on the instance as `original_error`.
-        
+
         Notes:
             The exception message includes the tool name and the original error's message.
         """
@@ -69,11 +69,11 @@ class ResponseParseError(AgentError):
     def __init__(self, response_text: str, original_error: Exception):
         """
         Create a ResponseParseError containing the raw agent response and the underlying parsing exception.
-        
+
         Parameters:
             response_text (str): Raw agent response that could not be parsed.
             original_error (Exception): The parsing exception that triggered this error.
-        
+
         Notes:
             The exception exposes `response_text` and `original_error` as attributes and includes the original error message in its exception text.
         """
@@ -104,7 +104,7 @@ class InvalidToolSchemaError(AgentError):
     def __init__(self, tool_name: str, reason: str):
         """
         Initialize an InvalidToolSchemaError for a tool with an invalid schema.
-        
+
         Parameters:
             tool_name (str): Name of the tool with the invalid schema.
             reason (str): Explanation of why the schema is invalid.

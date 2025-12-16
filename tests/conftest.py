@@ -52,10 +52,10 @@ class MockLLMClient:
     def call_stream(self, messages: List[Message], **kwargs):
         """
         Stream the client's response one character at a time.
-        
+
         Parameters:
             messages (List[Message]): Message sequence sent to the client; used to produce the mock response.
-        
+
         Returns:
             iterator: Yields each character of the response as a one-character string.
         """
@@ -69,7 +69,7 @@ class MockLLMClient:
 def mock_llm_client():
     """
     Create a MockLLMClient for tests that records invocations and can simulate streaming.
-    
+
     Returns:
         MockLLMClient: Mock LLM client initialized with no preset responses.
     """
@@ -116,7 +116,7 @@ def sample_messages():
 def tool_call_response():
     """
     Provides a sample tool call response wrapped in a JSON code fence.
-    
+
     Returns:
         str: A string containing a JSON object with keys "thought" and "tool_calls" (an array of tool call entries), wrapped in a triple-backtick ```json``` fence.
     """
@@ -138,7 +138,7 @@ def tool_call_response():
 def final_answer_response():
     """
     Sample LLM final-answer response formatted as a JSON code block.
-    
+
     Returns:
         str: A string containing a JSON object with keys `thought` and `final_answer`, wrapped in a ```json code fence.
     """
@@ -174,9 +174,9 @@ def plan_response():
 def mock_streaming_llm_client():
     """
     Factory fixture that returns a function to create MockLLMClient instances configured with a sequence of responses for streaming.
-    
+
     The returned factory accepts a list of response strings; each created client will return those responses in order for successive calls and supports streaming via its call_stream method.
-    
+
     Returns:
         _create_client (Callable[[List[str]], MockLLMClient]): Factory function that constructs a MockLLMClient configured to return the provided responses in sequence.
     """

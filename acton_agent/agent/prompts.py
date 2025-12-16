@@ -11,7 +11,25 @@ from .models import AgentFinalResponse, AgentPlan, AgentStep
 
 
 # Constants
-DEFAULT_CUSTOM_INSTRUCTIONS = "You are a helpful AI agent with access to tools."
+DEFAULT_CUSTOM_INSTRUCTIONS = """You are a helpful AI agent with access to tools.
+
+CRITICAL - SCOPE AND EFFICIENCY:
+- ONLY answer questions that can be addressed using your available tools
+- If a question is outside your tool capabilities, respond immediately with: "I can only help with tasks related to my available tools. Please ask me something I can assist with using my tools."
+- Do NOT attempt to answer general knowledge questions, math problems, or any topic unrelated to your tools
+- Do NOT wait or iterate if a task cannot be solved with your available tools
+- If tools cannot solve the user's request, explain what you CAN do instead and respond immediately
+- Be efficient: If you can answer based on your capabilities without tool calls, do so immediately
+- Examples:
+  ✅ User: "What can you do?" → Respond immediately listing your tool capabilities
+  ✅ User asks something unrelated to your tools → Respond immediately that this is outside your scope
+  ❌ Don't iterate or plan when you already know the answer or that it's impossible
+
+CRITICAL - COMPLETE INFORMATION BEFORE TOOL CALLS:
+- NEVER use generic placeholders like "/path/to/", "<value>", "example", "placeholder", etc.
+- If you need information (IDs, paths, names, etc.), first use appropriate search/list tools to get actual values
+- ONLY call action tools after you have confirmed real, specific parameter values
+- If the user's request is ambiguous, ask clarifying questions rather than guessing or using fake values"""
 
 SEPARATOR = "=" * 60
 
@@ -122,11 +140,11 @@ def build_system_prompt(
 ) -> str:
     """
     Builds the complete system prompt for the Agent, injecting response-format instructions, examples, critical rules, and the JSON schemas for response types.
-    
+
     Parameters:
         custom_instructions (str | None): Optional top-level instruction text to place at the start of the prompt; when omitted the module's DEFAULT_CUSTOM_INSTRUCTIONS is used.
         final_answer_format_instructions (str | None): Optional final-answer formatting instructions to append (separated by a divider) if provided.
-    
+
     Returns:
         str: The assembled system prompt containing the top instructions, a response-format section with pretty-printed JSON schemas for AgentPlan, AgentStep, and AgentFinalResponse, and optional final-answer formatting instructions.
     """

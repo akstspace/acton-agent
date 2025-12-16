@@ -50,7 +50,7 @@ def main():
     # Initialize the OpenAI client
     """
     Run an interactive demo that wraps several Python functions as callable tools for an agent.
-    
+
     Sets up an OpenAI client from the OPENAI_API_KEY environment variable, constructs an Agent, registers four FunctionTools (calculator, get_time, count_words, reverse_text), and walks the user through a sequence of example queries demonstrating each tool and combined usage. If OPENAI_API_KEY is not set, prints an error message and exits early.
     """
     api_key = os.getenv("OPENAI_API_KEY")

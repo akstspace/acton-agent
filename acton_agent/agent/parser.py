@@ -28,10 +28,10 @@ class ResponseParser:
     ) -> Union[AgentPlan, AgentStep, AgentFinalResponse]:
         """
         Parse LLM response text into a structured agent response model.
-        
+
         Parameters:
             response_text (str): Raw LLM output; may contain JSON inside Markdown code fences.
-        
+
         Returns:
             AgentPlan | AgentStep | AgentFinalResponse: An instantiated response model inferred from the parsed JSON:
                 - AgentPlan when the parsed data contains a plan.
@@ -88,12 +88,12 @@ class ResponseParser:
     def _extract_json_from_markdown(text: str) -> str:
         """
         Extract JSON text from a Markdown fenced code block if one is present.
-        
+
         Searches for a fenced code block starting with ```json or ``` and returns the inner content trimmed of surrounding whitespace. Also handles single-line inline fenced blocks. If no fenced code block is found, returns the original input trimmed.
-        
+
         Parameters:
             text (str): Text that may contain a Markdown fenced code block with JSON.
-        
+
         Returns:
             str: The extracted JSON text from the code block, or the original trimmed text if no code block is found.
         """
@@ -129,12 +129,12 @@ class ResponseParser:
     ) -> bool:
         """
         Validate that a parsed agent response has the required fields for its concrete type.
-        
+
         AgentPlan requires a non-empty `plan`. AgentStep requires `tool_calls` and each tool call must include `id` and `tool_name`. AgentFinalResponse requires a non-empty `final_answer`.
-        
+
         Parameters:
             response (AgentPlan | AgentStep | AgentFinalResponse): The parsed response object to validate.
-        
+
         Returns:
             bool: `True` if the response meets the validation rules for its type, `False` otherwise.
         """

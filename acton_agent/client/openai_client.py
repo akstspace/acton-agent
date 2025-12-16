@@ -97,11 +97,11 @@ class OpenAIClient:
     ) -> Generator[str, None, None]:
         """
         Stream content chunks from a chat completion for the given conversation.
-        
+
         Parameters:
             messages (List[Message]): Conversation messages in chronological order.
             **kwargs: Additional parameters forwarded to the API (e.g., temperature, max_tokens).
-        
+
         Yields:
             str: Incremental content chunks emitted by the model as they arrive.
         """

@@ -61,11 +61,11 @@ class TestClientImplementation:
             def call(self, messages: List[Message], **kwargs) -> str:
                 """
                 Increment the client's internal call counter and produce a response including the updated count.
-                
+
                 Parameters:
                     messages (List[Message]): Messages passed to the client (not used by this implementation).
                     **kwargs: Additional keyword arguments (ignored).
-                
+
                 Returns:
                     str: Response formatted as "Response #<n>" where <n> is the updated call count.
                 """

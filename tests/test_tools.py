@@ -22,10 +22,10 @@ class SimpleTool(Tool):
     def execute(self, parameters: dict) -> str:
         """
         Return a formatted result using the "value" entry from parameters.
-        
+
         Parameters:
             parameters (dict): Mapping that may contain the key "value"; when absent, "default" is used.
-        
+
         Returns:
             str: The string "Result: {value}" where {value} is the resolved parameter.
         """
@@ -35,7 +35,7 @@ class SimpleTool(Tool):
     def get_schema(self) -> dict:
         """
         JSON Schema describing this tool's expected input.
-        
+
         Returns:
             dict: JSON Schema with "type": "object" and a "properties" mapping that includes a "value" property of type "string" with description "Input value".
         """
@@ -166,7 +166,7 @@ class TestFunctionTool:
         def add(a: int, b: int) -> int:
             """
             Return the sum of two integers.
-            
+
             Returns:
                 int: The sum of `a` and `b`.
             """
@@ -191,7 +191,7 @@ class TestFunctionTool:
         def multiply(a: int, b: int) -> int:
             """
             Multiply two integers.
-            
+
             Returns:
                 int: The product of a and b.
             """
@@ -218,7 +218,7 @@ class TestFunctionTool:
         def greet(name: str) -> str:
             """
             Create a greeting for the given person.
-            
+
             Returns:
                 Greeting string in the form "Hello, {name}!".
             """
@@ -239,10 +239,10 @@ class TestFunctionTool:
         def get_info(id: int) -> dict:
             """
             Return a dictionary with the provided identifier and a status of "active".
-            
+
             Parameters:
                 id (int): Identifier to include in the returned dictionary.
-            
+
             Returns:
                 info (dict): Dictionary with keys "id" (int) and "status" (str) set to "active".
             """
@@ -283,7 +283,7 @@ class TestFunctionTool:
     def test_invalid_schema_no_type(self):
         """
         Ensure creating a FunctionTool with a schema that lacks a top-level "type" field raises InvalidToolSchemaError.
-        
+
         Constructs a dummy function and attempts to create a FunctionTool with a schema containing only "properties", asserting that InvalidToolSchemaError is raised.
         """
 
