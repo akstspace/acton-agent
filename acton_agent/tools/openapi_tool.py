@@ -437,7 +437,9 @@ class OpenAPIToolGenerator:
         }
         return type_map.get(openapi_type, "string")
 
-    def _convert_openapi_schema(self, schema: Dict[str, Any]) -> Dict[str, Any]:
+    def _convert_openapi_schema(
+        self, schema: Dict[str, Any], visited: Optional[set] = None
+    ) -> Dict[str, Any]:
         """
         Convert an OpenAPI schema fragment into a JSON Schema-like dictionary suitable for RequestsTool.
 
@@ -445,6 +447,7 @@ class OpenAPIToolGenerator:
 
         Parameters:
             schema (Dict[str, Any]): An OpenAPI schema object (may contain `$ref`, `properties`, `allOf`, `oneOf`, `anyOf`, etc.).
+            visited (Optional[set]): Set of visited $ref strings to detect circular references.
 
         Returns:
             Dict[str, Any]: A JSON Schema-like representation of the input schema. Returns an empty dict if `schema` is falsy.
@@ -452,11 +455,27 @@ class OpenAPIToolGenerator:
         if not schema:
             return {}
 
+        # Initialize visited set on first call
+        if visited is None:
+            visited = set()
+
         # Handle $ref - resolve references
         if "$ref" in schema:
-            resolved = self._resolve_ref(schema["$ref"])
+            ref = schema["$ref"]
+            # Check for circular reference
+            if ref in visited:
+                # Break the cycle by returning a simple object type
+                return {"type": "object", "description": "Circular reference"}
+            
+            # Add to visited set
+            visited.add(ref)
+            
+            resolved = self._resolve_ref(ref)
             if resolved:
-                return self._convert_openapi_schema(resolved)
+                result = self._convert_openapi_schema(resolved, visited)
+                # Remove from visited set after processing
+                visited.discard(ref)
+                return result
             # Fallback if resolution fails
             return {"type": "object"}
 
@@ -465,7 +484,7 @@ class OpenAPIToolGenerator:
             # Merge all schemas (simplified)
             merged = {"type": "object", "properties": {}}
             for sub_schema in schema["allOf"]:
-                converted = self._convert_openapi_schema(sub_schema)
+                converted = self._convert_openapi_schema(sub_schema, visited)
                 if "properties" in converted:
                     merged["properties"].update(converted["properties"])
                 if "required" in converted:
@@ -476,7 +495,7 @@ class OpenAPIToolGenerator:
             # Use first schema as a reasonable default
             options = schema.get("oneOf", schema.get("anyOf", []))
             if options:
-                return self._convert_openapi_schema(options[0])
+                return self._convert_openapi_schema(options[0], visited)
 
         result = {"type": schema.get("type", "object")}
 
@@ -505,19 +524,19 @@ class OpenAPIToolGenerator:
 
                 # Handle nested objects
                 if prop_schema.get("type") == "object" and "properties" in prop_schema:
-                    prop_converted = self._convert_openapi_schema(prop_schema)
+                    prop_converted = self._convert_openapi_schema(prop_schema, visited)
 
                 # Handle arrays
                 if prop_schema.get("type") == "array":
                     prop_converted["type"] = "array"
                     if "items" in prop_schema:
                         prop_converted["items"] = self._convert_openapi_schema(
-                            prop_schema["items"]
+                            prop_schema["items"], visited
                         )
 
                 # Handle $ref in properties
                 if "$ref" in prop_schema:
-                    prop_converted = self._convert_openapi_schema(prop_schema)
+                    prop_converted = self._convert_openapi_schema(prop_schema, visited)
 
                 result["properties"][prop_name] = prop_converted
 
