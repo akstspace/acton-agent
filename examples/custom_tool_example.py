@@ -8,7 +8,6 @@ for more complex or specialized functionality.
 
 import os
 import random
-from typing import Dict, Any
 from acton_agent import Agent
 from acton_agent.client import OpenAIClient
 from acton_agent.agent import Tool
@@ -18,13 +17,26 @@ class WeatherTool(Tool):
     """Custom tool for getting weather information (simulated)."""
 
     def __init__(self):
+        """
+        Initialize the WeatherTool.
+
+        Sets the tool's name to "get_weather" and its description to indicate it provides the current temperature and conditions for a given city when executed.
+        """
         super().__init__(
             name="get_weather",
-            description="Get current weather for a city. Returns temperature and conditions."
+            description="Get current weather for a city. Returns temperature and conditions.",
         )
 
     def execute(self, parameters: dict) -> str:
-        """Execute the tool with the given parameters."""
+        """
+        Return a formatted weather summary for the requested city.
+
+        Parameters:
+            parameters (dict): Input parameters; may include the optional key `"city"` with the city name (defaults to `"Unknown"`).
+
+        Returns:
+            str: A human-readable sentence describing simulated current weather for the specified city, including condition and temperature in °F (e.g., "The weather in Seattle is rainy with a temperature of 62°F").
+        """
         city = parameters.get("city", "Unknown")
 
         # Simulate weather data (in a real implementation, you would call a weather API)
@@ -35,16 +47,18 @@ class WeatherTool(Tool):
         return f"The weather in {city} is {condition} with a temperature of {temperature}°F"
 
     def get_schema(self) -> dict:
-        """Return the JSON schema for the tool parameters."""
+        """
+        JSON Schema describing this tool's parameters.
+
+        Returns:
+            dict: A JSON Schema object defining a required string property "city".
+        """
         return {
             "type": "object",
             "properties": {
-                "city": {
-                    "type": "string",
-                    "description": "Name of the city"
-                }
+                "city": {"type": "string", "description": "Name of the city"}
             },
-            "required": ["city"]
+            "required": ["city"],
         }
 
 
@@ -52,13 +66,28 @@ class DiceRollerTool(Tool):
     """Custom tool for rolling dice."""
 
     def __init__(self):
+        """
+        Initialize the DiceRollerTool with the name "roll_dice" and a description explaining it rolls dice with configurable count and sides.
+
+        The tool's execute method accepts optional parameters `num_dice` (default 1) and `num_sides` (default 6) to control how many dice are rolled and how many faces each die has.
+        """
         super().__init__(
             name="roll_dice",
-            description="Roll dice with specified number of sides and count. Returns the results."
+            description="Roll dice with specified number of sides and count. Returns the results.",
         )
 
     def execute(self, parameters: dict) -> str:
-        """Execute the tool with the given parameters."""
+        """
+        Roll a set of dice according to the provided parameters and return a formatted result.
+
+        Parameters:
+            parameters (dict): Dict that may contain:
+                - "num_dice" (int, optional): Number of dice to roll; defaults to 1. Must be between 1 and 100.
+                - "num_sides" (int, optional): Number of sides per die; defaults to 6. Must be between 2 and 1000.
+
+        Returns:
+            str: A formatted string describing the roll (e.g., "Rolling 3d6:\nRolls: [2, 5, 4]\nTotal: 11"), or an error message if input ranges are invalid.
+        """
         num_dice = parameters.get("num_dice", 1)
         num_sides = parameters.get("num_sides", 6)
 
@@ -78,7 +107,16 @@ class DiceRollerTool(Tool):
         return result
 
     def get_schema(self) -> dict:
-        """Return the JSON schema for the tool parameters."""
+        """
+        Provide the JSON Schema describing valid parameters for the dice roller tool.
+
+        The schema describes an object with two optional integer properties:
+        - `num_dice`: number of dice to roll (default 1, minimum 1, maximum 100)
+        - `num_sides`: number of sides on each die (default 6, minimum 2, maximum 1000)
+
+        Returns:
+            dict: A JSON Schema dictionary matching the described structure and constraints.
+        """
         return {
             "type": "object",
             "properties": {
@@ -87,17 +125,17 @@ class DiceRollerTool(Tool):
                     "description": "Number of dice to roll",
                     "default": 1,
                     "minimum": 1,
-                    "maximum": 100
+                    "maximum": 100,
                 },
                 "num_sides": {
                     "type": "integer",
                     "description": "Number of sides on each die",
                     "default": 6,
                     "minimum": 2,
-                    "maximum": 1000
-                }
+                    "maximum": 1000,
+                },
             },
-            "required": []
+            "required": [],
         }
 
 
@@ -105,13 +143,26 @@ class TextAnalyzerTool(Tool):
     """Custom tool for analyzing text properties."""
 
     def __init__(self):
+        """
+        Initialize the TextAnalyzerTool with its tool name and human-readable description.
+
+        The tool is registered as "analyze_text" and described as analyzing text to return statistics such as character count, word count, sentence count, line count, longest word, and average word length.
+        """
         super().__init__(
             name="analyze_text",
-            description="Analyze text and return various statistics: character count, word count, sentence count, etc."
+            description="Analyze text and return various statistics: character count, word count, sentence count, etc.",
         )
 
     def execute(self, parameters: dict) -> str:
-        """Execute the tool with the given parameters."""
+        """
+        Analyze input text and return a formatted summary of basic textual statistics.
+
+        Parameters:
+            parameters (dict): A dictionary expected to contain the key "text" with the string to analyze.
+
+        Returns:
+            str: A formatted report containing character count, word count, sentence count, line count, the longest word with its length, and average word length; if "text" is empty or missing, returns the error string "Error: No text provided".
+        """
         text = parameters.get("text", "")
 
         if not text:
@@ -120,53 +171,60 @@ class TextAnalyzerTool(Tool):
         # Calculate statistics
         char_count = len(text)
         word_count = len(text.split())
-        sentence_count = text.count('.') + text.count('!') + text.count('?')
-        line_count = text.count('\n') + 1
+        sentence_count = text.count(".") + text.count("!") + text.count("?")
+        line_count = text.count("\n") + 1
 
         # Find longest word
         words = text.split()
         longest_word = max(words, key=len) if words else ""
 
-        result = f"Text Analysis:\n"
+        result = "Text Analysis:\n"
         result += f"- Characters: {char_count}\n"
         result += f"- Words: {word_count}\n"
         result += f"- Sentences: {sentence_count}\n"
         result += f"- Lines: {line_count}\n"
         result += f"- Longest word: '{longest_word}' ({len(longest_word)} characters)\n"
-        result += f"- Average word length: {char_count / word_count:.2f} characters" if word_count > 0 else "N/A"
+        result += (
+            f"- Average word length: {char_count / word_count:.2f} characters"
+            if word_count > 0
+            else "N/A"
+        )
 
         return result
 
     def get_schema(self) -> dict:
-        """Return the JSON schema for the tool parameters."""
+        """
+        Provide the JSON Schema describing this tool's input parameters.
+
+        @returns A dict representing a JSON Schema that requires a single string property "text" (the text to analyze).
+        """
         return {
             "type": "object",
             "properties": {
-                "text": {
-                    "type": "string",
-                    "description": "The text to analyze"
-                }
+                "text": {"type": "string", "description": "The text to analyze"}
             },
-            "required": ["text"]
+            "required": ["text"],
         }
 
 
 def main():
     # Initialize the OpenAI client
+    """
+    Run an interactive demo that registers custom tools with an agent and executes sample queries.
+
+    This function reads the OPENAI_API_KEY environment variable and exits early with a printed error if the key is missing. It creates an OpenAI client and an Agent, registers three custom tools (weather checker, dice roller, and text analyzer), and then interactively runs a sequence of example queries demonstrating each tool. Outputs are printed to the console and the demo pauses for user input between steps.
+    """
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         print("Error: Please set OPENAI_API_KEY environment variable")
         return
 
-    client = OpenAIClient(
-        api_key=api_key,
-        model="gpt-4o"
-    )
+    client = OpenAIClient(api_key=api_key, model="gpt-4o")
 
     # Create an agent
     agent = Agent(
         llm_client=client,
-        system_prompt="You are a helpful assistant with access to various utility tools."
+        system_prompt="You are a helpful assistant with access to various utility tools.",
     )
 
     # Create and register custom tools

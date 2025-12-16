@@ -6,7 +6,11 @@ import json
 
 import pytest
 
-from acton_agent.agent.prompts import build_system_prompt, get_default_system_prompt
+from acton_agent.agent.prompts import (
+    DEFAULT_CUSTOM_INSTRUCTIONS,
+    build_system_prompt,
+    get_default_system_prompt,
+)
 
 
 class TestBuildSystemPrompt:
@@ -44,7 +48,7 @@ class TestBuildSystemPrompt:
     def test_prompt_contains_examples(self):
         """
         Verify the generated system prompt includes JSON example blocks and an examples section.
-        
+
         Checks that the prompt contains at least one '```json' code block and either the string 'EXAMPLES' or the word 'example' (case-insensitive).
         """
         prompt = build_system_prompt()
@@ -75,7 +79,7 @@ class TestGetDefaultSystemPrompt:
         """Test that get_default matches build with default instructions."""
         default_prompt = get_default_system_prompt()
         built_prompt = build_system_prompt(
-            custom_instructions="You are a helpful AI agent with access to tools."
+            custom_instructions=DEFAULT_CUSTOM_INSTRUCTIONS
         )
 
         assert default_prompt == built_prompt
@@ -100,7 +104,7 @@ class TestPromptFormat:
     def test_json_examples_valid(self):
         """
         Checks that any JSON code blocks included in the built system prompt parse as valid JSON.
-        
+
         Fails the test if any JSON block in the prompt is not valid JSON, reporting the parse error and the offending block.
         """
         prompt = build_system_prompt()

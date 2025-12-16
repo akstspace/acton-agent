@@ -139,14 +139,18 @@ class TestStreamingModels:
 
     def test_agent_token(self):
         """Test AgentToken model."""
-        token = AgentToken(content="test")
+        token = AgentToken(step_id="test-step-id", content="test")
         assert token.type == "token"
+        assert token.step_id == "test-step-id"
         assert token.content == "test"
 
     def test_agent_step_update(self):
         """Test AgentStepUpdate model."""
-        update = AgentStepUpdate(data={"thought": "partial"}, complete=False)
+        update = AgentStepUpdate(
+            step_id="test-step-id", data={"thought": "partial"}, complete=False
+        )
         assert update.type == "step_update"
+        assert update.step_id == "test-step-id"
         assert update.data == {"thought": "partial"}
         assert not update.complete
 
@@ -160,20 +164,23 @@ class TestStreamingModels:
             AgentStreamStart,
         )
 
-        assert AgentStreamStart().type == "stream_start"
-        assert AgentStreamEnd().type == "stream_end"
+        assert AgentStreamStart(step_id="step-1").type == "stream_start"
+        assert AgentStreamEnd(step_id="step-1").type == "stream_end"
 
-        plan_event = AgentPlanEvent(plan=AgentPlan(thought="test", plan=["step1"]))
+        plan_event = AgentPlanEvent(
+            step_id="step-1", plan=AgentPlan(thought="test", plan=["step1"])
+        )
         assert plan_event.type == "agent_plan"
 
         step_event = AgentStepEvent(
+            step_id="step-1",
             step=AgentStep(
                 thought="test", tool_calls=[ToolCall(id="1", tool_name="test")]
-            )
+            ),
         )
         assert step_event.type == "agent_step"
 
         final_event = AgentFinalResponseEvent(
-            response=AgentFinalResponse(final_answer="done")
+            step_id="step-1", response=AgentFinalResponse(final_answer="done")
         )
         assert final_event.type == "final_response"

@@ -62,9 +62,9 @@ class ToolResult(BaseModel):
     def success(self) -> bool:
         """
         Determine whether the tool execution succeeded.
-        
+
         Returns:
-            bool: `True` if the tool produced no error, `False` otherwise.
+            `true` if the tool produced no error, `false` otherwise.
         """
         return self.error is None
 
@@ -105,10 +105,10 @@ class AgentStep(BaseModel):
     @property
     def has_tool_calls(self) -> bool:
         """
-        Return whether the step contains any tool calls.
-        
+        Indicates whether this agent step includes one or more tool calls.
+
         Returns:
-            True if the step contains one or more tool calls, False otherwise.
+            True if the step includes one or more tool calls, False otherwise.
         """
         return len(self.tool_calls) > 0
 
@@ -126,7 +126,8 @@ class AgentFinalResponse(BaseModel):
 
     thought: Optional[str] = Field(None, description="Agent's final reasoning")
     final_answer: str = Field(
-        ..., description="The complete answer to the user's request"
+        ...,
+        description="The complete answer to the user's request",
     )
 
 
@@ -137,12 +138,18 @@ class AgentStreamStart(BaseModel):
     """Event indicating the start of LLM streaming."""
 
     type: Literal["stream_start"] = "stream_start"
+    step_id: str = Field(
+        ..., description="Unique identifier for this agent step/iteration"
+    )
 
 
 class AgentToken(BaseModel):
     """Event containing a single token from the LLM stream."""
 
     type: Literal["token"] = "token"
+    step_id: str = Field(
+        ..., description="Unique identifier for this agent step/iteration"
+    )
     content: str = Field(..., description="Token content")
 
 
@@ -150,12 +157,18 @@ class AgentStreamEnd(BaseModel):
     """Event indicating the end of LLM streaming."""
 
     type: Literal["stream_end"] = "stream_end"
+    step_id: str = Field(
+        ..., description="Unique identifier for this agent step/iteration"
+    )
 
 
 class AgentStepUpdate(BaseModel):
     """Event containing partial parsed data during streaming."""
 
     type: Literal["step_update"] = "step_update"
+    step_id: str = Field(
+        ..., description="Unique identifier for this agent step/iteration"
+    )
     data: Dict[str, Any] = Field(..., description="Partially parsed JSON data")
     complete: bool = Field(..., description="Whether this step is complete")
     tokens: Optional[List[str]] = Field(
@@ -167,6 +180,9 @@ class AgentToolResultsEvent(BaseModel):
     """Event containing tool execution results."""
 
     type: Literal["tool_results"] = "tool_results"
+    step_id: str = Field(
+        ..., description="Unique identifier for this agent step/iteration"
+    )
     results: List[ToolResult] = Field(..., description="Tool execution results")
 
 
@@ -174,6 +190,9 @@ class AgentPlanEvent(BaseModel):
     """Event containing a complete agent plan."""
 
     type: Literal["agent_plan"] = "agent_plan"
+    step_id: str = Field(
+        ..., description="Unique identifier for this agent step/iteration"
+    )
     plan: AgentPlan = Field(..., description="The agent's plan")
     complete: bool = True
 
@@ -182,6 +201,9 @@ class AgentStepEvent(BaseModel):
     """Event containing a complete agent step."""
 
     type: Literal["agent_step"] = "agent_step"
+    step_id: str = Field(
+        ..., description="Unique identifier for this agent step/iteration"
+    )
     step: AgentStep = Field(..., description="The agent's step")
     complete: bool = True
 
@@ -190,6 +212,9 @@ class AgentFinalResponseEvent(BaseModel):
     """Event containing the final agent response."""
 
     type: Literal["final_response"] = "final_response"
+    step_id: str = Field(
+        ..., description="Unique identifier for this agent step/iteration"
+    )
     response: AgentFinalResponse = Field(..., description="The agent's final response")
     complete: bool = True
 

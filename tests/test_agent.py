@@ -16,8 +16,8 @@ class SimpleCalculatorTool(Tool):
 
     def __init__(self):
         """
-        Initialize the SimpleCalculatorTool and set its registered name and description.
-        
+        Initialize the SimpleCalculatorTool with its registered name and description.
+
         Sets the tool's name to "calculator" and its description to "Perform basic arithmetic operations".
         """
         super().__init__(
@@ -26,14 +26,14 @@ class SimpleCalculatorTool(Tool):
 
     def execute(self, parameters: dict) -> str:
         """
-        Perform a basic arithmetic operation described by the provided parameters.
-        
+        Perform a basic arithmetic operation specified by the input parameters.
+
         Parameters:
             parameters (dict): Mapping with keys:
                 - "a" (int|float): First operand (defaults to 0).
                 - "b" (int|float): Second operand (defaults to 0).
                 - "operation" (str): One of "add", "subtract", "multiply", or "divide" (defaults to "add").
-        
+
         Returns:
             str: The numeric result converted to a string for successful operations, or an error message
             such as "Error: Division by zero" or "Error: Unknown operation {operation}".
@@ -60,7 +60,7 @@ class SimpleCalculatorTool(Tool):
     def get_schema(self) -> dict:
         """
         JSON schema describing the tool's input parameters.
-        
+
         Returns:
             dict: A JSON Schema object with properties:
                 - a (number): First operand (required).
@@ -341,7 +341,11 @@ class TestConversationHistory:
         assert any(msg.role == "user" for msg in agent.conversation_history)
 
     def test_clear_conversation_history(self, mock_llm_client):
-        """Test clearing conversation history."""
+        """
+        Verifies that the agent can clear its conversation history.
+
+        Adds messages to the agent's conversation_history, confirms it is non-empty, calls clear(), and asserts the history is empty.
+        """
         agent = Agent(llm_client=mock_llm_client)
 
         # Manually add some history

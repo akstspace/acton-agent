@@ -14,21 +14,27 @@ from acton_agent.tools import RequestsTool
 
 def main():
     # Initialize the OpenAI client
+    """
+    Run an interactive command-line demo that showcases real-time streaming responses from an agent.
+
+    This function reads OPENAI_API_KEY from the environment and, if present, creates an OpenAI client and a streaming Agent, registers a sample HTTP RequestsTool, and runs three interactive examples:
+    1) a simple streaming story,
+    2) a streaming request that demonstrates tool usage and shows tool-related status events,
+    3) multiple short queries streamed sequentially.
+    The demo prints agent tokens and status messages to stdout and pauses for user input between examples. If OPENAI_API_KEY is not set, the function prints an error and returns early.
+    """
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         print("Error: Please set OPENAI_API_KEY environment variable")
         return
 
-    client = OpenAIClient(
-        api_key=api_key,
-        model="gpt-4o"
-    )
+    client = OpenAIClient(api_key=api_key, model="gpt-4o")
 
     # Create an agent with streaming enabled
     agent = Agent(
         llm_client=client,
         system_prompt="You are a helpful assistant. Provide detailed and informative responses.",
-        stream=True  # Enable streaming
+        stream=True,  # Enable streaming
     )
 
     # Add a tool for demonstration
@@ -41,9 +47,9 @@ def main():
             "userId": {
                 "type": "number",
                 "description": "Filter posts by user ID",
-                "required": False
+                "required": False,
             }
-        }
+        },
     )
 
     agent.register_tool(posts_tool)
@@ -110,7 +116,7 @@ def main():
     queries = [
         "What is 2 + 2?",
         "Explain in one sentence what an API is",
-        "List 3 benefits of using AI agents"
+        "List 3 benefits of using AI agents",
     ]
 
     for i, query in enumerate(queries, 1):

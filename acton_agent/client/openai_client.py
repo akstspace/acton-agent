@@ -45,14 +45,14 @@ class OpenAIClient:
     ):
         """
         Create an OpenAI client configured with the provided API key and connection settings.
-        
+
         Parameters:
             api_key (Optional[str]): OpenAI API key; if omitted, read from OPENAI_API_KEY environment variable.
             model (str): Model identifier to use for requests (e.g., "gpt-4o", "gpt-3.5-turbo").
             base_url (str): Base URL for the OpenAI-compatible API.
             organization (Optional[str]): Optional organization ID to include with requests.
             default_headers (Optional[dict]): Optional default HTTP headers to include on all requests.
-        
+
         Raises:
             ValueError: If no API key is provided and OPENAI_API_KEY environment variable is not set.
         """
@@ -76,11 +76,11 @@ class OpenAIClient:
     def call(self, messages: List[Message], **kwargs) -> str:
         """
         Request a chat completion from the configured model and return the assistant's reply.
-        
+
         Parameters:
             messages (List[Message]): Conversation messages in order (each with `role` and `content`).
             **kwargs: Additional request parameters forwarded to the underlying API (e.g., `temperature`, `max_tokens`).
-        
+
         Returns:
             str: The assistant's response text from the first completion choice.
         """
@@ -96,14 +96,14 @@ class OpenAIClient:
         self, messages: List[Message], **kwargs
     ) -> Generator[str, None, None]:
         """
-        Yield token chunks from a streaming LLM completion for the given conversation.
-        
+        Stream content chunks from a chat completion for the given conversation.
+
         Parameters:
-            messages (List[Message]): Conversation messages in order.
-            **kwargs: Additional parameters forwarded to the API (for example, temperature or max_tokens).
-        
+            messages (List[Message]): Conversation messages in chronological order.
+            **kwargs: Additional parameters forwarded to the API (e.g., temperature, max_tokens).
+
         Yields:
-            str: Content chunks emitted by the model as they arrive.
+            str: Incremental content chunks emitted by the model as they arrive.
         """
         message_dicts = [{"role": msg.role, "content": msg.content} for msg in messages]
 

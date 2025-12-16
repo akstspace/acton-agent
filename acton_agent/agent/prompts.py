@@ -10,33 +10,55 @@ import json
 from .models import AgentFinalResponse, AgentPlan, AgentStep
 
 
-def build_system_prompt(custom_instructions: str = None) -> str:
-    """
-    Construct the system prompt used by the Agent, embedding response format instructions, examples, critical rules, and the JSON schemas for response types.
-    
-    Parameters:
-        custom_instructions (str | None): Optional text to place at the top of the prompt; if omitted a default instruction ("You are a helpful AI agent with access to tools.") is used.
-    
-    Returns:
-        system_prompt (str): The complete system prompt text with injected, pretty-printed JSON schemas for AgentPlan, AgentStep, and AgentFinalResponse.
-    """
-    # Get JSON schemas for the response types
-    plan_schema = json.dumps(AgentPlan.model_json_schema(), indent=2)
-    step_schema = json.dumps(AgentStep.model_json_schema(), indent=2)
-    final_schema = json.dumps(AgentFinalResponse.model_json_schema(), indent=2)
+# Constants
+DEFAULT_CUSTOM_INSTRUCTIONS = """You are a helpful AI agent with access to tools.
 
-    # Start with custom instructions if provided, otherwise use default
-    prompt_parts = []
-    if custom_instructions:
-        prompt_parts.append(custom_instructions)
-    else:
-        prompt_parts.append("You are a helpful AI agent with access to tools.")
+CRITICAL - SCOPE AND EFFICIENCY:
+- ONLY answer questions that can be addressed using your available tools
+- If a question is outside your tool capabilities, respond immediately with: "I can only help with tasks related to my available tools. Please ask me something I can assist with using my tools."
+- Do NOT attempt to answer general knowledge questions, math problems, or any topic unrelated to your tools
+- Do NOT wait or iterate if a task cannot be solved with your available tools
+- If tools cannot solve the user's request, explain what you CAN do instead and respond immediately
+- Be efficient: If you can answer based on your capabilities without tool calls, do so immediately
+- Examples:
+  ✅ User: "What can you do?" → Respond immediately listing your tool capabilities
+  ✅ User asks something unrelated to your tools → Respond immediately that this is outside your scope
+  ❌ Don't iterate or plan when you already know the answer or that it's impossible
 
-    prompt_parts.append("\n" + "=" * 60 + "\n")
+CRITICAL - COMPLETE INFORMATION BEFORE TOOL CALLS:
+- NEVER use generic placeholders like "/path/to/", "<value>", "example", "placeholder", etc.
+- If you need information (IDs, paths, names, etc.), first use appropriate search/list tools to get actual values
+- ONLY call action tools after you have confirmed real, specific parameter values
+- If the user's request is ambiguous, ask clarifying questions rather than guessing or using fake values"""
 
-    # Add the standard instructions
-    prompt_parts.append(
-        f"""RESPONSE FORMAT INSTRUCTIONS:
+SEPARATOR = "=" * 60
+
+DEFAULT_FORMAT_INSTRUCTIONS = """FINAL ANSWER FORMATTING:
+When providing your final_answer, format it as well-structured markdown:
+- Use proper headings (##, ###) for sections
+- Use bullet points (-) or numbered lists (1.) for clarity
+- Use **bold** for emphasis on important information
+- Use code blocks with language tags for code snippets
+- For images, use markdown syntax with alt text: ![Description](url)
+- For responsive images, consider using HTML with width attributes when needed
+- Keep paragraphs concise and readable
+- Use tables for structured data when appropriate
+- Add line breaks between sections for better readability
+
+Example:
+## Results
+
+Here are the findings:
+
+- **Item 1**: Description here
+- **Item 2**: Another description
+
+### Details
+
+Additional information in a clear format.
+"""
+
+RESPONSE_FORMAT_INSTRUCTIONS_TEMPLATE = """RESPONSE FORMAT INSTRUCTIONS:
 
 You MUST ALWAYS respond with valid JSON wrapped in a markdown code block. No exceptions.
 
@@ -61,32 +83,32 @@ RESPONSE FORMAT EXAMPLES:
 
 For initial planning:
 ```json
-{{
+{{{{
   "thought": "your reasoning about the task",
   "plan": ["step 1", "step 2", "step 3"]
-}}
+}}}}
 ```
 
 For tool execution:
 ```json
-{{
+{{{{
   "thought": "reasoning for this step",
   "tool_calls": [
-    {{
+    {{{{
       "id": "call_1",
       "tool_name": "tool_name",
-      "parameters": {{"param": "value"}}
-    }}
+      "parameters": {{{{"param": "value"}}}}
+    }}}}
   ]
-}}
+}}}}
 ```
 
 For final answer:
 ```json
-{{
+{{{{
   "thought": "final reasoning (optional)",
   "final_answer": "your complete answer to the user"
-}}
+}}}}
 ```
 
 CRITICAL RULES:
@@ -101,7 +123,59 @@ CRITICAL RULES:
 9. DO NOT put structured data (dicts/objects) in final_answer - format it as readable text
 
 Available tools will be listed below."""
+
+
+def get_default_format_instructions() -> str:
+    """
+    Get default formatting instructions for final answers.
+
+    Returns:
+        str: Default markdown formatting instructions.
+    """
+    return DEFAULT_FORMAT_INSTRUCTIONS
+
+
+def build_system_prompt(
+    custom_instructions: str = None, final_answer_format_instructions: str = None
+) -> str:
+    """
+    Builds the complete system prompt for the Agent, injecting response-format instructions, examples, critical rules, and the JSON schemas for response types.
+
+    Parameters:
+        custom_instructions (str | None): Optional top-level instruction text to place at the start of the prompt; when omitted the module's DEFAULT_CUSTOM_INSTRUCTIONS is used.
+        final_answer_format_instructions (str | None): Optional final-answer formatting instructions to append (separated by a divider) if provided.
+
+    Returns:
+        str: The assembled system prompt containing the top instructions, a response-format section with pretty-printed JSON schemas for AgentPlan, AgentStep, and AgentFinalResponse, and optional final-answer formatting instructions.
+    """
+    # Get JSON schemas for the response types
+    plan_schema = json.dumps(AgentPlan.model_json_schema(), indent=2)
+    step_schema = json.dumps(AgentStep.model_json_schema(), indent=2)
+    final_schema = json.dumps(AgentFinalResponse.model_json_schema(), indent=2)
+
+    # Start with custom instructions if provided, otherwise use default
+    prompt_parts = []
+    if custom_instructions:
+        prompt_parts.append(custom_instructions)
+    else:
+        prompt_parts.append(DEFAULT_CUSTOM_INSTRUCTIONS)
+
+    prompt_parts.append("\n" + SEPARATOR + "\n")
+
+    formatted_template = RESPONSE_FORMAT_INSTRUCTIONS_TEMPLATE.replace(
+        "{{{{", "{{"
+    ).replace("}}}}", "}}")
+    formatted_template = formatted_template.format(
+        plan_schema=plan_schema, step_schema=step_schema, final_schema=final_schema
     )
+
+    # Add the formatted instructions
+    prompt_parts.append(formatted_template)
+
+    # Add final answer formatting instructions if provided
+    if final_answer_format_instructions:
+        prompt_parts.append("\n" + SEPARATOR + "\n")
+        prompt_parts.append(final_answer_format_instructions)
 
     return "\n".join(prompt_parts)
 
@@ -109,10 +183,8 @@ Available tools will be listed below."""
 def get_default_system_prompt() -> str:
     """
     Default system prompt that includes injected JSON schemas for AgentPlan, AgentStep, and AgentFinalResponse.
-    
+
     Returns:
         str: The complete system prompt string containing response format instructions, examples, critical rules, and the embedded JSON schemas.
     """
-    return build_system_prompt(
-        custom_instructions="You are a helpful AI agent with access to tools."
-    )
+    return build_system_prompt(custom_instructions=DEFAULT_CUSTOM_INSTRUCTIONS)
