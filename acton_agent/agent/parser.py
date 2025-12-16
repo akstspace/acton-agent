@@ -2,7 +2,7 @@
 Response parser for the AI Agent Framework.
 
 This module provides functionality to parse and validate LLM responses
-into structured AgentResponse objects.
+into structured response objects.
 """
 
 import json
@@ -11,7 +11,7 @@ from typing import Optional, Union
 
 from loguru import logger
 
-from .models import AgentFinalResponse, AgentPlan, AgentResponse, AgentStep
+from .models import AgentFinalResponse, AgentPlan, AgentStep
 
 
 class ResponseParser:
@@ -19,13 +19,13 @@ class ResponseParser:
     Parse and validate LLM responses into structured response objects.
 
     Handles JSON parsing, markdown code block removal, and supports multiple
-    response types: AgentPlan, AgentStep, AgentFinalResponse, or legacy AgentResponse.
+    response types: AgentPlan, AgentStep, and AgentFinalResponse.
     """
 
     @staticmethod
     def parse(
         response_text: str,
-    ) -> Union[AgentPlan, AgentStep, AgentFinalResponse, AgentResponse]:
+    ) -> Union[AgentPlan, AgentStep, AgentFinalResponse]:
         """
         Parse LLM response text into a structured Agent response model.
         
@@ -33,7 +33,7 @@ class ResponseParser:
             response_text (str): Raw text from the LLM, optionally containing JSON inside markdown code fences.
         
         Returns:
-            Union[AgentPlan, AgentStep, AgentFinalResponse, AgentResponse]: An instantiated response model inferred from the parsed JSON.
+            Union[AgentPlan, AgentStep, AgentFinalResponse]: An instantiated response model inferred from the parsed JSON.
             If JSON parsing fails or an error occurs, returns an AgentFinalResponse containing the raw response text or an error message.
         """
         try:
@@ -59,9 +59,9 @@ class ResponseParser:
                 response = AgentStep(**data)
                 logger.debug("Parsed as AgentStep")
             else:
-                # Fallback to legacy AgentResponse
-                response = AgentResponse(**data)
-                logger.debug("Parsed as legacy AgentResponse")
+                # If no recognizable structure, treat as final answer
+                logger.debug("No recognizable structure, treating as AgentFinalResponse")
+                response = AgentFinalResponse(final_answer=response_text)
 
             return response
 
@@ -120,7 +120,7 @@ class ResponseParser:
 
     @staticmethod
     def validate_response(
-        response: Union[AgentPlan, AgentStep, AgentFinalResponse, AgentResponse],
+        response: Union[AgentPlan, AgentStep, AgentFinalResponse],
     ) -> bool:
         """
         Check whether a parsed agent response object satisfies the required structure for its specific response type.
@@ -129,10 +129,9 @@ class ResponseParser:
         - AgentPlan: must have a non-empty `plan`.
         - AgentStep: must have `tool_calls`; each tool call must include `id` and `tool_name`.
         - AgentFinalResponse: must have a non-empty `final_answer`.
-        - AgentResponse (legacy): must have either `tool_calls` or `final_answer`; if `tool_calls` are present, each must include `id` and `tool_name`.
         
         Parameters:
-            response (AgentPlan | AgentStep | AgentFinalResponse | AgentResponse): The parsed response object to validate.
+            response (AgentPlan | AgentStep | AgentFinalResponse): The parsed response object to validate.
         
         Returns:
             bool: `True` if the response meets the validation rules for its type, `False` otherwise.
@@ -160,50 +159,21 @@ class ResponseParser:
                 logger.warning("Invalid AgentFinalResponse: must have final_answer")
                 return False
 
-        # Legacy AgentResponse validation
-        elif isinstance(response, AgentResponse):
-            # Response must have either tool_calls or final_answer
-            if not response.has_tool_calls and not response.is_final:
-                logger.warning(
-                    "Invalid response: must have either tool_calls or final_answer"
-                )
-                return False
-
-            # If has tool calls, validate each one
-            if response.has_tool_calls:
-                for tool_call in response.tool_calls:
-                    if not tool_call.id or not tool_call.tool_name:
-                        logger.warning("Invalid tool call: missing id or tool_name")
-                        return False
-
         return True
 
     @staticmethod
     def extract_thought(
-        response: Union[AgentPlan, AgentStep, AgentFinalResponse, AgentResponse],
+        response: Union[AgentPlan, AgentStep, AgentFinalResponse],
     ) -> Optional[str]:
         """
         Retrieve the thought text from a response object.
         
-        For AgentPlan, AgentStep, and AgentFinalResponse, returns the object's `thought` attribute if present. For legacy AgentResponse, returns `None` if `thought` is `None`, returns the string if `thought` is a string, or returns `thought.content` for structured thought objects.
+        For AgentPlan, AgentStep, and AgentFinalResponse, returns the object's `thought` attribute if present.
         
         Parameters:
-            response (Union[AgentPlan, AgentStep, AgentFinalResponse, AgentResponse]): The response to extract thought from.
+            response (Union[AgentPlan, AgentStep, AgentFinalResponse]): The response to extract thought from.
         
         Returns:
             Optional[str]: The thought text if available, `None` otherwise.
         """
-        if isinstance(response, (AgentPlan, AgentStep, AgentFinalResponse)):
-            return getattr(response, "thought", None)
-
-        # Legacy AgentResponse handling
-        if isinstance(response, AgentResponse):
-            if response.thought is None:
-                return None
-
-            if isinstance(response.thought, str):
-                return response.thought
-
-            return response.thought.content
-
-        return None
+        return getattr(response, "thought", None)

@@ -16,7 +16,6 @@ from .models import (
     AgentFinalResponseEvent,
     AgentPlan,
     AgentPlanEvent,
-    AgentResponse,
     AgentStep,
     AgentStepEvent,
     AgentStreamEnd,
@@ -397,7 +396,7 @@ class Agent:
                 yield AgentFinalResponseEvent(response=error_response)
                 return
 
-            # Parse response (could be AgentPlan, AgentStep, AgentFinalResponse, or legacy AgentResponse)
+            # Parse response (could be AgentPlan, AgentStep, or AgentFinalResponse)
             agent_response = self.response_parser.parse(llm_response_text)
 
             # Add to history
@@ -433,53 +432,6 @@ class Agent:
                 logger.success("Agent produced final answer")
                 yield AgentFinalResponseEvent(response=agent_response)
                 return
-
-            # Legacy AgentResponse handling
-            elif isinstance(agent_response, AgentResponse):
-                # Handle tool calls
-                if agent_response.has_tool_calls:
-                    logger.info(
-                        f"Executing {len(agent_response.tool_calls)} tool call(s)"
-                    )
-
-                    # Convert to AgentStep for consistency
-                    step = AgentStep(
-                        thought=agent_response.thought.content
-                        if agent_response.thought
-                        and hasattr(agent_response.thought, "content")
-                        else None,
-                        tool_calls=agent_response.tool_calls,
-                    )
-                    yield AgentStepEvent(step=step)
-
-                    tool_results = self._execute_tool_calls(agent_response.tool_calls)
-                    results_text = self._format_tool_results(tool_results)
-
-                    self.conversation_history.append(
-                        Message(role="user", content=results_text)
-                    )
-
-                    # Yield tool results info
-                    yield AgentToolResultsEvent(results=tool_results)
-
-                    continue
-
-                # Return final answer
-                if agent_response.is_final:
-                    logger.success("Agent produced final answer")
-                    # Convert to AgentFinalResponse
-                    thought = None
-                    if agent_response.thought:
-                        thought = (
-                            agent_response.thought.content
-                            if hasattr(agent_response.thought, "content")
-                            else str(agent_response.thought)
-                        )
-                    final_response = AgentFinalResponse(
-                        thought=thought, final_answer=agent_response.final_answer
-                    )
-                    yield AgentFinalResponseEvent(response=final_response)
-                    return
 
         logger.warning("Agent reached maximum iterations without final answer")
         raise MaxIterationsError(max_iterations=self.max_iterations)

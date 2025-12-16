@@ -7,7 +7,7 @@ tool results, and agent responses.
 
 from typing import Any, Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field
 
 
 class Message(BaseModel):
@@ -21,17 +21,6 @@ class Message(BaseModel):
 
     role: Literal["user", "assistant", "system"]
     content: str
-
-
-class AgentThought(BaseModel):
-    """
-    Represents the agent's internal reasoning process.
-
-    Attributes:
-        content: The agent's thought process as text
-    """
-
-    content: str = Field(..., description="The agent's thought process")
 
 
 class ToolCall(BaseModel):
@@ -139,64 +128,6 @@ class AgentFinalResponse(BaseModel):
     final_answer: str = Field(
         ..., description="The complete answer to the user's request"
     )
-
-
-class AgentResponse(BaseModel):
-    """
-    Complete structured response from the agent.
-
-    This is a legacy/compatibility model that supports the old format.
-    New implementations should use AgentPlan, AgentStep, or AgentFinalResponse.
-
-    Attributes:
-        thought: Agent's reasoning (optional)
-        tool_calls: List of tools to call
-        final_answer: Final answer to the user (optional)
-    """
-
-    thought: Optional[Union[AgentThought, str]] = Field(
-        None, description="Agent's reasoning"
-    )
-    tool_calls: List[ToolCall] = Field(
-        default_factory=list, description="Tools to call"
-    )
-    final_answer: Optional[str] = Field(None, description="Final answer to the user")
-
-    @field_validator("thought", mode="before")
-    @classmethod
-    def validate_thought(cls, v):
-        """
-        Normalize a thought value into an AgentThought instance.
-        
-        Parameters:
-            v: The incoming thought value; may be a string or an AgentThought.
-        
-        Returns:
-            An `AgentThought` instance when `v` is a string, otherwise the original value.
-        """
-        if isinstance(v, str):
-            return AgentThought(content=v)
-        return v
-
-    @property
-    def has_tool_calls(self) -> bool:
-        """
-        Determines whether this response includes any tool calls.
-        
-        Returns:
-            True if there is at least one ToolCall in `tool_calls`, False otherwise.
-        """
-        return len(self.tool_calls) > 0
-
-    @property
-    def is_final(self) -> bool:
-        """
-        Indicates whether this response is final.
-        
-        Returns:
-            `true` if `final_answer` is not None, `false` otherwise.
-        """
-        return self.final_answer is not None
 
 
 # Streaming Event Models
