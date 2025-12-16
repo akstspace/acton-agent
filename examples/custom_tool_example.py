@@ -8,7 +8,6 @@ for more complex or specialized functionality.
 
 import os
 import random
-from typing import Dict, Any
 from acton_agent import Agent
 from acton_agent.client import OpenAIClient
 from acton_agent.agent import Tool
@@ -20,7 +19,7 @@ class WeatherTool(Tool):
     def __init__(self):
         super().__init__(
             name="get_weather",
-            description="Get current weather for a city. Returns temperature and conditions."
+            description="Get current weather for a city. Returns temperature and conditions.",
         )
 
     def execute(self, parameters: dict) -> str:
@@ -39,12 +38,9 @@ class WeatherTool(Tool):
         return {
             "type": "object",
             "properties": {
-                "city": {
-                    "type": "string",
-                    "description": "Name of the city"
-                }
+                "city": {"type": "string", "description": "Name of the city"}
             },
-            "required": ["city"]
+            "required": ["city"],
         }
 
 
@@ -54,7 +50,7 @@ class DiceRollerTool(Tool):
     def __init__(self):
         super().__init__(
             name="roll_dice",
-            description="Roll dice with specified number of sides and count. Returns the results."
+            description="Roll dice with specified number of sides and count. Returns the results.",
         )
 
     def execute(self, parameters: dict) -> str:
@@ -87,17 +83,17 @@ class DiceRollerTool(Tool):
                     "description": "Number of dice to roll",
                     "default": 1,
                     "minimum": 1,
-                    "maximum": 100
+                    "maximum": 100,
                 },
                 "num_sides": {
                     "type": "integer",
                     "description": "Number of sides on each die",
                     "default": 6,
                     "minimum": 2,
-                    "maximum": 1000
-                }
+                    "maximum": 1000,
+                },
             },
-            "required": []
+            "required": [],
         }
 
 
@@ -107,7 +103,7 @@ class TextAnalyzerTool(Tool):
     def __init__(self):
         super().__init__(
             name="analyze_text",
-            description="Analyze text and return various statistics: character count, word count, sentence count, etc."
+            description="Analyze text and return various statistics: character count, word count, sentence count, etc.",
         )
 
     def execute(self, parameters: dict) -> str:
@@ -120,20 +116,24 @@ class TextAnalyzerTool(Tool):
         # Calculate statistics
         char_count = len(text)
         word_count = len(text.split())
-        sentence_count = text.count('.') + text.count('!') + text.count('?')
-        line_count = text.count('\n') + 1
+        sentence_count = text.count(".") + text.count("!") + text.count("?")
+        line_count = text.count("\n") + 1
 
         # Find longest word
         words = text.split()
         longest_word = max(words, key=len) if words else ""
 
-        result = f"Text Analysis:\n"
+        result = "Text Analysis:\n"
         result += f"- Characters: {char_count}\n"
         result += f"- Words: {word_count}\n"
         result += f"- Sentences: {sentence_count}\n"
         result += f"- Lines: {line_count}\n"
         result += f"- Longest word: '{longest_word}' ({len(longest_word)} characters)\n"
-        result += f"- Average word length: {char_count / word_count:.2f} characters" if word_count > 0 else "N/A"
+        result += (
+            f"- Average word length: {char_count / word_count:.2f} characters"
+            if word_count > 0
+            else "N/A"
+        )
 
         return result
 
@@ -142,12 +142,9 @@ class TextAnalyzerTool(Tool):
         return {
             "type": "object",
             "properties": {
-                "text": {
-                    "type": "string",
-                    "description": "The text to analyze"
-                }
+                "text": {"type": "string", "description": "The text to analyze"}
             },
-            "required": ["text"]
+            "required": ["text"],
         }
 
 
@@ -158,15 +155,12 @@ def main():
         print("Error: Please set OPENAI_API_KEY environment variable")
         return
 
-    client = OpenAIClient(
-        api_key=api_key,
-        model="gpt-4o"
-    )
+    client = OpenAIClient(api_key=api_key, model="gpt-4o")
 
     # Create an agent
     agent = Agent(
         llm_client=client,
-        system_prompt="You are a helpful assistant with access to various utility tools."
+        system_prompt="You are a helpful assistant with access to various utility tools.",
     )
 
     # Create and register custom tools

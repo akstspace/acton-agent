@@ -28,10 +28,10 @@ class ResponseParser:
     ) -> Union[AgentPlan, AgentStep, AgentFinalResponse]:
         """
         Parse LLM response text into a structured Agent response model.
-        
+
         Parameters:
             response_text (str): Raw text from the LLM, optionally containing JSON inside markdown code fences.
-        
+
         Returns:
             Union[AgentPlan, AgentStep, AgentFinalResponse]: An instantiated response model inferred from the parsed JSON.
             If JSON parsing fails or an error occurs, returns an AgentFinalResponse containing the raw response text or an error message.
@@ -60,7 +60,9 @@ class ResponseParser:
                 logger.debug("Parsed as AgentStep")
             else:
                 # If no recognizable structure, treat as final answer
-                logger.debug("No recognizable structure, treating as AgentFinalResponse")
+                logger.debug(
+                    "No recognizable structure, treating as AgentFinalResponse"
+                )
                 response = AgentFinalResponse(final_answer=response_text)
 
             return response
@@ -83,12 +85,12 @@ class ResponseParser:
     def _extract_json_from_markdown(text: str) -> str:
         """
         Extract JSON content from a Markdown code block if present.
-        
+
         Searches the input for a fenced code block that begins with ```json or ``` and returns the inner content trimmed of surrounding whitespace and fences. If no such code block is found, returns the original input trimmed.
-        
+
         Parameters:
             text (str): Text that may contain a Markdown fenced code block with JSON.
-        
+
         Returns:
             str: The JSON text extracted from the code block, or the original trimmed text if no code block is found.
         """
@@ -124,15 +126,15 @@ class ResponseParser:
     ) -> bool:
         """
         Check whether a parsed agent response object satisfies the required structure for its specific response type.
-        
+
         Validation rules:
         - AgentPlan: must have a non-empty `plan`.
         - AgentStep: must have `tool_calls`; each tool call must include `id` and `tool_name`.
         - AgentFinalResponse: must have a non-empty `final_answer`.
-        
+
         Parameters:
             response (AgentPlan | AgentStep | AgentFinalResponse): The parsed response object to validate.
-        
+
         Returns:
             bool: `True` if the response meets the validation rules for its type, `False` otherwise.
         """
@@ -167,12 +169,12 @@ class ResponseParser:
     ) -> Optional[str]:
         """
         Retrieve the thought text from a response object.
-        
+
         For AgentPlan, AgentStep, and AgentFinalResponse, returns the object's `thought` attribute if present.
-        
+
         Parameters:
             response (Union[AgentPlan, AgentStep, AgentFinalResponse]): The response to extract thought from.
-        
+
         Returns:
             Optional[str]: The thought text if available, `None` otherwise.
         """

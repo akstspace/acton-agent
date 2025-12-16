@@ -26,13 +26,13 @@ class TestLLMClientProtocol:
             def call(self, messages: List[Message], **kwargs) -> str:
                 """
                 Provide a fixed response for the given messages.
-                
+
                 Parameters:
-                	messages (List[Message]): Messages to be processed by the client.
-                	**kwargs: Additional keyword arguments accepted but ignored.
-                
+                        messages (List[Message]): Messages to be processed by the client.
+                        **kwargs: Additional keyword arguments accepted but ignored.
+
                 Returns:
-                	response (str): The constant string "response".
+                        response (str): The constant string "response".
                 """
                 return "response"
 
@@ -61,13 +61,13 @@ class TestClientImplementation:
             def call(self, messages: List[Message], **kwargs) -> str:
                 """
                 Return a response string that reflects how many times the client has been called.
-                
+
                 This method increments the instance's `call_count` and returns "Response #<n>" where `<n>` is the updated count.
-                
+
                 Parameters:
                     messages (List[Message]): Sequence of messages provided to the client.
                     **kwargs: Additional keyword arguments; ignored by this implementation.
-                
+
                 Returns:
                     str: A response string formatted as "Response #<n>" with the current call count.
                 """

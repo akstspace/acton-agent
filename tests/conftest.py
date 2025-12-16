@@ -15,10 +15,10 @@ class MockLLMClient:
     def __init__(self, responses: List[str] = None):
         """
         Create a MockLLMClient configured with an optional sequence of preset responses.
-        
+
         Parameters:
             responses (List[str], optional): Ordered list of response strings to return for successive `call`/`call_stream` invocations. If omitted or exhausted, the client will produce a default mock response when called.
-        
+
         Notes:
             Initializes `call_count` to 0 and `calls` to an empty list to record invocation history for tests.
         """
@@ -29,13 +29,13 @@ class MockLLMClient:
     def call(self, messages: List[Message], **kwargs) -> str:
         """
         Record the invocation and return the next mock response.
-        
+
         Appends a record with the provided messages and keyword arguments to the client's internal call log. If a predefined response is available it is returned (and the internal call counter is advanced); otherwise a default JSON-formatted final answer wrapped in a code fence is returned.
-        
+
         Parameters:
             messages (List[Message]): Messages sent to the mock client; recorded for inspection.
             **kwargs: Additional call options; recorded for inspection.
-        
+
         Returns:
             str: The next predefined response string if available, otherwise a default JSON code-fenced final answer.
         """
@@ -52,10 +52,10 @@ class MockLLMClient:
     def call_stream(self, messages: List[Message], **kwargs):
         """
         Simulate streaming output from the LLM by yielding the response one character at a time.
-        
+
         Parameters:
             messages (List[Message]): The message sequence sent to the client; used to produce the mock response.
-        
+
         Returns:
             iterator: Yields each character of the resulting response string as a one-character string.
         """
@@ -69,7 +69,7 @@ class MockLLMClient:
 def mock_llm_client():
     """
     Provide a MockLLMClient instance for tests.
-    
+
     Returns:
         MockLLMClient: A mock LLM client initialized with no preset responses; it records calls and can simulate streaming.
     """
@@ -83,12 +83,12 @@ def mock_llm_client_with_responses():
     def _create_client(responses: List[str]):
         """
         Create a MockLLMClient preloaded with the given responses.
-        
+
         Each invocation of the client's call() will return the next string from the provided list; when the list is exhausted the client falls back to its default mock response.
-        
+
         Parameters:
             responses (List[str]): Ordered list of strings the mock client will return for successive calls.
-        
+
         Returns:
             MockLLMClient: A mock LLM client configured to return the provided responses in sequence.
         """
@@ -101,7 +101,7 @@ def mock_llm_client_with_responses():
 def sample_messages():
     """
     Provide a small sequence of Message objects representing a typical assistant interaction.
-    
+
     Returns:
         List[Message]: Three messages in order — a system prompt, a user message, and an assistant reply.
     """
@@ -116,7 +116,7 @@ def sample_messages():
 def tool_call_response():
     """
     Provides a sample tool call response wrapped in a JSON code fence.
-    
+
     Returns:
         str: A string containing a JSON-formatted tool call plan (includes a thought and a list of tool call entries) wrapped in triple-backtick ```json``` fencing.
     """
@@ -138,7 +138,7 @@ def tool_call_response():
 def final_answer_response():
     """
     Sample LLM final answer response formatted as a JSON code block.
-    
+
     Returns:
         str: A string containing a JSON object with keys `thought` and `final_answer`, wrapped in a ```json code fence.
     """
@@ -154,7 +154,7 @@ def final_answer_response():
 def plan_response():
     """
     Provide a JSON-formatted plan containing a "thought" and a "plan" array wrapped in a Markdown ```json fenced code block.
-    
+
     Returns:
         str: The plan response as a string containing a JSON object with a "thought" field and a "plan" array, enclosed in triple-backtick ```json fences.
     """
@@ -177,10 +177,10 @@ def mock_streaming_llm_client():
     def _create_client(responses: List[str]):
         """
         Create a MockLLMClient that supports streaming.
-        
+
         Parameters:
             responses (List[str]): Ordered list of strings the mock client will return for successive calls.
-        
+
         Returns:
             MockLLMClient: A mock LLM client configured to return the provided responses in sequence.
         """

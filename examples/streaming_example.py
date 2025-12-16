@@ -19,16 +19,13 @@ def main():
         print("Error: Please set OPENAI_API_KEY environment variable")
         return
 
-    client = OpenAIClient(
-        api_key=api_key,
-        model="gpt-4o"
-    )
+    client = OpenAIClient(api_key=api_key, model="gpt-4o")
 
     # Create an agent with streaming enabled
     agent = Agent(
         llm_client=client,
         system_prompt="You are a helpful assistant. Provide detailed and informative responses.",
-        stream=True  # Enable streaming
+        stream=True,  # Enable streaming
     )
 
     # Add a tool for demonstration
@@ -41,9 +38,9 @@ def main():
             "userId": {
                 "type": "number",
                 "description": "Filter posts by user ID",
-                "required": False
+                "required": False,
             }
-        }
+        },
     )
 
     agent.register_tool(posts_tool)
@@ -110,7 +107,7 @@ def main():
     queries = [
         "What is 2 + 2?",
         "Explain in one sentence what an API is",
-        "List 3 benefits of using AI agents"
+        "List 3 benefits of using AI agents",
     ]
 
     for i, query in enumerate(queries, 1):

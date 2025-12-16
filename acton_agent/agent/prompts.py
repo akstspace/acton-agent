@@ -10,33 +10,37 @@ import json
 from .models import AgentFinalResponse, AgentPlan, AgentStep
 
 
-def build_system_prompt(custom_instructions: str = None) -> str:
-    """
-    Construct the system prompt used by the Agent, embedding response format instructions, examples, critical rules, and the JSON schemas for response types.
-    
-    Parameters:
-        custom_instructions (str | None): Optional text to place at the top of the prompt; if omitted a default instruction ("You are a helpful AI agent with access to tools.") is used.
-    
-    Returns:
-        system_prompt (str): The complete system prompt text with injected, pretty-printed JSON schemas for AgentPlan, AgentStep, and AgentFinalResponse.
-    """
-    # Get JSON schemas for the response types
-    plan_schema = json.dumps(AgentPlan.model_json_schema(), indent=2)
-    step_schema = json.dumps(AgentStep.model_json_schema(), indent=2)
-    final_schema = json.dumps(AgentFinalResponse.model_json_schema(), indent=2)
+# Constants
+DEFAULT_CUSTOM_INSTRUCTIONS = "You are a helpful AI agent with access to tools."
 
-    # Start with custom instructions if provided, otherwise use default
-    prompt_parts = []
-    if custom_instructions:
-        prompt_parts.append(custom_instructions)
-    else:
-        prompt_parts.append("You are a helpful AI agent with access to tools.")
+SEPARATOR = "=" * 60
 
-    prompt_parts.append("\n" + "=" * 60 + "\n")
+DEFAULT_FORMAT_INSTRUCTIONS = """FINAL ANSWER FORMATTING:
+When providing your final_answer, format it as well-structured markdown:
+- Use proper headings (##, ###) for sections
+- Use bullet points (-) or numbered lists (1.) for clarity
+- Use **bold** for emphasis on important information
+- Use code blocks with language tags for code snippets
+- For images, use markdown syntax with alt text: ![Description](url)
+- For responsive images, consider using HTML with width attributes when needed
+- Keep paragraphs concise and readable
+- Use tables for structured data when appropriate
+- Add line breaks between sections for better readability
 
-    # Add the standard instructions
-    prompt_parts.append(
-        f"""RESPONSE FORMAT INSTRUCTIONS:
+Example:
+## Results
+
+Here are the findings:
+
+- **Item 1**: Description here
+- **Item 2**: Another description
+
+### Details
+
+Additional information in a clear format.
+"""
+
+RESPONSE_FORMAT_INSTRUCTIONS_TEMPLATE = """RESPONSE FORMAT INSTRUCTIONS:
 
 You MUST ALWAYS respond with valid JSON wrapped in a markdown code block. No exceptions.
 
@@ -61,32 +65,32 @@ RESPONSE FORMAT EXAMPLES:
 
 For initial planning:
 ```json
-{{
+{{{{
   "thought": "your reasoning about the task",
   "plan": ["step 1", "step 2", "step 3"]
-}}
+}}}}
 ```
 
 For tool execution:
 ```json
-{{
+{{{{
   "thought": "reasoning for this step",
   "tool_calls": [
-    {{
+    {{{{
       "id": "call_1",
       "tool_name": "tool_name",
-      "parameters": {{"param": "value"}}
-    }}
+      "parameters": {{{{"param": "value"}}}}
+    }}}}
   ]
-}}
+}}}}
 ```
 
 For final answer:
 ```json
-{{
+{{{{
   "thought": "final reasoning (optional)",
   "final_answer": "your complete answer to the user"
-}}
+}}}}
 ```
 
 CRITICAL RULES:
@@ -101,7 +105,56 @@ CRITICAL RULES:
 9. DO NOT put structured data (dicts/objects) in final_answer - format it as readable text
 
 Available tools will be listed below."""
+
+
+def get_default_format_instructions() -> str:
+    """
+    Get default formatting instructions for final answers.
+
+    Returns:
+        str: Default markdown formatting instructions.
+    """
+    return DEFAULT_FORMAT_INSTRUCTIONS
+
+
+def build_system_prompt(
+    custom_instructions: str = None, final_answer_format_instructions: str = None
+) -> str:
+    """
+    Construct the system prompt used by the Agent, embedding response format instructions, examples, critical rules, and the JSON schemas for response types.
+
+    Parameters:
+        custom_instructions (str | None): Optional text to place at the top of the prompt; if omitted a default instruction ("You are a helpful AI agent with access to tools.") is used.
+        final_answer_format_instructions (str | None): Optional formatting instructions for final answers. If provided, these will be included in the system prompt.
+
+    Returns:
+        system_prompt (str): The complete system prompt text with injected, pretty-printed JSON schemas for AgentPlan, AgentStep, and AgentFinalResponse.
+    """
+    # Get JSON schemas for the response types
+    plan_schema = json.dumps(AgentPlan.model_json_schema(), indent=2)
+    step_schema = json.dumps(AgentStep.model_json_schema(), indent=2)
+    final_schema = json.dumps(AgentFinalResponse.model_json_schema(), indent=2)
+
+    # Start with custom instructions if provided, otherwise use default
+    prompt_parts = []
+    if custom_instructions:
+        prompt_parts.append(custom_instructions)
+    else:
+        prompt_parts.append(DEFAULT_CUSTOM_INSTRUCTIONS)
+
+    prompt_parts.append("\n" + SEPARATOR + "\n")
+
+    # Add the standard instructions with schema injection
+    prompt_parts.append(
+        RESPONSE_FORMAT_INSTRUCTIONS_TEMPLATE.format(
+            plan_schema=plan_schema, step_schema=step_schema, final_schema=final_schema
+        )
     )
+
+    # Add final answer formatting instructions if provided
+    if final_answer_format_instructions:
+        prompt_parts.append("\n" + SEPARATOR + "\n")
+        prompt_parts.append(final_answer_format_instructions)
 
     return "\n".join(prompt_parts)
 
@@ -109,10 +162,8 @@ Available tools will be listed below."""
 def get_default_system_prompt() -> str:
     """
     Default system prompt that includes injected JSON schemas for AgentPlan, AgentStep, and AgentFinalResponse.
-    
+
     Returns:
         str: The complete system prompt string containing response format instructions, examples, critical rules, and the embedded JSON schemas.
     """
-    return build_system_prompt(
-        custom_instructions="You are a helpful AI agent with access to tools."
-    )
+    return build_system_prompt(custom_instructions=DEFAULT_CUSTOM_INSTRUCTIONS)

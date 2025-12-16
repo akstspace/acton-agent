@@ -16,7 +16,7 @@ class SimpleTool(Tool):
     def __init__(self):
         """
         Initialize the SimpleTool with its default name and description.
-        
+
         Sets the tool's name to "simple" and its description to "A simple test tool".
         """
         super().__init__(name="simple", description="A simple test tool")
@@ -24,10 +24,10 @@ class SimpleTool(Tool):
     def execute(self, parameters: dict) -> str:
         """
         Run the tool with the provided parameters.
-        
+
         Parameters:
             parameters (dict): Input parameters; the key "value" (optional) is used as the output value and defaults to "default" if absent.
-        
+
         Returns:
             Formatted result string in the form "Result: {value}" where {value} is the resolved parameter.
         """
@@ -37,7 +37,7 @@ class SimpleTool(Tool):
     def get_schema(self) -> dict:
         """
         Return the JSON Schema describing this tool's expected input.
-        
+
         Returns:
             dict: A JSON Schema object with "type": "object" and a "value" property (type "string") that includes a description.
         """
@@ -168,7 +168,7 @@ class TestFunctionTool:
         def add(a: int, b: int) -> int:
             """
             Compute the sum of two integers.
-            
+
             Returns:
                 The sum of `a` and `b` as an int.
             """
@@ -193,7 +193,7 @@ class TestFunctionTool:
         def multiply(a: int, b: int) -> int:
             """
             Multiply two integers.
-            
+
             Returns:
                 int: Product of the two input integers.
             """
@@ -220,10 +220,10 @@ class TestFunctionTool:
         def greet(name: str) -> str:
             """
             Create a greeting for the given person.
-            
+
             Parameters:
                 name (str): Recipient's name.
-            
+
             Returns:
                 str: Greeting in the form "Hello, {name}!".
             """
@@ -244,10 +244,10 @@ class TestFunctionTool:
         def get_info(id: int) -> dict:
             """
             Return information for the given identifier.
-            
+
             Parameters:
                 id (int): Identifier to retrieve information for.
-            
+
             Returns:
                 info (dict): Dictionary with keys:
                     - "id": the provided identifier (int)
@@ -269,14 +269,14 @@ class TestFunctionTool:
     def test_invalid_schema_not_dict(self):
         """
         Ensure FunctionTool raises InvalidToolSchemaError when provided a schema that is not a dict.
-        
+
         Attempts to construct a FunctionTool with a non-dict schema value and expects InvalidToolSchemaError to be raised.
         """
 
         def dummy():
             """
             No-op placeholder function.
-            
+
             This function intentionally performs no action and returns None.
             """
             pass
@@ -295,7 +295,7 @@ class TestFunctionTool:
         def dummy():
             """
             No-op placeholder function.
-            
+
             This function intentionally performs no action and returns None.
             """
             pass
@@ -314,7 +314,7 @@ class TestFunctionTool:
         def dummy():
             """
             No-op placeholder function.
-            
+
             This function intentionally performs no action and returns None.
             """
             pass

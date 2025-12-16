@@ -25,7 +25,7 @@ class Tool(ABC):
     def __init__(self, name: str, description: str):
         """
         Create a Tool instance identified by a unique name and a human-readable description.
-        
+
         Parameters:
             name (str): Unique identifier for the tool used in registration and lookup.
             description (str): Brief human-readable description for prompts, listings, and documentation.
@@ -37,10 +37,10 @@ class Tool(ABC):
     def execute(self, parameters: Dict[str, Any]) -> str:
         """
         Execute the tool using the provided parameters and return its textual result.
-        
+
         Parameters:
             parameters (Dict[str, Any]): Mapping of parameter names to values used during execution.
-        
+
         Returns:
             str: The tool's result as a string.
         """
@@ -50,7 +50,7 @@ class Tool(ABC):
     def get_schema(self) -> Dict[str, Any]:
         """
         Retrieve the JSON Schema that describes this tool's parameters.
-        
+
         Returns:
             schema (Dict[str, Any]): A JSON Schema object describing expected parameter names, types, and validation rules.
         """
@@ -59,13 +59,13 @@ class Tool(ABC):
     def agent_md(self, template: str, tool_output: str) -> str:
         """
         Format the tool's output into a markdown string using a template.
-        
+
         Supports replacing the placeholders `{tool_name}`, `{output}`, and `{description}` in the template.
-        
+
         Parameters:
             template (str): Markdown template containing placeholders to replace.
             tool_output (str): Output produced by the tool to insert into the template.
-        
+
         Returns:
             formatted_markdown (str): The template with placeholders replaced by the tool's values.
         """
@@ -84,7 +84,7 @@ class Tool(ABC):
     def __repr__(self) -> str:
         """
         Provide a concise developer-facing representation of the tool including its name.
-        
+
         Returns:
             str: Representation in the form "Tool(name=<name>)".
         """
@@ -106,7 +106,7 @@ class ToolRegistry:
     def register(self, tool: Tool) -> None:
         """
         Register a Tool instance in the registry, overwriting any existing tool with the same name.
-        
+
         Parameters:
             tool (Tool): The Tool instance to register.
         """
@@ -119,12 +119,12 @@ class ToolRegistry:
     def unregister(self, tool_name: str) -> None:
         """
         Remove a registered tool from the registry by name.
-        
+
         Parameters:
-        	tool_name (str): Name of the tool to remove.
-        
+                tool_name (str): Name of the tool to remove.
+
         Raises:
-        	ToolNotFoundError: If no tool with `tool_name` is registered.
+                ToolNotFoundError: If no tool with `tool_name` is registered.
         """
         if tool_name not in self._tools:
             raise ToolNotFoundError(tool_name)
@@ -135,10 +135,10 @@ class ToolRegistry:
     def get(self, tool_name: str) -> Optional[Tool]:
         """
         Retrieve a registered tool by name.
-        
+
         Parameters:
             tool_name (str): The name of the tool to retrieve.
-        
+
         Returns:
             Optional[Tool]: The Tool instance if found, otherwise None.
         """
@@ -156,7 +156,7 @@ class ToolRegistry:
     def list_tool_names(self) -> List[str]:
         """
         List the names of all registered tools.
-        
+
         Returns:
             A list of registered tool names.
         """
@@ -165,7 +165,7 @@ class ToolRegistry:
     def has_tool(self, tool_name: str) -> bool:
         """
         Check whether a tool with the given name is registered in the registry.
-        
+
         Returns:
             `True` if a tool with `tool_name` is registered, `False` otherwise.
         """
@@ -174,9 +174,9 @@ class ToolRegistry:
     def format_for_prompt(self) -> str:
         """
         Builds a human-readable text block describing all registered tools for inclusion in an LLM prompt.
-        
+
         Each tool entry includes the tool's name, description, and its JSON schema (pretty-printed) when available.
-        
+
         Returns:
             A formatted string listing available tools, or "No tools available." if the registry is empty.
         """
@@ -204,7 +204,7 @@ class ToolRegistry:
     def __len__(self) -> int:
         """
         Get the number of registered tools.
-        
+
         Returns:
             count (int): Number of tools currently registered in the registry.
         """
@@ -213,7 +213,7 @@ class ToolRegistry:
     def __contains__(self, tool_name: str) -> bool:
         """
         Check whether a tool name is registered in the registry.
-        
+
         Returns:
             `true` if the tool name is registered, `false` otherwise.
         """
@@ -233,15 +233,15 @@ class FunctionTool(Tool):
     ):
         """
         Create a FunctionTool that wraps a Python callable and its JSON Schema.
-        
+
         Store the provided function and schema on the instance and validate that the schema is a dictionary with a top-level "type" equal to "object".
-        
+
         Parameters:
             name (str): Unique name for the tool.
             description (str): Human-readable description of the tool.
             func (Callable): Python callable to be invoked when the tool is executed.
             schema (Dict[str, Any]): JSON Schema describing the function's parameters; must be a dict with `"type": "object"`.
-        
+
         Raises:
             InvalidToolSchemaError: If `schema` is not a dict, missing a `"type"` field, or its `"type"` is not `"object"`.
         """
@@ -255,10 +255,10 @@ class FunctionTool(Tool):
     def _validate_schema(self, schema: Dict[str, Any]) -> None:
         """
         Ensure the provided JSON Schema describes an object; raise if it is invalid.
-        
+
         Parameters:
             schema (Dict[str, Any]): JSON Schema for the tool's parameters.
-        
+
         Raises:
             InvalidToolSchemaError: If `schema` is not a dict, if it lacks a `"type"` field,
                 or if `"type"` is not `"object"`.
@@ -275,13 +275,13 @@ class FunctionTool(Tool):
     def execute(self, parameters: Dict[str, Any]) -> str:
         """
         Invoke the wrapped function with the given parameters and return its result as a string.
-        
+
         Parameters:
             parameters (Dict[str, Any]): Mapping of argument names to values passed as keyword arguments to the wrapped function.
-        
+
         Returns:
             result_str (str): The wrapped function's return value converted to a string; non-string results are serialized to JSON.
-        
+
         Raises:
             Exception: Propagates any exception raised by the wrapped function.
         """
@@ -301,7 +301,7 @@ class FunctionTool(Tool):
     def get_schema(self) -> Dict[str, Any]:
         """
         Get the JSON Schema describing the tool's parameters.
-        
+
         Returns:
             schema (Dict[str, Any]): JSON Schema for the function's parameters.
         """

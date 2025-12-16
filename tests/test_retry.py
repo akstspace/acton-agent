@@ -39,9 +39,9 @@ class TestRetryConfig:
         def successful_func():
             """
             Return the literal string "success" and increment a shared call counter.
-            
+
             Increments the external mutable counter call_count[0] by 1 as a side effect.
-            
+
             Returns:
                 str: "success"
             """
@@ -57,7 +57,7 @@ class TestRetryConfig:
     def test_wrap_function_retry_then_success(self):
         """
         Verify that wrapping a function retries on a specified exception and succeeds on a subsequent attempt.
-        
+
         This test creates a RetryConfig with limited attempts and small waits, wraps a function that raises ValueError on its first call and returns a value on the second, then asserts the wrapped function returns the expected result and was invoked twice (one retry).
         """
         config = RetryConfig(max_attempts=3, wait_min=0.01, wait_max=0.1)
@@ -67,12 +67,12 @@ class TestRetryConfig:
         def flaky_func():
             """
             Simulate a flaky operation that fails on the first invocation and succeeds thereafter.
-            
+
             Each call increments the external counter call_count[0]. On the first call this function raises a ValueError; on subsequent calls it returns the string "success".
-            
+
             Returns:
                 str: The string "success" when the call does not raise.
-            
+
             Raises:
                 ValueError: On the first invocation to indicate a temporary failure.
             """
@@ -96,9 +96,9 @@ class TestRetryConfig:
         def always_fails():
             """
             Helper used in tests that increments an external call counter and always raises an error.
-            
+
             Increments the first element of the external list `call_count` to record an invocation, then raises a ValueError with message "Always fails".
-            
+
             Raises:
                 ValueError: Always raised with message "Always fails".
             """
@@ -139,7 +139,7 @@ class TestRetryConfig:
         def func_with_wrong_exception():
             """
             Function used in tests that increments call_count[0] and always raises a TypeError.
-            
+
             Raises:
                 TypeError: always raised with message "Wrong exception type".
             """
@@ -172,14 +172,14 @@ class TestRetryWaitTimes:
         def timing_func():
             """
             Record the current timestamp and succeed on the third invocation.
-            
+
             Appends the current time (time.time()) to the outer-scope list `call_times` each time it is called. Raises ValueError on the first two calls; on the third call returns the string "done".
-            
+
             Returns:
-            	"The string \"done\"" on the third call.
-            
+                "The string \"done\"" on the third call.
+
             Raises:
-            	ValueError: Raised for the first two invocations to indicate a retry-worthy failure.
+                ValueError: Raised for the first two invocations to indicate a retry-worthy failure.
             """
             call_times.append(time.time())
             if len(call_times) < 3:

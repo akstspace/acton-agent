@@ -20,16 +20,13 @@ def main():
         print("Error: Please set OPENAI_API_KEY environment variable")
         return
 
-    client = OpenAIClient(
-        api_key=api_key,
-        model="gpt-4o"
-    )
+    client = OpenAIClient(api_key=api_key, model="gpt-4o")
 
     # Create an agent
     agent = Agent(
         llm_client=client,
         system_prompt="You are a helpful assistant that can fetch data from APIs. "
-                     "When presenting data, format it nicely for readability."
+        "When presenting data, format it nicely for readability.",
     )
 
     # Example 1: Create a RequestsTool for fetching all posts
@@ -42,9 +39,9 @@ def main():
             "userId": {
                 "type": "number",
                 "description": "Filter posts by user ID",
-                "required": False
+                "required": False,
             }
-        }
+        },
     )
 
     # Example 2: Create a tool for fetching a specific post using route parameters
@@ -53,7 +50,7 @@ def main():
         name="get_post",
         description="Fetch a specific post by ID using route parameters",
         endpoint="https://jsonplaceholder.typicode.com/posts/{post_id}",
-        method="GET"
+        method="GET",
     )
 
     # Example 3: Create a tool for fetching comments on a post (route parameter: post_id)
@@ -61,7 +58,7 @@ def main():
         name="get_comments",
         description="Fetch comments for a specific post using route parameters",
         endpoint="https://jsonplaceholder.typicode.com/posts/{post_id}/comments",
-        method="GET"
+        method="GET",
     )
 
     # Example 4: Create a tool for fetching user information (route parameter: user_id)
@@ -69,7 +66,7 @@ def main():
         name="get_user",
         description="Fetch user information by user ID using route parameters",
         endpoint="https://jsonplaceholder.typicode.com/users/{user_id}",
-        method="GET"
+        method="GET",
     )
 
     # Example 5: Create a tool for fetching a specific user's specific post
@@ -83,14 +80,14 @@ def main():
             "userId": {
                 "type": "number",
                 "description": "User ID to filter posts",
-                "required": True
+                "required": True,
             },
             "_limit": {
                 "type": "number",
                 "description": "Limit number of results",
-                "required": False
-            }
-        }
+                "required": False,
+            },
+        },
     )
 
     # Register all tools with the agent
@@ -104,7 +101,9 @@ def main():
     print("🌐 Welcome to the API Integration Example!")
     print("=" * 70)
     print("\nThis demo shows how your agent can interact with REST APIs.")
-    print("We'll be using JSONPlaceholder API with route parameters and query params.\n")
+    print(
+        "We'll be using JSONPlaceholder API with route parameters and query params.\n"
+    )
     input("Press Enter to start the demo...")
     print()
 
@@ -168,7 +167,9 @@ def main():
     print()
 
     print("\n" + "=" * 70)
-    print("✅ Demo completed! The agent used route parameters & query params seamlessly.")
+    print(
+        "✅ Demo completed! The agent used route parameters & query params seamlessly."
+    )
     print("=" * 70)
     print()
 

@@ -176,7 +176,7 @@ class TestRequestsTool:
     def test_execute_request_failure(self, mock_request):
         """
         Verify that RequestsTool raises ToolExecutionError when the HTTP request fails.
-        
+
         Asserts that calling execute results in a ToolExecutionError if the underlying HTTP response's raise_for_status raises an exception (simulating an error status like 404).
         """
         mock_response = Mock()

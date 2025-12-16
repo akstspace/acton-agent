@@ -80,7 +80,7 @@ class RequestsTool(Tool):
         # Auto-extract route/path parameters from URL template if not provided
         if path_params is None:
             # Find all {parameter_name} patterns in the URL template
-            self.path_params = re.findall(r'\{([^}]+)\}', url_template)
+            self.path_params = re.findall(r"\{([^}]+)\}", url_template)
         else:
             self.path_params = path_params
 

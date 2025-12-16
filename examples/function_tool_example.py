@@ -53,15 +53,12 @@ def main():
         print("Error: Please set OPENAI_API_KEY environment variable")
         return
 
-    client = OpenAIClient(
-        api_key=api_key,
-        model="gpt-4o"
-    )
+    client = OpenAIClient(api_key=api_key, model="gpt-4o")
 
     # Create an agent
     agent = Agent(
         llm_client=client,
-        system_prompt="You are a helpful assistant with various utility functions available."
+        system_prompt="You are a helpful assistant with various utility functions available.",
     )
 
     # Create FunctionTools with their schemas
@@ -70,28 +67,22 @@ def main():
     calculator_schema = {
         "type": "object",
         "properties": {
-            "a": {
-                "type": "number",
-                "description": "First number"
-            },
-            "b": {
-                "type": "number",
-                "description": "Second number"
-            },
+            "a": {"type": "number", "description": "First number"},
+            "b": {"type": "number", "description": "Second number"},
             "operation": {
                 "type": "string",
                 "description": "Operation to perform",
-                "enum": ["add", "subtract", "multiply", "divide"]
-            }
+                "enum": ["add", "subtract", "multiply", "divide"],
+            },
         },
-        "required": ["a", "b", "operation"]
+        "required": ["a", "b", "operation"],
     }
 
     calculator_tool = FunctionTool(
         name="calculator",
         description="Perform basic arithmetic operations (add, subtract, multiply, divide)",
         func=calculate,
-        schema=calculator_schema
+        schema=calculator_schema,
     )
 
     # Time tool
@@ -101,55 +92,49 @@ def main():
             "timezone": {
                 "type": "string",
                 "description": "Timezone for the time (only UTC supported)",
-                "default": "UTC"
+                "default": "UTC",
             }
         },
-        "required": []
+        "required": [],
     }
 
     time_tool = FunctionTool(
         name="get_time",
         description="Get the current time in UTC",
         func=get_current_time,
-        schema=time_schema
+        schema=time_schema,
     )
 
     # Word count tool
     word_count_schema = {
         "type": "object",
         "properties": {
-            "text": {
-                "type": "string",
-                "description": "The text to count words in"
-            }
+            "text": {"type": "string", "description": "The text to count words in"}
         },
-        "required": ["text"]
+        "required": ["text"],
     }
 
     word_count_tool = FunctionTool(
         name="count_words",
         description="Count the number of words in a text string",
         func=word_count,
-        schema=word_count_schema
+        schema=word_count_schema,
     )
 
     # String reverse tool
     reverse_schema = {
         "type": "object",
         "properties": {
-            "text": {
-                "type": "string",
-                "description": "The text to reverse"
-            }
+            "text": {"type": "string", "description": "The text to reverse"}
         },
-        "required": ["text"]
+        "required": ["text"],
     }
 
     reverse_tool = FunctionTool(
         name="reverse_text",
         description="Reverse a string",
         func=reverse_string,
-        schema=reverse_schema
+        schema=reverse_schema,
     )
 
     # Register all tools
@@ -162,7 +147,9 @@ def main():
     print("🛠️  Welcome to the Function Tool Demo!")
     print("=" * 70)
     print("\nThis demo shows how to give your agent custom Python functions as tools.")
-    print("Our agent has access to: calculator, clock, word counter, and text reverser.\n")
+    print(
+        "Our agent has access to: calculator, clock, word counter, and text reverser.\n"
+    )
     input("Press Enter to start the demo...")
     print()
 

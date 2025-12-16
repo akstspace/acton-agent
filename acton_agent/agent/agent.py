@@ -5,7 +5,9 @@ This module contains the core Agent class that orchestrates LLM interactions,
 tool execution, and conversation management.
 """
 
+from datetime import datetime
 from typing import Generator, List, Optional
+from zoneinfo import ZoneInfo
 
 from loguru import logger
 
@@ -28,7 +30,7 @@ from .models import (
     ToolResult,
 )
 from .parser import ResponseParser
-from .prompts import build_system_prompt
+from .prompts import build_system_prompt, get_default_format_instructions
 from .retry import RetryConfig
 from .tools import Tool, ToolRegistry
 
@@ -64,20 +66,30 @@ class Agent:
         max_iterations: int = 10,
         retry_config: Optional[RetryConfig] = None,
         stream: bool = False,
+        final_answer_format_instructions: Optional[str] = None,
+        timezone: str = "UTC",
     ):
         """
         Create an Agent configured to orchestrate LLM calls, tool execution, and conversation state.
-        
+
         Parameters:
             llm_client (LLMClient): The LLM client used for generating responses.
             system_prompt (Optional[str]): Optional custom instructions that are embedded into the agent's system prompt.
             max_iterations (int): Maximum number of reasoning iterations the agent will perform before raising an error.
             retry_config (Optional[RetryConfig]): Retry behavior for LLM and tool calls; a default RetryConfig is created when omitted.
             stream (bool): If true, enables streaming responses from the LLM (tokens yielded as they arrive).
+            final_answer_format_instructions (Optional[str]): Optional instructions for formatting the final answer. If not provided, uses default markdown formatting instructions.
+            timezone (str): Timezone for displaying current date/time (e.g., 'UTC', 'America/New_York', 'Europe/London'). Defaults to 'UTC'.
         """
         self.llm_client = llm_client
         self.custom_instructions = system_prompt  # Store custom instructions separately
-        self.system_prompt = build_system_prompt(system_prompt)
+        self.final_answer_format_instructions = (
+            final_answer_format_instructions or get_default_format_instructions()
+        )
+        self.timezone = timezone
+        self.system_prompt = build_system_prompt(
+            system_prompt, self.final_answer_format_instructions
+        )
         self.max_iterations = max_iterations
         self.retry_config = retry_config or RetryConfig()
         self.stream = stream
@@ -91,7 +103,7 @@ class Agent:
     def register_tool(self, tool: Tool) -> None:
         """
         Register a Tool with the agent, making it available for use in tool calls.
-        
+
         Parameters:
             tool (Tool): The tool instance to register with the agent's tool registry.
         """
@@ -100,10 +112,10 @@ class Agent:
     def unregister_tool(self, tool_name: str) -> None:
         """
         Remove a registered tool from the agent's tool registry.
-        
+
         Parameters:
             tool_name (str): Name of the tool to remove.
-        
+
         Raises:
             ToolNotFoundError: If no tool with the given name is registered.
         """
@@ -121,16 +133,28 @@ class Agent:
     def _build_messages(self) -> List[Message]:
         """
         Compose the sequence of messages to send to the LLM.
-        
+
         Creates a system message that contains the agent's system prompt followed by the tool registry formatted for inclusion in prompts, then appends the current conversation history in order.
-        
+
         Returns:
             messages (List[Message]): Ordered list of Message objects starting with the system message and followed by the conversation history.
         """
+        # Get current date and time in the specified timezone
+        try:
+            tz = ZoneInfo(self.timezone)
+            current_datetime = datetime.now(tz)
+            datetime_str = current_datetime.strftime("%A, %B %d, %Y at %I:%M:%S %p %Z")
+        except Exception as e:
+            logger.warning(
+                f"Failed to get timezone '{self.timezone}': {e}. Falling back to UTC."
+            )
+            current_datetime = datetime.now(ZoneInfo("UTC"))
+            datetime_str = current_datetime.strftime("%A, %B %d, %Y at %I:%M:%S %p UTC")
+
         messages = [
             Message(
                 role="system",
-                content=f"{self.system_prompt}\n\n{self.tool_registry.format_for_prompt()}",
+                content=f"{self.system_prompt}\n\nCurrent Date and Time: {datetime_str}\n\n{self.tool_registry.format_for_prompt()}",
             )
         ]
         messages.extend(self.conversation_history)
@@ -139,14 +163,14 @@ class Agent:
     def _execute_single_tool(self, tool: Tool, parameters: dict) -> str:
         """
         Execute the given tool with configured retry behavior and return its result.
-        
+
         Parameters:
             tool (Tool): The tool to invoke.
             parameters (dict): Parameters to pass to the tool's `execute` method.
-        
+
         Returns:
             result_text (str): The tool's execution result.
-        
+
         Raises:
             ToolExecutionError: If the tool fails after the configured retry attempts; wraps the original exception.
         """
@@ -154,7 +178,7 @@ class Agent:
         def _execute():
             """
             Invoke the current tool with the provided parameters and return its execution result.
-            
+
             Returns:
                 The value returned by the tool's `execute` method.
             """
@@ -176,12 +200,12 @@ class Agent:
     def _execute_tool_calls(self, tool_calls: List[ToolCall]) -> List[ToolResult]:
         """
         Execute a sequence of tool calls and produce corresponding ToolResult entries.
-        
+
         For each ToolCall in the input list, the agent attempts to locate and invoke the named tool, producing a ToolResult that records the tool_call id, tool name, returned text, and any error.
-        
+
         Parameters:
             tool_calls (List[ToolCall]): Tool calls to execute in order.
-        
+
         Returns:
             List[ToolResult]: A list of ToolResult objects in the same order as the input ToolCall list. If a tool is not registered the corresponding ToolResult contains an error message "Tool '<name>' not found". If a tool's execution output begins with "Error", that text is recorded in the `error` field and the `result` is set to an empty string. If execution raises a ToolExecutionError, the exception string is recorded in the `error` field and the `result` is an empty string.
         """
@@ -241,10 +265,10 @@ class Agent:
     def _format_tool_results(self, results: List[ToolResult]) -> str:
         """
         Create a human-readable string representation of multiple tool execution results for appending to conversation history.
-        
+
         Parameters:
             results (List[ToolResult]): Tool execution outcomes to format; each entry's `tool_name`, `tool_call_id`, and either `result` (on success) or `error` (on failure) are included.
-        
+
         Returns:
             str: Multi-line string that lists each tool's name and call ID, followed by either "Success: <result>" or "Error: <error>" for that call.
         """
@@ -260,13 +284,13 @@ class Agent:
     def _call_llm_with_retry(self, messages: List[Message]) -> str:
         """
         Invoke the configured LLM client with retry handling.
-        
+
         Parameters:
             messages (List[Message]): The message sequence to send to the LLM.
-        
+
         Returns:
             str: The LLM's full response text.
-        
+
         Raises:
             LLMCallError: If the LLM call fails after the configured number of retry attempts.
         """
@@ -274,7 +298,7 @@ class Agent:
         def _call():
             """
             Invoke the configured LLM client with the assembled messages and return its response.
-            
+
             Returns:
                 The response returned by the LLM client.
             """
@@ -298,12 +322,12 @@ class Agent:
     ) -> Generator[str, None, str]:
         """
         Stream tokens from the LLM for the provided message sequence.
-        
+
         Yields token chunks as they arrive from the LLM. The generator's final return value (accessible via StopIteration.value) is the complete accumulated response string.
-        
+
         Returns:
             The complete accumulated response string produced by the LLM.
-        
+
         Raises:
             AttributeError: If the LLM client does not implement `call_stream()`.
             LLMCallError: If the streaming call fails after retry handling.
@@ -312,13 +336,13 @@ class Agent:
         def _call_stream():
             """
             Stream tokens from the LLM client and yield each received chunk.
-            
+
             Yields:
                 str: Each chunk of text produced by the LLM as it becomes available.
-            
+
             Returns:
                 final_text (str): The full concatenated text of all yielded chunks when the stream completes.
-            
+
             Raises:
                 AttributeError: If the configured LLM client does not implement a `call_stream` method.
             """
@@ -344,15 +368,13 @@ class Agent:
             logger.error(f"LLM streaming call failed: {e}")
             raise LLMCallError(e, self.retry_config.max_attempts)
 
-    def run_stream(
-        self, user_input: str
-    ) -> Generator[StreamingEvent, None, None]:
+    def run_stream(self, user_input: str) -> Generator[StreamingEvent, None, None]:
         """
         Stream the agent's execution for a single user input, yielding structured streaming events.
-        
+
         Parameters:
             user_input (str): The user's question or request to process.
-        
+
         Yields:
             StreamingEvent: One of the structured streaming event models:
                 - AgentStreamStart: Emitted when LLM streaming starts.
@@ -362,7 +384,7 @@ class Agent:
                 - AgentPlanEvent: A complete agent plan.
                 - AgentStepEvent: A complete agent step with tool calls.
                 - AgentFinalResponseEvent: The final answer from the agent.
-        
+
         Raises:
             MaxIterationsError: If the agent exhausts max_iterations without producing a final response.
         """
@@ -439,13 +461,13 @@ class Agent:
     def run(self, user_input: str) -> str:
         """
         Run the agent on user input and produce the conversation's final answer.
-        
+
         Parameters:
             user_input (str): The user's prompt or request.
-        
+
         Returns:
             str: The agent's final answer.
-        
+
         Raises:
             MaxIterationsError: If no final answer is produced within the configured max_iterations.
         """
@@ -472,7 +494,7 @@ class Agent:
     def get_conversation_history(self) -> List[Message]:
         """
         Return a copy of the agent's conversation history.
-        
+
         Returns:
             List[Message]: A copy of the conversation history as a list of Message objects.
         """
@@ -481,18 +503,49 @@ class Agent:
     def set_system_prompt(self, prompt: str) -> None:
         """
         Update the agent's custom instruction portion and rebuild the full system prompt.
-        
+
         Parameters:
             prompt (str): New custom instructions to embed into the agent's system prompt.
         """
         self.custom_instructions = prompt
-        self.system_prompt = build_system_prompt(prompt)
+        self.system_prompt = build_system_prompt(
+            prompt, self.final_answer_format_instructions
+        )
         logger.info("System prompt updated")
+
+    def set_final_answer_format(self, format_instructions: str) -> None:
+        """
+        Update the formatting instructions for final answers and rebuild the system prompt.
+
+        Parameters:
+            format_instructions (str): New formatting instructions for final answers.
+        """
+        self.final_answer_format_instructions = format_instructions
+        self.system_prompt = build_system_prompt(
+            self.custom_instructions, format_instructions
+        )
+        logger.info("Final answer format instructions updated")
+
+    def set_timezone(self, timezone: str) -> None:
+        """
+        Update the agent's timezone for date/time display.
+
+        Parameters:
+            timezone (str): Timezone name (e.g., 'UTC', 'America/New_York', 'Europe/London').
+        """
+        # Validate timezone
+        try:
+            ZoneInfo(timezone)
+            self.timezone = timezone
+            logger.info(f"Timezone updated to {timezone}")
+        except Exception as e:
+            logger.error(f"Invalid timezone '{timezone}': {e}")
+            raise ValueError(f"Invalid timezone: {timezone}")
 
     def __repr__(self) -> str:
         """
         Return a compact string summarizing the agent's tool count, conversation history length, and max iterations.
-        
+
         Returns:
             str: A representation like "Agent(tools=<n>, history=<m>, max_iterations=<k>)" where `<n>` is the number of registered tools, `<m>` is the number of messages in conversation history, and `<k>` is the configured maximum iterations.
         """

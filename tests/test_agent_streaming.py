@@ -65,7 +65,9 @@ class SimpleCalculatorTool(Tool):
 class TestAgentStreamingEvents:
     """Tests for agent streaming with structured events."""
 
-    def test_run_stream_yields_final_response_event(self, mock_llm_client_with_responses):
+    def test_run_stream_yields_final_response_event(
+        self, mock_llm_client_with_responses
+    ):
         """Test that run_stream yields AgentFinalResponseEvent."""
         response = """```json
 {
@@ -216,4 +218,6 @@ class TestAgentStreamingEvents:
         )
 
         for event in events:
-            assert isinstance(event, valid_event_types), f"Invalid event type: {type(event)}"
+            assert isinstance(event, valid_event_types), (
+                f"Invalid event type: {type(event)}"
+            )
