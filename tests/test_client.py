@@ -2,8 +2,8 @@
 Tests for the client module.
 """
 
-from toolio_agent.agent.client import LLMClient
-from toolio_agent.agent.models import Message
+from acton_agent.agent.client import LLMClient
+from acton_agent.agent.models import Message
 
 
 class TestLLMClientProtocol:

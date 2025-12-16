@@ -4,11 +4,11 @@ Tests for the core Agent class.
 
 import pytest
 
-from toolio_agent.agent.agent import Agent
-from toolio_agent.agent.exceptions import MaxIterationsError
-from toolio_agent.agent.models import Message, ToolCall
-from toolio_agent.agent.retry import RetryConfig
-from toolio_agent.agent.tools import FunctionTool, Tool
+from acton_agent.agent.agent import Agent
+from acton_agent.agent.exceptions import MaxIterationsError
+from acton_agent.agent.models import Message, ToolCall
+from acton_agent.agent.retry import RetryConfig
+from acton_agent.agent.tools import FunctionTool, Tool
 
 
 class SimpleCalculatorTool(Tool):

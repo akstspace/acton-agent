@@ -2,7 +2,7 @@
 Tests for the exceptions module.
 """
 
-from toolio_agent.agent.exceptions import (
+from acton_agent.agent.exceptions import (
     AgentError,
     InvalidToolSchemaError,
     LLMCallError,

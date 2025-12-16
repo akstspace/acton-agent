@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from toolio_agent.agent.prompts import build_system_prompt, get_default_system_prompt
+from acton_agent.agent.prompts import build_system_prompt, get_default_system_prompt
 
 
 class TestBuildSystemPrompt:

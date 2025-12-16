@@ -1,3 +1,3 @@
 """
-Tests package for toolio-agent.
+Tests package for acton-agent.
 """

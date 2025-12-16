@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "toolio-agent"
+name = "acton-agent"
 version = "0.0.1"
 description = "LLM Agent Framework with tool execution capabilities"
 readme = "README.md"
@@ -51,18 +51,18 @@ streaming = [
     "jiter>=0.5.0",
 ]
 all = [
-    "toolio-agent[dev,openai,streaming]",
+    "acton-agent[dev,openai,streaming]",
 ]
 
 [project.urls]
-Homepage = "https://github.com/akshayt/toolio-agent"
-Documentation = "https://github.com/akshayt/toolio-agent#readme"
-Repository = "https://github.com/akshayt/toolio-agent"
-"Bug Tracker" = "https://github.com/akshayt/toolio-agent/issues"
+Homepage = "https://github.com/akstspace/acton-agent"
+Documentation = "https://github.com/akstspace/acton-agent#readme"
+Repository = "https://github.com/akstspace/acton-agent"
+"Bug Tracker" = "https://github.com/akstspace/acton-agent/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["toolio_agent*"]
+include = ["acton_agent*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -108,7 +108,7 @@ disallow_untyped_defs = false
 ignore_missing_imports = true
 
 [tool.coverage.run]
-source = ["toolio_agent"]
+source = ["acton_agent"]
 omit = [
     "*/tests/*",
     "*/__pycache__/*",

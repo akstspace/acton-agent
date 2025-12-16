@@ -6,7 +6,7 @@ from typing import List
 
 import pytest
 
-from toolio_agent.agent.models import Message
+from acton_agent.agent.models import Message
 
 
 class MockLLMClient:

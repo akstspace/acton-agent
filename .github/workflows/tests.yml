@@ -28,7 +28,7 @@ jobs:
           pip install -e ".[dev,openai,streaming]"
 
       - name: Run tests with pytest
-        run: pytest --cov=toolio_agent --cov-report=xml --cov-report=term
+        run: pytest --cov=acton_agent --cov-report=xml --cov-report=term
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3

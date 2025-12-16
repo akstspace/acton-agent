@@ -6,8 +6,8 @@ import json
 
 import pytest
 
-from toolio_agent.agent.exceptions import InvalidToolSchemaError, ToolNotFoundError
-from toolio_agent.agent.tools import FunctionTool, Tool, ToolRegistry
+from acton_agent.agent.exceptions import InvalidToolSchemaError, ToolNotFoundError
+from acton_agent.agent.tools import FunctionTool, Tool, ToolRegistry
 
 
 class SimpleTool(Tool):
