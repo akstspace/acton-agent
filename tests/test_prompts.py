@@ -6,7 +6,11 @@ import json
 
 import pytest
 
-from acton_agent.agent.prompts import build_system_prompt, get_default_system_prompt
+from acton_agent.agent.prompts import (
+    DEFAULT_CUSTOM_INSTRUCTIONS,
+    build_system_prompt,
+    get_default_system_prompt,
+)
 
 
 class TestBuildSystemPrompt:
@@ -75,7 +79,7 @@ class TestGetDefaultSystemPrompt:
         """Test that get_default matches build with default instructions."""
         default_prompt = get_default_system_prompt()
         built_prompt = build_system_prompt(
-            custom_instructions="You are a helpful AI agent with access to tools."
+            custom_instructions=DEFAULT_CUSTOM_INSTRUCTIONS
         )
 
         assert default_prompt == built_prompt
