@@ -19,7 +19,7 @@ class ResponseParser:
     Parse and validate LLM responses into structured response objects.
 
     Handles JSON parsing, markdown code block removal, and supports multiple
-    response types: AgentPlan, AgentStep, AgentFinalResponse, or legacy AgentResponse.
+    response types: AgentPlan, AgentStep, and AgentFinalResponse.
     """
 
     @staticmethod
