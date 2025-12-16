@@ -5,7 +5,7 @@ This module contains the core Agent class that orchestrates LLM interactions,
 tool execution, and conversation management.
 """
 
-from typing import Generator, List, Optional, Union
+from typing import Generator, List, Optional
 
 from loguru import logger
 
@@ -13,10 +13,18 @@ from .client import LLMClient
 from .exceptions import LLMCallError, MaxIterationsError, ToolExecutionError
 from .models import (
     AgentFinalResponse,
+    AgentFinalResponseEvent,
     AgentPlan,
+    AgentPlanEvent,
     AgentResponse,
     AgentStep,
+    AgentStepEvent,
+    AgentStreamEnd,
+    AgentStreamStart,
+    AgentToken,
+    AgentToolResultsEvent,
     Message,
+    StreamingEvent,
     ToolCall,
     ToolResult,
 )
@@ -339,22 +347,22 @@ class Agent:
 
     def run_stream(
         self, user_input: str
-    ) -> Generator[Union[AgentPlan, AgentStep, AgentFinalResponse, dict], None, None]:
+    ) -> Generator[StreamingEvent, None, None]:
         """
-        Stream the agent's execution for a single user input, yielding plans, steps, intermediate tool results, streaming tokens, and the final response.
+        Stream the agent's execution for a single user input, yielding structured streaming events.
         
         Parameters:
             user_input (str): The user's question or request to process.
         
         Yields:
-            AgentPlan: A multi-step plan the agent intends to follow.
-            AgentStep: A single step containing one or more tool calls to execute.
-            AgentFinalResponse: The final answer produced by the agent.
-            dict: Event or progress objects, including:
-                - {"type": "stream_start" | "stream_end"} for streaming boundaries,
-                - {"type": "token", "content": <str>} for streaming tokens,
-                - {"type": "tool_results", "results": <List[ToolResult]>} for executed tool outputs,
-                - error dictionaries when LLM or tool execution fails.
+            StreamingEvent: One of the structured streaming event models:
+                - AgentStreamStart: Emitted when LLM streaming starts.
+                - AgentToken: Individual tokens from the LLM stream.
+                - AgentStreamEnd: Emitted when LLM streaming ends.
+                - AgentToolResultsEvent: Tool execution results.
+                - AgentPlanEvent: A complete agent plan.
+                - AgentStepEvent: A complete agent step with tool calls.
+                - AgentFinalResponseEvent: The final answer from the agent.
         
         Raises:
             MaxIterationsError: If the agent exhausts max_iterations without producing a final response.
@@ -373,11 +381,11 @@ class Agent:
                 if self.stream:
                     # Streaming mode - yield tokens and accumulate response
                     llm_response_text = ""
-                    yield {"type": "stream_start"}
+                    yield AgentStreamStart()
                     for chunk in self._call_llm_with_retry_stream(messages):
                         llm_response_text += chunk
-                        yield {"type": "token", "content": chunk}
-                    yield {"type": "stream_end"}
+                        yield AgentToken(content=chunk)
+                    yield AgentStreamEnd()
                 else:
                     # Non-streaming mode
                     llm_response_text = self._call_llm_with_retry(messages)
@@ -386,7 +394,7 @@ class Agent:
                 error_response = AgentFinalResponse(
                     final_answer=f"Error: Failed to get response from LLM - {str(e.original_error)}"
                 )
-                yield error_response
+                yield AgentFinalResponseEvent(response=error_response)
                 return
 
             # Parse response (could be AgentPlan, AgentStep, AgentFinalResponse, or legacy AgentResponse)
@@ -400,13 +408,13 @@ class Agent:
             # Handle different response types
             if isinstance(agent_response, AgentPlan):
                 logger.info(f"Agent created plan with {len(agent_response.plan)} steps")
-                yield agent_response
+                yield AgentPlanEvent(plan=agent_response)
                 # Continue to next iteration - agent should follow up with AgentStep or AgentFinalResponse
                 continue
 
             elif isinstance(agent_response, AgentStep):
                 logger.info(f"Executing {len(agent_response.tool_calls)} tool call(s)")
-                yield agent_response
+                yield AgentStepEvent(step=agent_response)
 
                 # Execute tools and add results to conversation
                 tool_results = self._execute_tool_calls(agent_response.tool_calls)
@@ -417,13 +425,13 @@ class Agent:
                 )
 
                 # Yield tool results info
-                yield {"type": "tool_results", "results": tool_results}
+                yield AgentToolResultsEvent(results=tool_results)
 
                 continue
 
             elif isinstance(agent_response, AgentFinalResponse):
                 logger.success("Agent produced final answer")
-                yield agent_response
+                yield AgentFinalResponseEvent(response=agent_response)
                 return
 
             # Legacy AgentResponse handling
@@ -442,7 +450,7 @@ class Agent:
                         else None,
                         tool_calls=agent_response.tool_calls,
                     )
-                    yield step
+                    yield AgentStepEvent(step=step)
 
                     tool_results = self._execute_tool_calls(agent_response.tool_calls)
                     results_text = self._format_tool_results(tool_results)
@@ -452,7 +460,7 @@ class Agent:
                     )
 
                     # Yield tool results info
-                    yield {"type": "tool_results", "results": tool_results}
+                    yield AgentToolResultsEvent(results=tool_results)
 
                     continue
 
@@ -470,7 +478,7 @@ class Agent:
                     final_response = AgentFinalResponse(
                         thought=thought, final_answer=agent_response.final_answer
                     )
-                    yield final_response
+                    yield AgentFinalResponseEvent(response=final_response)
                     return
 
         logger.warning("Agent reached maximum iterations without final answer")
@@ -490,14 +498,11 @@ class Agent:
             MaxIterationsError: If no final answer is produced within the configured max_iterations.
         """
         final_answer = None
-        for step in self.run_stream(user_input):
-            # Skip intermediate steps and stream events
-            if isinstance(step, AgentFinalResponse):
-                final_answer = step.final_answer
+        for event in self.run_stream(user_input):
+            # Skip intermediate steps and stream events, only capture final response
+            if isinstance(event, AgentFinalResponseEvent):
+                final_answer = event.response.final_answer
                 break
-            elif isinstance(step, dict) and step.get("type") == "stream_end":
-                # For streaming mode, wait for final response after stream ends
-                continue
 
         # If we got here without a final answer, something went wrong
         if final_answer is None:

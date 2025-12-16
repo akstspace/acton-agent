@@ -168,3 +168,22 @@ def plan_response():
   ]
 }
 ```"""
+
+
+@pytest.fixture
+def mock_streaming_llm_client():
+    """Fixture factory for mock streaming LLM client."""
+
+    def _create_client(responses: List[str]):
+        """
+        Create a MockLLMClient that supports streaming.
+        
+        Parameters:
+            responses (List[str]): Ordered list of strings the mock client will return for successive calls.
+        
+        Returns:
+            MockLLMClient: A mock LLM client configured to return the provided responses in sequence.
+        """
+        return MockLLMClient(responses=responses)
+
+    return _create_client

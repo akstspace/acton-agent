@@ -191,88 +191,80 @@ def stream_with_partial_json(
     agent_run_generator: Generator,
 ) -> Generator[StreamingEvent, None, None]:
     """
-    Wrap an agent.run() generator to emit structured streaming events and partial JSON updates.
+    Wrap an agent.run_stream() generator to add partial JSON parsing capabilities.
     
-    Accumulates streaming tokens, extracts JSON embedded in streamed Markdown, and yields high-level events as the agent produces tokens and structured responses.
+    Accumulates streaming tokens, extracts JSON embedded in streamed Markdown, and yields 
+    additional AgentStepUpdate events for partial parsing alongside the original events.
     
     Parameters:
-        agent_run_generator (Generator): Generator produced by agent.run() that yields streaming steps and structured response objects.
+        agent_run_generator (Generator): Generator produced by agent.run_stream() that yields StreamingEvent objects.
     
     Yields:
-        StreamingEvent: One of the streaming event models:
-            - AgentStreamStart: emitted when a stream starts.
-            - AgentToken: emitted for each raw token.
-            - AgentStreamEnd: emitted when a stream ends.
-            - AgentStepUpdate: emitted when partial or complete JSON is parsed from the current stream; `complete` indicates whether parsing finished.
-            - AgentToolResultsEvent: emitted when tool results are produced.
-            - AgentPlanEvent: emitted for a complete AgentPlan.
-            - AgentStepEvent: emitted for a complete AgentStep.
-            - AgentFinalResponseEvent: emitted for a complete AgentFinalResponse.
+        StreamingEvent: All original streaming events plus:
+            - AgentStepUpdate: emitted when partial or complete JSON is parsed from the current stream; 
+              `complete` indicates whether parsing finished.
     """
     parser = StreamingResponseParser()
     steps_log = []
     current_step_tokens = []
     in_llm_response = False
 
-    for step in agent_run_generator:
-        # Track streaming state
-        if isinstance(step, dict):
-            if step.get("type") == "stream_start":
-                in_llm_response = True
-                parser.reset()
-                current_step_tokens = []
-                yield AgentStreamStart()
-                continue
+    for event in agent_run_generator:
+        # Track streaming state based on structured events
+        if isinstance(event, AgentStreamStart):
+            in_llm_response = True
+            parser.reset()
+            current_step_tokens = []
+            yield event
+            continue
 
-            elif step.get("type") == "token":
-                if in_llm_response:
-                    token = step["content"]
-                    current_step_tokens.append(token)
+        elif isinstance(event, AgentToken):
+            if in_llm_response:
+                token = event.content
+                current_step_tokens.append(token)
 
-                    # Try to parse partial JSON
-                    parsed = parser.push(token)
+                # Try to parse partial JSON
+                parsed = parser.push(token)
 
-                    if parsed:
-                        # We have something parseable - yield updates for any type
-                        # The parsed dict can contain fields from AgentPlan, AgentStep, or AgentFinalResponse
-                        yield AgentStepUpdate(
-                            data=parsed,
-                            complete=False,
-                            tokens=current_step_tokens.copy(),
-                        )
-
-                # Also pass through the raw token
-                yield AgentToken(content=step["content"])
-                continue
-
-            elif step.get("type") == "stream_end":
-                in_llm_response = False
-                # Get final parsed state
-                final_parsed = parser.get_current()
-                if final_parsed:
+                if parsed:
+                    # We have something parseable - yield updates for any type
+                    # The parsed dict can contain fields from AgentPlan, AgentStep, or AgentFinalResponse
                     yield AgentStepUpdate(
-                        data=final_parsed, complete=True, tokens=current_step_tokens
+                        data=parsed,
+                        complete=False,
+                        tokens=current_step_tokens.copy(),
                     )
 
-                yield AgentStreamEnd()
-                continue
+            # Also pass through the raw token
+            yield event
+            continue
 
-            elif step.get("type") == "tool_results":
-                steps_log.append({"type": "tool_results", "data": step["results"]})
-                yield AgentToolResultsEvent(results=step["results"])
-                continue
+        elif isinstance(event, AgentStreamEnd):
+            in_llm_response = False
+            # Get final parsed state
+            final_parsed = parser.get_current()
+            if final_parsed:
+                yield AgentStepUpdate(
+                    data=final_parsed, complete=True, tokens=current_step_tokens
+                )
 
-        # Handle structured responses
-        from .models import AgentFinalResponse, AgentPlan, AgentStep
+            yield event
+            continue
 
-        if isinstance(step, AgentPlan):
-            steps_log.append({"type": "plan", "data": step})
-            yield AgentPlanEvent(plan=step)
+        elif isinstance(event, AgentToolResultsEvent):
+            steps_log.append({"type": "tool_results", "data": event.results})
+            yield event
+            continue
 
-        elif isinstance(step, AgentStep):
-            steps_log.append({"type": "step", "data": step})
-            yield AgentStepEvent(step=step)
+        # Handle structured responses - pass through and log
+        elif isinstance(event, AgentPlanEvent):
+            steps_log.append({"type": "plan", "data": event.plan})
+            yield event
 
-        elif isinstance(step, AgentFinalResponse):
-            steps_log.append({"type": "final", "data": step})
-            yield AgentFinalResponseEvent(response=step)
+        elif isinstance(event, AgentStepEvent):
+            steps_log.append({"type": "step", "data": event.step})
+            yield event
+
+        elif isinstance(event, AgentFinalResponseEvent):
+            steps_log.append({"type": "final", "data": event.response})
+            yield event
