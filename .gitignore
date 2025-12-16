@@ -217,4 +217,6 @@ __marimo__/
 
 .venv/
 .DS_Store
-dist/\nbuild/\n*.egg-info/
+dist/
+build/
+*.egg-info/
