@@ -52,6 +52,8 @@ class RequestsTool(Tool):
         query_params_schema: Optional[Dict[str, Any]] = None,
         body_schema: Optional[Dict[str, Any]] = None,
         path_params: Optional[List[str]] = None,
+        path_params_schema: Optional[Dict[str, Any]] = None,
+        header_params_schema: Optional[Dict[str, Any]] = None,
         timeout: int = 30,
         auth: Optional[tuple] = None,
     ):
@@ -67,6 +69,8 @@ class RequestsTool(Tool):
             query_params_schema: JSON Schema describing supported query parameters.
             body_schema: JSON Schema describing the request body structure for methods that send a body.
             path_params: List of path parameter names. If None, automatically extracted from url_template.
+            path_params_schema: JSON Schema describing path parameters (name -> schema mapping).
+            header_params_schema: JSON Schema describing header parameters (name -> schema mapping).
             timeout: Request timeout in seconds.
             auth: Optional (username, password) tuple for basic authentication.
         """
@@ -76,6 +80,8 @@ class RequestsTool(Tool):
         self.headers = headers or {}
         self.query_params_schema = query_params_schema or {}
         self.body_schema = body_schema or {}
+        self.path_params_schema = path_params_schema or {}
+        self.header_params_schema = header_params_schema or {}
 
         # Auto-extract route/path parameters from URL template if not provided
         if path_params is None:
@@ -92,7 +98,7 @@ class RequestsTool(Tool):
         Execute the configured HTTP request using the provided parameters and return the response body.
 
         Parameters:
-            parameters (Dict[str, Any]): Mapping of parameter names to values. Values matching configured route/path parameters are substituted into the URL template; values matching the query parameters schema are sent as query string parameters; values matching the body schema's properties are sent as a JSON body for POST/PUT/PATCH requests.
+            parameters (Dict[str, Any]): Mapping of parameter names to values. Values matching configured route/path parameters are substituted into the URL template; values matching the query parameters schema are sent as query string parameters; values matching header parameters schema are sent as headers; values matching the body schema's properties are sent as a JSON body for POST/PUT/PATCH requests.
 
         Returns:
             str: Pretty-printed JSON string if the response is JSON, otherwise the raw response text.
@@ -111,8 +117,9 @@ class RequestsTool(Tool):
             if path_params:
                 url = url.format(**path_params)
 
-            # Separate query params and body data
+            # Separate query params, header params, and body data
             query_params = {}
+            header_params = {}
             body_data = {}
 
             for key, value in parameters.items():
@@ -120,12 +127,19 @@ class RequestsTool(Tool):
                     continue  # Already used for URL
                 elif key in self.query_params_schema:
                     query_params[key] = value
+                elif key in self.header_params_schema:
+                    header_params[key] = value
                 elif key in self.body_schema.get("properties", {}):
                     body_data[key] = value
+
+            # Merge headers: base headers + dynamic header parameters
+            request_headers = self.headers.copy()
+            request_headers.update(header_params)
 
             # Make the request
             logger.debug(f"Making {self.method} request to {url}")
             logger.debug(f"Query params: {query_params}")
+            logger.debug(f"Header params: {header_params}")
             logger.debug(f"Body data: {body_data}")
 
             response = requests.request(
@@ -135,7 +149,7 @@ class RequestsTool(Tool):
                 json=body_data
                 if body_data and self.method in ["POST", "PUT", "PATCH"]
                 else None,
-                headers=self.headers,
+                headers=request_headers,
                 auth=self.auth,
                 timeout=self.timeout,
             )
@@ -160,9 +174,9 @@ class RequestsTool(Tool):
 
     def get_schema(self) -> Dict[str, Any]:
         """
-        Builds a combined JSON Schema describing the tool's route/path, query, and body parameters.
+        Builds a combined JSON Schema describing the tool's route/path, query, header, and body parameters.
 
-        Route parameters are added as string properties and marked required. If a query parameter schema includes `"required": True`, that name is added to the top-level required list and the flag is removed from the individual schema. Body schema properties and any body-level required list are merged into the resulting properties and required list.
+        Route parameters are added as string properties and marked required. If a query or header parameter schema includes `"required": True`, that name is added to the top-level required list and the flag is removed from the individual schema. Body schema properties and any body-level required list are merged into the resulting properties and required list.
 
         Returns:
             dict: JSON Schema object with "type": "object", "properties" mapping parameter names to their schemas, and a "required" list of parameter names (empty list if none).
@@ -172,14 +186,27 @@ class RequestsTool(Tool):
 
         # Add route/path parameters
         for param in self.path_params:
-            properties[param] = {
-                "type": "string",
-                "description": f"Route parameter: {param}",
-            }
+            if param in self.path_params_schema:
+                # Use schema if available
+                properties[param] = self.path_params_schema[param].copy()
+            else:
+                # Fallback to default
+                properties[param] = {
+                    "type": "string",
+                    "description": f"Route parameter: {param}",
+                }
             required.append(param)
 
         # Add query parameters
         for param_name, param_schema in self.query_params_schema.items():
+            properties[param_name] = param_schema.copy()
+            if param_schema.get("required", False):
+                required.append(param_name)
+                # Remove 'required' from individual param schema
+                properties[param_name].pop("required", None)
+
+        # Add header parameters
+        for param_name, param_schema in self.header_params_schema.items():
             properties[param_name] = param_schema.copy()
             if param_schema.get("required", False):
                 required.append(param_name)

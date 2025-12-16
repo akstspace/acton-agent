@@ -14,6 +14,12 @@ from loguru import logger
 
 from .requests_tool import RequestsTool
 
+# Try to import yaml, but don't fail if it's not available
+try:
+    import yaml
+except ImportError:
+    yaml = None
+
 
 def create_tools_from_openapi(
     spec: Union[str, Dict[str, Any]],
@@ -122,14 +128,11 @@ class OpenAPIToolGenerator:
             return json.loads(content)
         except json.JSONDecodeError:
             # Try YAML
-            try:
-                import yaml
-
-                return yaml.safe_load(content)
-            except ImportError:
+            if yaml is None:
                 raise ValueError(
                     "PyYAML is required to load YAML specs. Install with: pip install pyyaml"
                 )
+            return yaml.safe_load(content)
 
     def _get_security_headers(self, operation: Dict[str, Any]) -> Dict[str, str]:
         """
@@ -316,6 +319,7 @@ class OpenAPIToolGenerator:
 
             # Extract path, query, and header parameters
             path_param_names = []
+            path_params_schema = {}
             query_params = {}
             header_params = {}
 
@@ -352,6 +356,7 @@ class OpenAPIToolGenerator:
 
                 if param_in == "path":
                     path_param_names.append(param_name)
+                    path_params_schema[param_name] = param_def
                 elif param_in == "query":
                     query_params[param_name] = param_def
                 elif param_in == "header":
@@ -397,10 +402,6 @@ class OpenAPIToolGenerator:
                     schema = content[first_content_type].get("schema", {})
                     body_schema = self._convert_openapi_schema(schema)
 
-                # Mark body as required if specified
-                if body_schema and request_body.get("required", False):
-                    body_schema["required"] = True
-
             # Create the RequestsTool
             return RequestsTool(
                 name=name,
@@ -409,7 +410,9 @@ class OpenAPIToolGenerator:
                 url_template=url_template,
                 headers=tool_headers,
                 path_params=path_param_names if path_param_names else None,
+                path_params_schema=path_params_schema if path_params_schema else None,
                 query_params_schema=query_params if query_params else None,
+                header_params_schema=header_params if header_params else None,
                 body_schema=body_schema,
             )
 
@@ -437,7 +440,7 @@ class OpenAPIToolGenerator:
         }
         return type_map.get(openapi_type, "string")
 
-    def _convert_openapi_schema(self, schema: Dict[str, Any]) -> Dict[str, Any]:
+    def _convert_openapi_schema(self, schema: Dict[str, Any], visited_refs: Optional[set] = None) -> Dict[str, Any]:
         """
         Convert an OpenAPI schema fragment into a JSON Schema-like dictionary suitable for RequestsTool.
 
@@ -445,18 +448,33 @@ class OpenAPIToolGenerator:
 
         Parameters:
             schema (Dict[str, Any]): An OpenAPI schema object (may contain `$ref`, `properties`, `allOf`, `oneOf`, `anyOf`, etc.).
+            visited_refs (Optional[set]): Set of already visited $ref paths to detect circular references.
 
         Returns:
             Dict[str, Any]: A JSON Schema-like representation of the input schema. Returns an empty dict if `schema` is falsy.
         """
+        if visited_refs is None:
+            visited_refs = set()
+            
         if not schema:
             return {}
 
         # Handle $ref - resolve references
         if "$ref" in schema:
-            resolved = self._resolve_ref(schema["$ref"])
+            ref = schema["$ref"]
+            # Detect circular reference
+            if ref in visited_refs:
+                logger.debug(f"Circular reference detected: {ref}")
+                return {"type": "object", "description": f"Circular reference to {ref}"}
+            
+            resolved = self._resolve_ref(ref)
             if resolved:
-                return self._convert_openapi_schema(resolved)
+                # Add to visited set before recursing
+                visited_refs.add(ref)
+                result = self._convert_openapi_schema(resolved, visited_refs)
+                # Remove from visited set after recursing
+                visited_refs.discard(ref)
+                return result
             # Fallback if resolution fails
             return {"type": "object"}
 
@@ -465,7 +483,7 @@ class OpenAPIToolGenerator:
             # Merge all schemas (simplified)
             merged = {"type": "object", "properties": {}}
             for sub_schema in schema["allOf"]:
-                converted = self._convert_openapi_schema(sub_schema)
+                converted = self._convert_openapi_schema(sub_schema, visited_refs)
                 if "properties" in converted:
                     merged["properties"].update(converted["properties"])
                 if "required" in converted:
@@ -476,7 +494,7 @@ class OpenAPIToolGenerator:
             # Use first schema as a reasonable default
             options = schema.get("oneOf", schema.get("anyOf", []))
             if options:
-                return self._convert_openapi_schema(options[0])
+                return self._convert_openapi_schema(options[0], visited_refs)
 
         result = {"type": schema.get("type", "object")}
 
@@ -505,19 +523,19 @@ class OpenAPIToolGenerator:
 
                 # Handle nested objects
                 if prop_schema.get("type") == "object" and "properties" in prop_schema:
-                    prop_converted = self._convert_openapi_schema(prop_schema)
+                    prop_converted = self._convert_openapi_schema(prop_schema, visited_refs)
 
                 # Handle arrays
                 if prop_schema.get("type") == "array":
                     prop_converted["type"] = "array"
                     if "items" in prop_schema:
                         prop_converted["items"] = self._convert_openapi_schema(
-                            prop_schema["items"]
+                            prop_schema["items"], visited_refs
                         )
 
                 # Handle $ref in properties
                 if "$ref" in prop_schema:
-                    prop_converted = self._convert_openapi_schema(prop_schema)
+                    prop_converted = self._convert_openapi_schema(prop_schema, visited_refs)
 
                 result["properties"][prop_name] = prop_converted
 
