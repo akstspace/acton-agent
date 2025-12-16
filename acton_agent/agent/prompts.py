@@ -121,14 +121,14 @@ def build_system_prompt(
     custom_instructions: str = None, final_answer_format_instructions: str = None
 ) -> str:
     """
-    Construct the system prompt used by the Agent, embedding response format instructions, examples, critical rules, and the JSON schemas for response types.
-
+    Builds the complete system prompt for the Agent, injecting response-format instructions, examples, critical rules, and the JSON schemas for response types.
+    
     Parameters:
-        custom_instructions (str | None): Optional text to place at the top of the prompt; if omitted a default instruction ("You are a helpful AI agent with access to tools.") is used.
-        final_answer_format_instructions (str | None): Optional formatting instructions for final answers. If provided, these will be included in the system prompt.
-
+        custom_instructions (str | None): Optional top-level instruction text to place at the start of the prompt; when omitted the module's DEFAULT_CUSTOM_INSTRUCTIONS is used.
+        final_answer_format_instructions (str | None): Optional final-answer formatting instructions to append (separated by a divider) if provided.
+    
     Returns:
-        system_prompt (str): The complete system prompt text with injected, pretty-printed JSON schemas for AgentPlan, AgentStep, and AgentFinalResponse.
+        str: The assembled system prompt containing the top instructions, a response-format section with pretty-printed JSON schemas for AgentPlan, AgentStep, and AgentFinalResponse, and optional final-answer formatting instructions.
     """
     # Get JSON schemas for the response types
     plan_schema = json.dumps(AgentPlan.model_json_schema(), indent=2)

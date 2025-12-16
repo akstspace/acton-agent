@@ -14,6 +14,15 @@ from acton_agent.tools import RequestsTool
 
 def main():
     # Initialize the OpenAI client
+    """
+    Run an interactive command-line demo that showcases real-time streaming responses from an agent.
+    
+    This function reads OPENAI_API_KEY from the environment and, if present, creates an OpenAI client and a streaming Agent, registers a sample HTTP RequestsTool, and runs three interactive examples:
+    1) a simple streaming story,
+    2) a streaming request that demonstrates tool usage and shows tool-related status events,
+    3) multiple short queries streamed sequentially.
+    The demo prints agent tokens and status messages to stdout and pauses for user input between examples. If OPENAI_API_KEY is not set, the function prints an error and returns early.
+    """
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         print("Error: Please set OPENAI_API_KEY environment variable")

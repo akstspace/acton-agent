@@ -15,31 +15,29 @@ class SimpleTool(Tool):
 
     def __init__(self):
         """
-        Initialize the SimpleTool with its default name and description.
-
-        Sets the tool's name to "simple" and its description to "A simple test tool".
+        Create a SimpleTool with the name "simple" and the description "A simple test tool".
         """
         super().__init__(name="simple", description="A simple test tool")
 
     def execute(self, parameters: dict) -> str:
         """
-        Run the tool with the provided parameters.
-
+        Return a formatted result using the "value" entry from parameters.
+        
         Parameters:
-            parameters (dict): Input parameters; the key "value" (optional) is used as the output value and defaults to "default" if absent.
-
+            parameters (dict): Mapping that may contain the key "value"; when absent, "default" is used.
+        
         Returns:
-            Formatted result string in the form "Result: {value}" where {value} is the resolved parameter.
+            str: The string "Result: {value}" where {value} is the resolved parameter.
         """
         value = parameters.get("value", "default")
         return f"Result: {value}"
 
     def get_schema(self) -> dict:
         """
-        Return the JSON Schema describing this tool's expected input.
-
+        JSON Schema describing this tool's expected input.
+        
         Returns:
-            dict: A JSON Schema object with "type": "object" and a "value" property (type "string") that includes a description.
+            dict: JSON Schema with "type": "object" and a "properties" mapping that includes a "value" property of type "string" with description "Input value".
         """
         return {
             "type": "object",
@@ -167,10 +165,10 @@ class TestFunctionTool:
 
         def add(a: int, b: int) -> int:
             """
-            Compute the sum of two integers.
-
+            Return the sum of two integers.
+            
             Returns:
-                The sum of `a` and `b` as an int.
+                int: The sum of `a` and `b`.
             """
             return a + b
 
@@ -193,9 +191,9 @@ class TestFunctionTool:
         def multiply(a: int, b: int) -> int:
             """
             Multiply two integers.
-
+            
             Returns:
-                int: Product of the two input integers.
+                int: The product of a and b.
             """
             return a * b
 
@@ -220,12 +218,9 @@ class TestFunctionTool:
         def greet(name: str) -> str:
             """
             Create a greeting for the given person.
-
-            Parameters:
-                name (str): Recipient's name.
-
+            
             Returns:
-                str: Greeting in the form "Hello, {name}!".
+                Greeting string in the form "Hello, {name}!".
             """
             return f"Hello, {name}!"
 
@@ -243,15 +238,13 @@ class TestFunctionTool:
 
         def get_info(id: int) -> dict:
             """
-            Return information for the given identifier.
-
+            Return a dictionary with the provided identifier and a status of "active".
+            
             Parameters:
-                id (int): Identifier to retrieve information for.
-
+                id (int): Identifier to include in the returned dictionary.
+            
             Returns:
-                info (dict): Dictionary with keys:
-                    - "id": the provided identifier (int)
-                    - "status": the string "active"
+                info (dict): Dictionary with keys "id" (int) and "status" (str) set to "active".
             """
             return {"id": id, "status": "active"}
 
@@ -275,9 +268,7 @@ class TestFunctionTool:
 
         def dummy():
             """
-            No-op placeholder function.
-
-            This function intentionally performs no action and returns None.
+            No-op placeholder used where a callable is required.
             """
             pass
 
@@ -290,13 +281,15 @@ class TestFunctionTool:
             )
 
     def test_invalid_schema_no_type(self):
-        """Test that schema without type raises error."""
+        """
+        Ensure creating a FunctionTool with a schema that lacks a top-level "type" field raises InvalidToolSchemaError.
+        
+        Constructs a dummy function and attempts to create a FunctionTool with a schema containing only "properties", asserting that InvalidToolSchemaError is raised.
+        """
 
         def dummy():
             """
-            No-op placeholder function.
-
-            This function intentionally performs no action and returns None.
+            No-op placeholder used where a callable is required.
             """
             pass
 
@@ -313,9 +306,7 @@ class TestFunctionTool:
 
         def dummy():
             """
-            No-op placeholder function.
-
-            This function intentionally performs no action and returns None.
+            No-op placeholder used where a callable is required.
             """
             pass
 

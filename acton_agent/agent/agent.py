@@ -70,16 +70,16 @@ class Agent:
         timezone: str = "UTC",
     ):
         """
-        Create an Agent configured to orchestrate LLM calls, tool execution, and conversation state.
-
+        Initialize an Agent for orchestrating LLM interactions, tool execution, retries, and conversation state.
+        
         Parameters:
-            llm_client (LLMClient): The LLM client used for generating responses.
-            system_prompt (Optional[str]): Optional custom instructions that are embedded into the agent's system prompt.
-            max_iterations (int): Maximum number of reasoning iterations the agent will perform before raising an error.
-            retry_config (Optional[RetryConfig]): Retry behavior for LLM and tool calls; a default RetryConfig is created when omitted.
-            stream (bool): If true, enables streaming responses from the LLM (tokens yielded as they arrive).
-            final_answer_format_instructions (Optional[str]): Optional instructions for formatting the final answer. If not provided, uses default markdown formatting instructions.
-            timezone (str): Timezone for displaying current date/time (e.g., 'UTC', 'America/New_York', 'Europe/London'). Defaults to 'UTC'.
+            llm_client (LLMClient): LLM client used for all model calls.
+            system_prompt (Optional[str]): Custom system instructions to include in the agent's system prompt.
+            max_iterations (int): Maximum reasoning iterations before the agent raises a MaxIterationsError.
+            retry_config (Optional[RetryConfig]): Retry configuration for LLM and tool calls; a default is created when omitted.
+            stream (bool): Enable streaming LLM responses (tokens yielded as they arrive) when True.
+            final_answer_format_instructions (Optional[str]): Instructions controlling final-answer formatting; defaults to the module's standard format when omitted.
+            timezone (str): Timezone name used when inserting the current date/time into system messages (e.g., "UTC", "America/New_York"); defaults to "UTC".
         """
         self.llm_client = llm_client
         self.custom_instructions = system_prompt  # Store custom instructions separately
@@ -102,10 +102,10 @@ class Agent:
 
     def register_tool(self, tool: Tool) -> None:
         """
-        Register a Tool with the agent, making it available for use in tool calls.
-
+        Register a tool in the agent's tool registry so it can be invoked in future tool calls.
+        
         Parameters:
-            tool (Tool): The tool instance to register with the agent's tool registry.
+            tool (Tool): The tool instance to add to the agent's registry.
         """
         self.tool_registry.register(tool)
 
@@ -132,12 +132,12 @@ class Agent:
 
     def _build_messages(self) -> List[Message]:
         """
-        Compose the sequence of messages to send to the LLM.
-
-        Creates a system message that contains the agent's system prompt followed by the tool registry formatted for inclusion in prompts, then appends the current conversation history in order.
-
+        Build the ordered message list to send to the LLM.
+        
+        The first message is a system message containing the agent's system prompt, the current date and time in the agent's configured timezone (falls back to UTC on error), and the tool registry formatted for inclusion in prompts. The remaining messages are the current conversation history in chronological order.
+        
         Returns:
-            messages (List[Message]): Ordered list of Message objects starting with the system message and followed by the conversation history.
+            messages (List[Message]): Ordered list of Message objects starting with the system message followed by the conversation history.
         """
         # Get current date and time in the specified timezone
         try:
@@ -162,15 +162,15 @@ class Agent:
 
     def _execute_single_tool(self, tool: Tool, parameters: dict) -> str:
         """
-        Execute the given tool with configured retry behavior and return its result.
-
+        Execute a Tool using the agent's configured retry policy and return the tool's result.
+        
         Parameters:
-            tool (Tool): The tool to invoke.
-            parameters (dict): Parameters to pass to the tool's `execute` method.
-
+            tool (Tool): Tool to invoke.
+            parameters (dict): Arguments to pass to the tool's `execute` method.
+        
         Returns:
-            result_text (str): The tool's execution result.
-
+            result_text (str): The text returned by the tool's execution.
+        
         Raises:
             ToolExecutionError: If the tool fails after the configured retry attempts; wraps the original exception.
         """
@@ -178,9 +178,9 @@ class Agent:
         def _execute():
             """
             Invoke the current tool with the provided parameters and return its execution result.
-
+            
             Returns:
-                The value returned by the tool's `execute` method.
+                The tool's execution result string.
             """
             logger.debug(f"Executing tool: {tool.name} with parameters: {parameters}")
             result = tool.execute(parameters)
@@ -264,13 +264,15 @@ class Agent:
 
     def _format_tool_results(self, results: List[ToolResult]) -> str:
         """
-        Create a human-readable string representation of multiple tool execution results for appending to conversation history.
-
+        Format multiple tool execution results into a readable multi-line string suitable for appending to conversation history.
+        
+        Each entry includes the tool name, call ID, and either "Success: <result>" or "Error: <error>".
+        
         Parameters:
-            results (List[ToolResult]): Tool execution outcomes to format; each entry's `tool_name`, `tool_call_id`, and either `result` (on success) or `error` (on failure) are included.
-
+            results (List[ToolResult]): Sequence of tool results to format.
+        
         Returns:
-            str: Multi-line string that lists each tool's name and call ID, followed by either "Success: <result>" or "Error: <error>" for that call.
+            str: Multi-line string summarizing each tool call and its outcome.
         """
         results_text = "Tool Results:\n"
         for result in results:
@@ -321,28 +323,28 @@ class Agent:
         self, messages: List[Message]
     ) -> Generator[str, None, str]:
         """
-        Stream tokens from the LLM for the provided message sequence.
-
-        Yields token chunks as they arrive from the LLM. The generator's final return value (accessible via StopIteration.value) is the complete accumulated response string.
-
+        Stream token chunks from the configured LLM for the given message sequence.
+        
+        Yields each text chunk as it becomes available; when the generator completes, its return value (accessible as StopIteration.value) is the full concatenated response.
+        
         Returns:
-            The complete accumulated response string produced by the LLM.
-
+            final_text (str): The complete response text produced by the LLM.
+        
         Raises:
-            AttributeError: If the LLM client does not implement `call_stream()`.
-            LLMCallError: If the streaming call fails after retry handling.
+            AttributeError: If the configured LLM client does not implement `call_stream`.
+            LLMCallError: If the streaming call fails.
         """
 
         def _call_stream():
             """
-            Stream tokens from the LLM client and yield each received chunk.
-
+            Yield token chunks produced by the LLM client's streaming interface and return the concatenated final text.
+            
             Yields:
                 str: Each chunk of text produced by the LLM as it becomes available.
-
+            
             Returns:
-                final_text (str): The full concatenated text of all yielded chunks when the stream completes.
-
+                final_text (str): Concatenation of all yielded chunks when the stream completes.
+            
             Raises:
                 AttributeError: If the configured LLM client does not implement a `call_stream` method.
             """
@@ -493,19 +495,16 @@ class Agent:
 
     def get_conversation_history(self) -> List[Message]:
         """
-        Return a copy of the agent's conversation history.
-
+        Retrieve a shallow copy of the agent's conversation history.
+        
         Returns:
-            List[Message]: A copy of the conversation history as a list of Message objects.
+            List[Message]: A shallow copy of the conversation history as a list of Message objects in chronological order.
         """
         return self.conversation_history.copy()
 
     def set_system_prompt(self, prompt: str) -> None:
         """
-        Update the agent's custom instruction portion and rebuild the full system prompt.
-
-        Parameters:
-            prompt (str): New custom instructions to embed into the agent's system prompt.
+        Update the agent's custom instructions and rebuild the system prompt using the current final-answer format instructions.
         """
         self.custom_instructions = prompt
         self.system_prompt = build_system_prompt(
@@ -528,10 +527,13 @@ class Agent:
 
     def set_timezone(self, timezone: str) -> None:
         """
-        Update the agent's timezone for date/time display.
-
+        Update the agent's timezone used when rendering current date/time in system messages.
+        
         Parameters:
-            timezone (str): Timezone name (e.g., 'UTC', 'America/New_York', 'Europe/London').
+            timezone (str): IANA timezone name (e.g., "UTC", "America/New_York", "Europe/London").
+        
+        Raises:
+            ValueError: If the provided timezone name is not valid.
         """
         # Validate timezone
         try:
@@ -544,10 +546,10 @@ class Agent:
 
     def __repr__(self) -> str:
         """
-        Return a compact string summarizing the agent's tool count, conversation history length, and max iterations.
-
+        Compactly summarize the agent's registered tools, conversation history length, and configured maximum iterations.
+        
         Returns:
-            str: A representation like "Agent(tools=<n>, history=<m>, max_iterations=<k>)" where `<n>` is the number of registered tools, `<m>` is the number of messages in conversation history, and `<k>` is the configured maximum iterations.
+            str: Representation in the form `Agent(tools=<n>, history=<m>, max_iterations=<k>)` where `<n>` is the number of registered tools, `<m>` is the number of messages in the conversation history, and `<k>` is the configured maximum iterations.
         """
         return (
             f"Agent(tools={len(self.tool_registry)}, "
