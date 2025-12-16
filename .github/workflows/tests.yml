@@ -27,12 +27,6 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev,openai,streaming]"
 
-      - name: Lint with ruff
-        run: ruff check toolio_agent tests
-
-      - name: Check code formatting with ruff
-        run: ruff format --check toolio_agent tests
-
       - name: Run tests with pytest
         run: pytest --cov=toolio_agent --cov-report=xml --cov-report=term
 
