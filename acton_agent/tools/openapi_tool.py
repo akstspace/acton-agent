@@ -465,7 +465,10 @@ class OpenAPIToolGenerator:
             # Check for circular reference
             if ref in visited:
                 # Break the cycle by returning a simple object type
-                return {"type": "object", "description": "Circular reference"}
+                return {
+                    "type": "object",
+                    "description": f"Circular reference to {ref}",
+                }
             
             # Add to visited set
             visited.add(ref)
