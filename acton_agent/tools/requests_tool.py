@@ -6,6 +6,7 @@ to APIs based on OpenAPI-like specifications.
 """
 
 import json
+import re
 from typing import Any, Dict, List, Literal, Optional
 
 import requests
@@ -56,16 +57,16 @@ class RequestsTool(Tool):
     ):
         """
         Configure a RequestsTool for making HTTP API calls to a templated endpoint.
-        
+
         Parameters:
             name: Unique tool identifier.
             description: Human-readable description of the API.
             method: HTTP method to use (GET, POST, PUT, DELETE, PATCH).
-            url_template: URL template that may include `{param}` placeholders for path parameters.
+            url_template: URL template that may include `{param}` placeholders for route/path parameters.
             headers: Default headers to include with every request.
             query_params_schema: JSON Schema describing supported query parameters.
             body_schema: JSON Schema describing the request body structure for methods that send a body.
-            path_params: List of path parameter names that correspond to placeholders in `url_template`.
+            path_params: List of path parameter names. If None, automatically extracted from url_template.
             timeout: Request timeout in seconds.
             auth: Optional (username, password) tuple for basic authentication.
         """
@@ -75,25 +76,32 @@ class RequestsTool(Tool):
         self.headers = headers or {}
         self.query_params_schema = query_params_schema or {}
         self.body_schema = body_schema or {}
-        self.path_params = path_params or []
+
+        # Auto-extract route/path parameters from URL template if not provided
+        if path_params is None:
+            # Find all {parameter_name} patterns in the URL template
+            self.path_params = re.findall(r'\{([^}]+)\}', url_template)
+        else:
+            self.path_params = path_params
+
         self.timeout = timeout
         self.auth = auth
 
     def execute(self, parameters: Dict[str, Any]) -> str:
         """
         Execute the configured HTTP request using the provided parameters and return the response body.
-        
+
         Parameters:
-            parameters (Dict[str, Any]): Mapping of parameter names to values. Values matching configured path parameters are substituted into the URL template; values matching the query parameters schema are sent as query string parameters; values matching the body schema's properties are sent as a JSON body for POST/PUT/PATCH requests.
-        
+            parameters (Dict[str, Any]): Mapping of parameter names to values. Values matching configured route/path parameters are substituted into the URL template; values matching the query parameters schema are sent as query string parameters; values matching the body schema's properties are sent as a JSON body for POST/PUT/PATCH requests.
+
         Returns:
             str: Pretty-printed JSON string if the response is JSON, otherwise the raw response text.
-        
+
         Raises:
             ToolExecutionError: If the HTTP request fails or an unexpected error occurs while executing the request.
         """
         try:
-            # Build the URL with path parameters
+            # Build the URL with route/path parameters
             url = self.url_template
             path_params = {}
             for param in self.path_params:
@@ -152,21 +160,21 @@ class RequestsTool(Tool):
 
     def get_schema(self) -> Dict[str, Any]:
         """
-        Builds a combined JSON Schema describing the tool's path, query, and body parameters.
-        
-        Path parameters are added as string properties and marked required. If a query parameter schema includes `"required": True`, that name is added to the top-level required list and the flag is removed from the individual schema. Body schema properties and any body-level required list are merged into the resulting properties and required list.
-        
+        Builds a combined JSON Schema describing the tool's route/path, query, and body parameters.
+
+        Route parameters are added as string properties and marked required. If a query parameter schema includes `"required": True`, that name is added to the top-level required list and the flag is removed from the individual schema. Body schema properties and any body-level required list are merged into the resulting properties and required list.
+
         Returns:
             dict: JSON Schema object with "type": "object", "properties" mapping parameter names to their schemas, and a "required" list of parameter names (empty list if none).
         """
         properties = {}
         required = []
 
-        # Add path parameters
+        # Add route/path parameters
         for param in self.path_params:
             properties[param] = {
                 "type": "string",
-                "description": f"Path parameter: {param}",
+                "description": f"Route parameter: {param}",
             }
             required.append(param)
 
@@ -205,7 +213,7 @@ def create_api_tool(
 ) -> RequestsTool:
     """
     Create a configured RequestsTool for a single API endpoint.
-    
+
     Parameters:
         name: Tool identifier shown in tooling UIs.
         description: Short human-readable description of the tool's purpose.
@@ -214,7 +222,7 @@ def create_api_tool(
         headers: Default request headers to include.
         parameters: JSON Schema describing query parameters.
         body_schema: JSON Schema describing the request body.
-    
+
     Returns:
         A RequestsTool instance configured with the provided endpoint, method, headers, query parameters schema, and body schema.
     """

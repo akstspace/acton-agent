@@ -19,11 +19,6 @@ For OpenAI integration:
 pip install acton-agent[openai]
 ```
 
-For streaming support:
-```bash
-pip install acton-agent[streaming]
-```
-
 For development (includes testing and linting tools):
 ```bash
 pip install acton-agent[dev]
@@ -191,19 +186,19 @@ from acton_agent.agent import Tool
 
 class WeatherTool(Tool):
     """Custom tool for getting weather information."""
-    
+
     def __init__(self):
         super().__init__(
             name="get_weather",
             description="Get current weather for a city"
         )
-    
+
     def execute(self, parameters: dict) -> str:
         """Execute the tool with the given parameters."""
         city = parameters.get("city", "Unknown")
         # In a real implementation, you would call a weather API here
         return f"The weather in {city} is sunny and 72°F"
-    
+
     def get_schema(self) -> dict:
         """Return the JSON schema for the tool parameters."""
         return {
@@ -223,141 +218,60 @@ agent.register_tool(weather_tool)
 result = agent.run("What's the weather in San Francisco?")
 ```
 
-## API Reference
+### Example 3: Streaming Responses
 
-### Core Classes
+You can stream responses from the agent in real-time:
 
-#### `Agent`
+```python
+from acton_agent import Agent
+from acton_agent.client import OpenAIClient
+from acton_agent.tools import RequestsTool
 
-The main agent class that orchestrates LLM interactions and tool execution.
+# Initialize the client
+client = OpenAIClient(
+    api_key="your-openai-api-key",
+    model="gpt-4o"
+)
 
-**Constructor Parameters:**
-- `llm_client` (LLMClient): The LLM client for generating responses
-- `system_prompt` (Optional[str]): Custom instructions for the agent
-- `max_iterations` (int): Maximum reasoning iterations (default: 10)
-- `retry_config` (Optional[RetryConfig]): Retry configuration for LLM/tool calls
-- `stream` (bool): Enable streaming responses (default: False)
+# Create an agent with streaming enabled
+agent = Agent(
+    llm_client=client,
+    system_prompt="You are a helpful assistant.",
+    stream=True
+)
 
-**Key Methods:**
-- `register_tool(tool: Tool)`: Register a tool with the agent
-- `unregister_tool(tool_name: str)`: Remove a tool by name
-- `run(query: str, **kwargs)`: Execute the agent with a query
-- `run_stream(query: str, **kwargs)`: Execute with streaming (yields events)
-- `reset()`: Clear conversation history
+# Add a tool (optional)
+posts_tool = RequestsTool(
+    name="get_posts",
+    description="Fetch posts from JSONPlaceholder API",
+    method="GET",
+    url_template="https://jsonplaceholder.typicode.com/posts"
+)
+agent.register_tool(posts_tool)
 
-#### `Tool` (Abstract Base Class)
+# Stream the response
+for event in agent.run_stream("Tell me about post number 1"):
+    if event.get("type") == "content":
+        print(event.get("data"), end="", flush=True)
+    elif event.get("type") == "tool_call":
+        print(f"\n[Calling tool: {event.get('tool_name')}]\n")
+    elif event.get("type") == "tool_result":
+        print(f"\n[Tool result received]\n")
+print()  # Final newline
+```
 
-Base class for all tools.
+## More Examples
 
-**Constructor Parameters:**
-- `name` (str): Unique identifier for the tool
-- `description` (str): Human-readable description
+For complete, runnable examples, check out the [examples](examples/) directory:
 
-**Abstract Methods:**
-- `execute(parameters: Dict[str, Any]) -> str`: Execute the tool
-- `get_schema() -> Dict[str, Any]`: Return JSON schema for parameters
+- [examples/requests_tool_example.py](examples/requests_tool_example.py) - API integration with RequestsTool
+- [examples/function_tool_example.py](examples/function_tool_example.py) - Custom Python function tools
+- [examples/streaming_example.py](examples/streaming_example.py) - Real-time streaming responses
+- [examples/custom_tool_example.py](examples/custom_tool_example.py) - Building custom tool classes
 
-#### `FunctionTool`
+## API Documentation
 
-Wrapper for Python functions as tools.
-
-**Constructor Parameters:**
-- `name` (str): Tool identifier
-- `description` (str): Tool description
-- `func` (Callable): Python function to wrap
-- `schema` (Dict[str, Any]): JSON schema for function parameters
-
-#### `RequestsTool`
-
-Tool for making HTTP API calls.
-
-**Constructor Parameters:**
-- `name` (str): Tool identifier
-- `description` (str): Tool description
-- `method` (str): HTTP method (GET, POST, PUT, DELETE, PATCH)
-- `url_template` (str): URL template with `{param}` placeholders
-- `headers` (Optional[Dict[str, str]]): Default headers
-- `query_params_schema` (Optional[Dict[str, Any]]): Query parameter schema
-- `body_schema` (Optional[Dict[str, Any]]): Request body schema
-- `path_params` (Optional[List[str]]): Path parameter names
-- `timeout` (int): Request timeout in seconds (default: 30)
-- `auth` (Optional[tuple]): Basic auth credentials (username, password)
-
-#### `OpenAIClient`
-
-Client for OpenAI-compatible APIs.
-
-**Constructor Parameters:**
-- `api_key` (Optional[str]): API key (or from OPENAI_API_KEY env var)
-- `model` (str): Model identifier (default: "gpt-4o")
-- `base_url` (str): API base URL (default: OpenAI's URL)
-- `organization` (Optional[str]): Organization ID
-- `default_headers` (Optional[dict]): Default request headers
-
-**Methods:**
-- `call(messages: List[Message], **kwargs) -> str`: Get a completion
-- `call_stream(messages: List[Message], **kwargs) -> Generator`: Stream completion
-
-#### `OpenRouterClient`
-
-Client for OpenRouter API (supports multiple LLM providers).
-
-**Constructor Parameters:**
-- `api_key` (Optional[str]): API key (or from OPENROUTER_API_KEY env var)
-- `model` (str): Model identifier (default: "openai/gpt-4o")
-- `site_url` (Optional[str]): Your site URL for rankings
-- `app_name` (Optional[str]): Your app name for rankings
-
-### Models
-
-#### `Message`
-
-Represents a conversation message.
-
-**Attributes:**
-- `role` (str): Message role ("user", "assistant", "system")
-- `content` (str): Message content
-- `tool_calls` (Optional[List[ToolCall]]): Tool calls in the message
-
-#### `ToolCall`
-
-Represents a tool invocation.
-
-**Attributes:**
-- `id` (str): Unique call identifier
-- `name` (str): Tool name
-- `parameters` (Dict[str, Any]): Tool parameters
-
-#### `ToolResult`
-
-Represents a tool execution result.
-
-**Attributes:**
-- `tool_call_id` (str): ID of the tool call
-- `tool_name` (str): Name of the tool
-- `result` (str): Execution result
-
-### Exceptions
-
-- `AgentError`: Base exception for all agent errors
-- `ToolNotFoundError`: Tool not found in registry
-- `ToolExecutionError`: Tool execution failed
-- `LLMCallError`: LLM API call failed
-- `ResponseParseError`: Failed to parse LLM response
-- `MaxIterationsError`: Agent exceeded maximum iterations
-- `InvalidToolSchemaError`: Tool schema validation failed
-
-### Retry Configuration
-
-#### `RetryConfig`
-
-Configure retry behavior for LLM and tool calls.
-
-**Constructor Parameters:**
-- `max_attempts` (int): Maximum retry attempts (default: 3)
-- `wait_min` (float): Minimum wait between retries in seconds (default: 1.0)
-- `wait_max` (float): Maximum wait between retries in seconds (default: 10.0)
-- `multiplier` (float): Exponential backoff multiplier (default: 2.0)
+For detailed API documentation, please refer to the docstrings in the source code or visit our [GitHub repository](https://github.com/akstspace/acton-agent).
 
 ## Additional Information
 
@@ -373,7 +287,6 @@ This project is in **experimental phase** and is primarily for personal use. The
 ### Known Limitations
 
 - Limited to text-based interactions (no multimodal support yet)
-- Streaming support requires additional dependencies (`jiter`)
 - Tool execution is synchronous (no async support yet)
 - Limited error recovery strategies for complex tool chains
 - No built-in conversation persistence
