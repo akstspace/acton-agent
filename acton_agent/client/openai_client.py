@@ -96,14 +96,14 @@ class OpenAIClient:
         self, messages: List[Message], **kwargs
     ) -> Generator[str, None, None]:
         """
-        Yield token chunks from a streaming LLM completion for the given conversation.
-
+        Stream content chunks from a chat completion for the given conversation.
+        
         Parameters:
-            messages (List[Message]): Conversation messages in order.
-            **kwargs: Additional parameters forwarded to the API (for example, temperature or max_tokens).
-
+            messages (List[Message]): Conversation messages in chronological order.
+            **kwargs: Additional parameters forwarded to the API (e.g., temperature, max_tokens).
+        
         Yields:
-            str: Content chunks emitted by the model as they arrive.
+            str: Incremental content chunks emitted by the model as they arrive.
         """
         message_dicts = [{"role": msg.role, "content": msg.content} for msg in messages]
 

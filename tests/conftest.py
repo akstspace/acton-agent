@@ -51,13 +51,13 @@ class MockLLMClient:
 
     def call_stream(self, messages: List[Message], **kwargs):
         """
-        Simulate streaming output from the LLM by yielding the response one character at a time.
-
+        Stream the client's response one character at a time.
+        
         Parameters:
-            messages (List[Message]): The message sequence sent to the client; used to produce the mock response.
-
+            messages (List[Message]): Message sequence sent to the client; used to produce the mock response.
+        
         Returns:
-            iterator: Yields each character of the resulting response string as a one-character string.
+            iterator: Yields each character of the response as a one-character string.
         """
         response = self.call(messages, **kwargs)
         # Yield character by character
@@ -68,10 +68,10 @@ class MockLLMClient:
 @pytest.fixture
 def mock_llm_client():
     """
-    Provide a MockLLMClient instance for tests.
-
+    Create a MockLLMClient for tests that records invocations and can simulate streaming.
+    
     Returns:
-        MockLLMClient: A mock LLM client initialized with no preset responses; it records calls and can simulate streaming.
+        MockLLMClient: Mock LLM client initialized with no preset responses.
     """
     return MockLLMClient()
 
@@ -116,9 +116,9 @@ def sample_messages():
 def tool_call_response():
     """
     Provides a sample tool call response wrapped in a JSON code fence.
-
+    
     Returns:
-        str: A string containing a JSON-formatted tool call plan (includes a thought and a list of tool call entries) wrapped in triple-backtick ```json``` fencing.
+        str: A string containing a JSON object with keys "thought" and "tool_calls" (an array of tool call entries), wrapped in a triple-backtick ```json``` fence.
     """
     return """```json
 {
@@ -137,8 +137,8 @@ def tool_call_response():
 @pytest.fixture
 def final_answer_response():
     """
-    Sample LLM final answer response formatted as a JSON code block.
-
+    Sample LLM final-answer response formatted as a JSON code block.
+    
     Returns:
         str: A string containing a JSON object with keys `thought` and `final_answer`, wrapped in a ```json code fence.
     """
@@ -172,7 +172,14 @@ def plan_response():
 
 @pytest.fixture
 def mock_streaming_llm_client():
-    """Fixture factory for mock streaming LLM client."""
+    """
+    Factory fixture that returns a function to create MockLLMClient instances configured with a sequence of responses for streaming.
+    
+    The returned factory accepts a list of response strings; each created client will return those responses in order for successive calls and supports streaming via its call_stream method.
+    
+    Returns:
+        _create_client (Callable[[List[str]], MockLLMClient]): Factory function that constructs a MockLLMClient configured to return the provided responses in sequence.
+    """
 
     def _create_client(responses: List[str]):
         """

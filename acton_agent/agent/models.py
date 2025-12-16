@@ -62,9 +62,9 @@ class ToolResult(BaseModel):
     def success(self) -> bool:
         """
         Determine whether the tool execution succeeded.
-
+        
         Returns:
-            bool: `True` if the tool produced no error, `False` otherwise.
+            `true` if the tool produced no error, `false` otherwise.
         """
         return self.error is None
 
@@ -105,10 +105,10 @@ class AgentStep(BaseModel):
     @property
     def has_tool_calls(self) -> bool:
         """
-        Return whether the step contains any tool calls.
-
+        Indicates whether this agent step includes one or more tool calls.
+        
         Returns:
-            True if the step contains one or more tool calls, False otherwise.
+            True if the step includes one or more tool calls, False otherwise.
         """
         return len(self.tool_calls) > 0
 

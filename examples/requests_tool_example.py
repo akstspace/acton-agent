@@ -15,6 +15,11 @@ from acton_agent.tools import RequestsTool, create_api_tool
 def main():
     # Initialize the OpenAI client
     # Make sure to set your OPENAI_API_KEY environment variable
+    """
+    Run an interactive demo that showcases an Acton Agent using RequestsTool and create_api_tool against the JSONPlaceholder API.
+    
+    Initializes an OpenAI client from the OPENAI_API_KEY environment variable (exits early and prints an error if the key is missing), builds an agent, registers example API tools (posts, single post, comments, user, and user posts), and executes a sequence of five interactive demo queries that print prompts, invoke the agent, display results, and pause for user input between steps.
+    """
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         print("Error: Please set OPENAI_API_KEY environment variable")

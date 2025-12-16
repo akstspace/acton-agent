@@ -60,16 +60,14 @@ class TestClientImplementation:
 
             def call(self, messages: List[Message], **kwargs) -> str:
                 """
-                Return a response string that reflects how many times the client has been called.
-
-                This method increments the instance's `call_count` and returns "Response #<n>" where `<n>` is the updated count.
-
+                Increment the client's internal call counter and produce a response including the updated count.
+                
                 Parameters:
-                    messages (List[Message]): Sequence of messages provided to the client.
-                    **kwargs: Additional keyword arguments; ignored by this implementation.
-
+                    messages (List[Message]): Messages passed to the client (not used by this implementation).
+                    **kwargs: Additional keyword arguments (ignored).
+                
                 Returns:
-                    str: A response string formatted as "Response #<n>" with the current call count.
+                    str: Response formatted as "Response #<n>" where <n> is the updated call count.
                 """
                 self.call_count += 1
                 return f"Response #{self.call_count}"
