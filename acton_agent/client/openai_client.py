@@ -90,7 +90,9 @@ class OpenAIClient:
             model=self.model, messages=message_dicts, stream=False, **kwargs
         )
 
-        return completion.choices[0].message.content
+        if completion.choices and completion.choices[0].message.content is not None:
+            return completion.choices[0].message.content
+        return ""
 
     def call_stream(
         self, messages: List[Message], **kwargs
@@ -112,5 +114,9 @@ class OpenAIClient:
         )
 
         for chunk in stream:
-            if chunk.choices and chunk.choices[0].delta.content:
+            if (
+                chunk.choices
+                and len(chunk.choices) > 0
+                and chunk.choices[0].delta.content is not None
+            ):
                 yield chunk.choices[0].delta.content
