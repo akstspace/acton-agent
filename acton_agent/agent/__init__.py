@@ -13,6 +13,7 @@ from .exceptions import (
     ToolExecutionError,
     ToolNotFoundError,
 )
+from .memory import AgentMemory, SimpleAgentMemory
 from .models import (
     AgentFinalResponse,
     AgentFinalResponseEvent,
@@ -48,6 +49,8 @@ __all__ = [
     "RetryConfig",
     "LLMClient",
     "ResponseParser",
+    "AgentMemory",
+    "SimpleAgentMemory",
     "AgentError",
     "ToolNotFoundError",
     "ToolExecutionError",

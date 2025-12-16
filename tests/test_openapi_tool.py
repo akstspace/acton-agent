@@ -2,7 +2,6 @@
 Comprehensive tests for the OpenAPI tool generator module.
 """
 
-import json
 from unittest.mock import Mock, mock_open, patch
 
 import pytest
@@ -220,9 +219,7 @@ class TestOpenAPIToolGenerator:
     def test_init_with_custom_base_url(self):
         """Test initialization with a custom base URL override."""
         custom_url = "https://custom.example.com"
-        generator = OpenAPIToolGenerator(
-            spec=MINIMAL_OPENAPI_SPEC, base_url=custom_url
-        )
+        generator = OpenAPIToolGenerator(spec=MINIMAL_OPENAPI_SPEC, base_url=custom_url)
         assert generator.base_url == custom_url
 
     def test_init_with_custom_headers(self):
@@ -241,7 +238,9 @@ class TestOpenAPIToolGenerator:
 
         generator = OpenAPIToolGenerator(spec="https://api.example.com/openapi.json")
         assert generator.spec == MINIMAL_OPENAPI_SPEC
-        mock_get.assert_called_once_with("https://api.example.com/openapi.json", timeout=30)
+        mock_get.assert_called_once_with(
+            "https://api.example.com/openapi.json", timeout=30
+        )
 
     @patch("acton_agent.tools.openapi_tool.requests.get")
     def test_load_spec_from_url_http_error(self, mock_get):
@@ -260,11 +259,18 @@ class TestOpenAPIToolGenerator:
         assert "openapi" in generator.spec
         mock_file.assert_called_once_with("/path/to/spec.json", "r")
 
-    @patch("builtins.open", new_callable=mock_open, read_data="openapi: 3.0.0\ninfo:\n  title: Test")
+    @patch(
+        "builtins.open",
+        new_callable=mock_open,
+        read_data="openapi: 3.0.0\ninfo:\n  title: Test",
+    )
     @patch("acton_agent.tools.openapi_tool.yaml")
     def test_load_spec_from_yaml_file(self, mock_yaml, mock_file):
         """Test loading OpenAPI spec from a YAML file."""
-        mock_yaml.safe_load.return_value = {"openapi": "3.0.0", "info": {"title": "Test"}}
+        mock_yaml.safe_load.return_value = {
+            "openapi": "3.0.0",
+            "info": {"title": "Test"},
+        }
         generator = OpenAPIToolGenerator(spec="/path/to/spec.yaml")
         assert generator.spec["openapi"] == "3.0.0"
         mock_yaml.safe_load.assert_called_once()
@@ -528,11 +534,15 @@ class TestOpenAPIToolGenerator:
                                         "oneOf": [
                                             {
                                                 "type": "object",
-                                                "properties": {"type_a": {"type": "string"}},
+                                                "properties": {
+                                                    "type_a": {"type": "string"}
+                                                },
                                             },
                                             {
                                                 "type": "object",
-                                                "properties": {"type_b": {"type": "integer"}},
+                                                "properties": {
+                                                    "type_b": {"type": "integer"}
+                                                },
                                             },
                                         ]
                                     }
@@ -586,7 +596,11 @@ class TestOpenAPIToolGenerator:
 
         assert "status" in schema["properties"]
         assert "enum" in schema["properties"]["status"]
-        assert schema["properties"]["status"]["enum"] == ["active", "inactive", "pending"]
+        assert schema["properties"]["status"]["enum"] == [
+            "active",
+            "inactive",
+            "pending",
+        ]
 
     def test_convert_openapi_schema_with_defaults(self):
         """Test converting OpenAPI schema with default values."""
@@ -679,9 +693,7 @@ class TestOpenAPIToolGenerator:
                 }
             },
             "components": {
-                "securitySchemes": {
-                    "BearerAuth": {"type": "http", "scheme": "bearer"}
-                }
+                "securitySchemes": {"BearerAuth": {"type": "http", "scheme": "bearer"}}
             },
         }
         generator = OpenAPIToolGenerator(spec=spec)
@@ -753,7 +765,9 @@ class TestOpenAPIToolGenerator:
         schema = tool.get_schema()
 
         # Header parameters should be in schema
-        assert "x_custom_header" in schema["properties"] or "X-Custom-Header" in str(schema)
+        assert "x_custom_header" in schema["properties"] or "X-Custom-Header" in str(
+            schema
+        )
 
     def test_tool_with_cookie_parameters(self):
         """Test tool creation with cookie parameters."""
@@ -798,13 +812,17 @@ class TestOpenAPIToolGenerator:
                                 "application/x-www-form-urlencoded": {
                                     "schema": {
                                         "type": "object",
-                                        "properties": {"form_field": {"type": "string"}},
+                                        "properties": {
+                                            "form_field": {"type": "string"}
+                                        },
                                     }
                                 },
                                 "application/json": {
                                     "schema": {
                                         "type": "object",
-                                        "properties": {"json_field": {"type": "string"}},
+                                        "properties": {
+                                            "json_field": {"type": "string"}
+                                        },
                                     }
                                 },
                             }
@@ -839,7 +857,10 @@ class TestOpenAPIToolGenerator:
                                     "schema": {
                                         "type": "object",
                                         "properties": {
-                                            "file": {"type": "string", "format": "binary"}
+                                            "file": {
+                                                "type": "string",
+                                                "format": "binary",
+                                            }
                                         },
                                     }
                                 }
@@ -1007,7 +1028,9 @@ class TestCreateToolsFromOpenAPI:
     def test_create_tools_with_base_url_override(self):
         """Test creating tools with base URL override."""
         custom_url = "https://custom.example.com"
-        tools = create_tools_from_openapi(spec=MINIMAL_OPENAPI_SPEC, base_url=custom_url)
+        tools = create_tools_from_openapi(
+            spec=MINIMAL_OPENAPI_SPEC, base_url=custom_url
+        )
 
         assert len(tools) == 1
         assert custom_url in tools[0].url_template
@@ -1134,7 +1157,16 @@ class TestEdgeCases:
 
         assert len(tools) == 1
         # Should sanitize to valid tool name (alphanumeric and underscores)
-        assert tools[0].name.replace("_", "").replace("test", "").replace("operation", "").replace("with", "").replace("special", "").replace("chars", "") == ""
+        assert (
+            tools[0]
+            .name.replace("_", "")
+            .replace("test", "")
+            .replace("operation", "")
+            .replace("with", "")
+            .replace("special", "")
+            .replace("chars", "")
+            == ""
+        )
 
     def test_missing_schema_in_parameter(self):
         """Test handling of parameter without schema."""

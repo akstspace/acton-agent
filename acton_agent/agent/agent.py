@@ -13,6 +13,7 @@ from loguru import logger
 
 from .client import LLMClient
 from .exceptions import LLMCallError, MaxIterationsError, ToolExecutionError
+from .memory import AgentMemory, SimpleAgentMemory
 from .models import (
     AgentFinalResponse,
     AgentFinalResponseEvent,
@@ -68,6 +69,7 @@ class Agent:
         stream: bool = False,
         final_answer_format_instructions: Optional[str] = None,
         timezone: str = "UTC",
+        memory: Optional[AgentMemory] = None,
     ):
         """
         Initialize an Agent for orchestrating LLM interactions, tool execution, retries, and conversation state.
@@ -80,6 +82,7 @@ class Agent:
             stream (bool): Enable streaming LLM responses (tokens yielded as they arrive) when True.
             final_answer_format_instructions (Optional[str]): Instructions controlling final-answer formatting; defaults to the module's standard format when omitted.
             timezone (str): Timezone name used when inserting the current date/time into system messages (e.g., "UTC", "America/New_York"); defaults to "UTC".
+            memory (Optional[AgentMemory]): Custom memory management instance; uses SimpleAgentMemory(max_history_tokens=8000) by default. Set to None to disable memory management entirely.
         """
         self.llm_client = llm_client
         self.custom_instructions = system_prompt  # Store custom instructions separately
@@ -93,6 +96,10 @@ class Agent:
         self.max_iterations = max_iterations
         self.retry_config = retry_config or RetryConfig()
         self.stream = stream
+        # Use SimpleAgentMemory by default if no custom memory provided
+        self.memory: Optional[AgentMemory] = (
+            memory if memory is not None else SimpleAgentMemory()
+        )
 
         self.tool_registry = ToolRegistry()
         self.conversation_history: List[Message] = []
@@ -136,9 +143,17 @@ class Agent:
 
         The first message is a system message containing the agent's system prompt, the current date and time in the agent's configured timezone (falls back to UTC on error), and the tool registry formatted for inclusion in prompts. The remaining messages are the current conversation history in chronological order.
 
+        Automatically manages conversation history using the configured memory instance (if any).
+
         Returns:
-            messages (List[Message]): Ordered list of Message objects starting with the system message followed by the conversation history.
+            messages (List[Message]): Ordered list of Message objects starting with the system message followed by the managed conversation history.
         """
+        # Apply memory management if memory is configured
+        if self.memory is not None:
+            managed_history = self.memory.manage_history(self.conversation_history)
+        else:
+            managed_history = self.conversation_history
+
         # Get current date and time in the specified timezone
         try:
             tz = ZoneInfo(self.timezone)
@@ -157,7 +172,7 @@ class Agent:
                 content=f"{self.system_prompt}\n\nCurrent Date and Time: {datetime_str}\n\n{self.tool_registry.format_for_prompt()}",
             )
         ]
-        messages.extend(self.conversation_history)
+        messages.extend(managed_history)
         return messages
 
     def _execute_single_tool(self, tool: Tool, parameters: dict) -> str:

@@ -56,6 +56,22 @@ class Tool(ABC):
         """
         pass
 
+    def process_output(self, output: str) -> str:
+        """
+        Post-process the raw output from the tool execution.
+
+        This method can be overridden by subclasses to transform, filter, or format
+        the output before it's returned to the agent. By default, it returns the
+        output unchanged.
+
+        Parameters:
+            output (str): The raw output from the tool's execute method.
+
+        Returns:
+            str: The processed output (by default, unchanged).
+        """
+        return output
+
     def agent_md(self, template: str, tool_output: str) -> str:
         """
         Render the tool's values into a Markdown template by replacing placeholders.

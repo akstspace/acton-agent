@@ -157,13 +157,16 @@ class RequestsTool(Tool):
             # Raise exception for bad status codes
             response.raise_for_status()
 
-            # Return response
+            # Get raw response
             try:
                 # Try to return JSON response
-                return json.dumps(response.json(), indent=2)
+                raw_output = json.dumps(response.json(), indent=2)
             except ValueError:
                 # If not JSON, return text
-                return response.text
+                raw_output = response.text
+
+            # Process output through post-processing hook
+            return self.process_output(raw_output)
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Request failed: {e}")

@@ -126,7 +126,8 @@ class AgentFinalResponse(BaseModel):
 
     thought: Optional[str] = Field(None, description="Agent's final reasoning")
     final_answer: str = Field(
-        ..., description="The complete answer to the user's request"
+        ...,
+        description="The complete answer to the user's request : SHOULD ALWAYS BE MARKDOWN STRING (follow instructions)",
     )
 
 

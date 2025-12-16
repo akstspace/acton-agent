@@ -440,7 +440,9 @@ class OpenAPIToolGenerator:
         }
         return type_map.get(openapi_type, "string")
 
-    def _convert_openapi_schema(self, schema: Dict[str, Any], visited_refs: Optional[set] = None) -> Dict[str, Any]:
+    def _convert_openapi_schema(
+        self, schema: Dict[str, Any], visited_refs: Optional[set] = None
+    ) -> Dict[str, Any]:
         """
         Convert an OpenAPI schema fragment into a JSON Schema-like dictionary suitable for RequestsTool.
 
@@ -455,7 +457,7 @@ class OpenAPIToolGenerator:
         """
         if visited_refs is None:
             visited_refs = set()
-            
+
         if not schema:
             return {}
 
@@ -466,7 +468,7 @@ class OpenAPIToolGenerator:
             if ref in visited_refs:
                 logger.debug(f"Circular reference detected: {ref}")
                 return {"type": "object", "description": f"Circular reference to {ref}"}
-            
+
             resolved = self._resolve_ref(ref)
             if resolved:
                 # Add to visited set before recursing
@@ -523,7 +525,9 @@ class OpenAPIToolGenerator:
 
                 # Handle nested objects
                 if prop_schema.get("type") == "object" and "properties" in prop_schema:
-                    prop_converted = self._convert_openapi_schema(prop_schema, visited_refs)
+                    prop_converted = self._convert_openapi_schema(
+                        prop_schema, visited_refs
+                    )
 
                 # Handle arrays
                 if prop_schema.get("type") == "array":
@@ -535,7 +539,9 @@ class OpenAPIToolGenerator:
 
                 # Handle $ref in properties
                 if "$ref" in prop_schema:
-                    prop_converted = self._convert_openapi_schema(prop_schema, visited_refs)
+                    prop_converted = self._convert_openapi_schema(
+                        prop_schema, visited_refs
+                    )
 
                 result["properties"][prop_name] = prop_converted
 
