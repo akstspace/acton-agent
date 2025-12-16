@@ -8,7 +8,6 @@ from pydantic import ValidationError
 from acton_agent.agent.models import (
     AgentFinalResponse,
     AgentPlan,
-    AgentResponse,
     AgentStep,
     AgentStepUpdate,
     AgentToken,
@@ -133,39 +132,6 @@ class TestAgentFinalResponse:
         response = AgentFinalResponse(final_answer="The answer is 42")
         assert response.thought is None
         assert response.final_answer == "The answer is 42"
-
-
-class TestAgentResponse:
-    """Tests for legacy AgentResponse model."""
-
-    def test_response_with_tool_calls(self):
-        """Test response with tool calls."""
-        response = AgentResponse(
-            thought="Need to call tool",
-            tool_calls=[ToolCall(id="call_1", tool_name="test", parameters={})],
-        )
-        assert response.has_tool_calls
-        assert not response.is_final
-
-    def test_response_with_final_answer(self):
-        """Test response with final answer."""
-        response = AgentResponse(thought="Done", final_answer="The answer")
-        assert not response.has_tool_calls
-        assert response.is_final
-
-    def test_response_thought_validation(self):
-        """Test that thought can be string or AgentThought."""
-        # String thought
-        response1 = AgentResponse(thought="Test thought", final_answer="Answer")
-        assert response1.thought.content == "Test thought"
-
-        # Already AgentThought
-        from acton_agent.agent.models import AgentThought
-
-        response2 = AgentResponse(
-            thought=AgentThought(content="Test thought"), final_answer="Answer"
-        )
-        assert response2.thought.content == "Test thought"
 
 
 class TestStreamingModels:

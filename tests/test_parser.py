@@ -5,7 +5,6 @@ Tests for the parser module.
 from acton_agent.agent.models import (
     AgentFinalResponse,
     AgentPlan,
-    AgentResponse,
     AgentStep,
     ToolCall,
 )
@@ -149,22 +148,6 @@ class TestResponseValidation:
         """Test validating invalid final response (empty answer)."""
         response = AgentFinalResponse(final_answer="")
         assert not ResponseParser.validate_response(response)
-
-    def test_validate_legacy_response(self):
-        """Test validating legacy AgentResponse."""
-        # Valid with final answer
-        response1 = AgentResponse(final_answer="answer")
-        assert ResponseParser.validate_response(response1)
-
-        # Valid with tool calls
-        response2 = AgentResponse(
-            tool_calls=[ToolCall(id="1", tool_name="test", parameters={})]
-        )
-        assert ResponseParser.validate_response(response2)
-
-        # Invalid (neither final answer nor tool calls)
-        response3 = AgentResponse()
-        assert not ResponseParser.validate_response(response3)
 
 
 class TestExtractThought:
