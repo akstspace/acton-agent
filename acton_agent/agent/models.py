@@ -122,13 +122,9 @@ class AgentFinalResponse(BaseModel):
     This represents the agent's final answer after completing all necessary steps.
 
     Attributes:
-        thought: Optional reasoning before the final answer
         final_answer: The complete answer to the user's request
     """
 
-    thought: Optional[str] = Field(
-        None, description="Agent's reasoning before providing the final answer"
-    )
     final_answer: str = Field(
         default="",
         description="The complete answer to the user's request",

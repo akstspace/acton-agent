@@ -2,7 +2,6 @@
 Tests for the streaming_parser module.
 """
 
-
 from acton_agent.agent.models import (
     AgentFinalResponse,
     AgentFinalResponseEvent,
@@ -212,13 +211,12 @@ class TestStreamingTokenParser:
     def test_try_parse_partial_final_response(self):
         """Test parsing final response."""
         parser = StreamingTokenParser()
-        parser.add_token("step-1", '{"thought": "Done", "final_answer": "42"}')
+        parser.add_token("step-1", '{"final_answer": "42"}')
 
         result = parser.try_parse_partial("step-1")
 
         assert isinstance(result, AgentFinalResponseEvent)
         assert result.step_id == "step-1"
-        assert result.response.thought == "Done"
         assert result.response.final_answer == "42"
         assert result.complete is True
 
