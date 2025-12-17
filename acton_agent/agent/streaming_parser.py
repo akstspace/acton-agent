@@ -161,6 +161,15 @@ class StreamingTokenParser:
 
         json_bytes = self._extract_json_from_markdown(buffer)
 
+        # Check if JSON is complete by trying to parse without partial mode
+        is_complete = False
+        try:
+            jiter.from_json(json_bytes)
+            is_complete = True
+        except Exception:
+            # JSON is incomplete, will try partial mode
+            pass
+
         try:
             data = jiter.from_json(json_bytes, partial_mode="trailing-strings")
 
@@ -179,7 +188,7 @@ class StreamingTokenParser:
             if detected_type == "plan" and "plan" in data:
                 plan_str = str(data["plan"]) if data["plan"] else ""
                 return AgentPlanEvent(
-                    step_id=step_id, plan=AgentPlan(plan=plan_str), complete=False
+                    step_id=step_id, plan=AgentPlan(plan=plan_str), complete=is_complete
                 )
 
             elif detected_type == "step" and (
@@ -204,7 +213,7 @@ class StreamingTokenParser:
                     step=AgentStep(
                         tool_thought=data.get("tool_thought"), tool_calls=tool_calls
                     ),
-                    complete=False,
+                    complete=is_complete,
                 )
 
             elif detected_type == "final_response" and "final_answer" in data:
@@ -212,7 +221,7 @@ class StreamingTokenParser:
                 return AgentFinalResponseEvent(
                     step_id=step_id,
                     response=AgentFinalResponse(final_answer=final_answer),
-                    complete=False,
+                    complete=is_complete,
                 )
 
         except Exception:
