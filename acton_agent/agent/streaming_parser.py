@@ -161,70 +161,63 @@ class StreamingTokenParser:
 
         json_bytes = self._extract_json_from_markdown(buffer)
 
-        # Try to parse JSON without partial mode first to check if it's complete
-        is_complete = False
-        data = None
         try:
-            data = jiter.from_json(json_bytes)
-            is_complete = True
-        except ValueError:
-            # JSON is incomplete, try with partial mode
-            try:
-                data = jiter.from_json(json_bytes, partial_mode="trailing-strings")
-            except ValueError:
-                # Cannot parse even with partial mode
+            data = jiter.from_json(json_bytes, partial_mode="trailing-strings")
+
+            if not isinstance(data, dict):
                 return None
 
-        if not isinstance(data, dict):
-            return None
+            detected_type = self.detected_types.get(step_id)
+            if detected_type is None:
+                detected_type = self._detect_event_type_from_partial(data)
+                if detected_type != "unknown":
+                    self.detected_types[step_id] = detected_type
+                    logger.debug(
+                        f"🎯 Early detection: {detected_type} (step_id={step_id})"
+                    )
 
-        detected_type = self.detected_types.get(step_id)
-        if detected_type is None:
-            detected_type = self._detect_event_type_from_partial(data)
-            if detected_type != "unknown":
-                self.detected_types[step_id] = detected_type
-                logger.debug(
-                    f"🎯 Early detection: {detected_type} (step_id={step_id})"
+            if detected_type == "plan" and "plan" in data:
+                plan_str = str(data["plan"]) if data["plan"] else ""
+                return AgentPlanEvent(
+                    step_id=step_id, plan=AgentPlan(plan=plan_str), complete=False
                 )
 
-        if detected_type == "plan" and "plan" in data:
-            plan_str = str(data["plan"]) if data["plan"] else ""
-            return AgentPlanEvent(
-                step_id=step_id, plan=AgentPlan(plan=plan_str), complete=is_complete
-            )
+            elif detected_type == "step" and (
+                "tool_thought" in data or "tool_calls" in data
+            ):
+                tool_calls = []
+                tool_calls_data = data.get("tool_calls")
 
-        elif detected_type == "step" and (
-            "tool_thought" in data or "tool_calls" in data
-        ):
-            tool_calls = []
-            tool_calls_data = data.get("tool_calls")
-
-            if isinstance(tool_calls_data, list):
-                # Batch process tool calls
-                for tc in tool_calls_data:
-                    if isinstance(tc, dict) and "id" in tc and "tool_name" in tc:
-                        tool_calls.append(
-                            ToolCall(
-                                id=tc["id"],
-                                tool_name=tc["tool_name"],
-                                parameters=tc.get("parameters", {}),
+                if isinstance(tool_calls_data, list):
+                    # Batch process tool calls
+                    for tc in tool_calls_data:
+                        if isinstance(tc, dict) and "id" in tc and "tool_name" in tc:
+                            tool_calls.append(
+                                ToolCall(
+                                    id=tc["id"],
+                                    tool_name=tc["tool_name"],
+                                    parameters=tc.get("parameters", {}),
+                                )
                             )
-                        )
-            return AgentStepEvent(
-                step_id=step_id,
-                step=AgentStep(
-                    tool_thought=data.get("tool_thought"), tool_calls=tool_calls
-                ),
-                complete=is_complete,
-            )
+                return AgentStepEvent(
+                    step_id=step_id,
+                    step=AgentStep(
+                        tool_thought=data.get("tool_thought"), tool_calls=tool_calls
+                    ),
+                    complete=False,
+                )
 
-        elif detected_type == "final_response" and "final_answer" in data:
-            final_answer = data.get("final_answer", "")
-            return AgentFinalResponseEvent(
-                step_id=step_id,
-                response=AgentFinalResponse(final_answer=final_answer),
-                complete=is_complete,
-            )
+            elif detected_type == "final_response" and "final_answer" in data:
+                final_answer = data.get("final_answer", "")
+                return AgentFinalResponseEvent(
+                    step_id=step_id,
+                    response=AgentFinalResponse(final_answer=final_answer),
+                    complete=False,
+                )
+
+        except Exception:
+            # Expected for incomplete JSON
+            pass
 
         return None
 

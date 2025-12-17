@@ -153,7 +153,7 @@ class TestStreamingTokenParser:
         # JSON parsing converts \\n to actual newline
         assert "Step 1" in result.plan.plan
         assert "Step 2" in result.plan.plan
-        assert result.complete is True
+        assert result.complete is False
 
     def test_try_parse_partial_plan_incomplete(self):
         """Test parsing incomplete plan."""
@@ -190,7 +190,7 @@ class TestStreamingTokenParser:
         assert result.step.tool_thought == "I need to calculate"
         assert len(result.step.tool_calls) == 1
         assert result.step.tool_calls[0].tool_name == "calculator"
-        assert result.complete is True
+        assert result.complete is False
 
     def test_try_parse_partial_step_incomplete_tool_calls(self):
         """Test parsing step with incomplete tool calls."""
@@ -218,7 +218,7 @@ class TestStreamingTokenParser:
         assert isinstance(result, AgentFinalResponseEvent)
         assert result.step_id == "step-1"
         assert result.response.final_answer == "42"
-        assert result.complete is True
+        assert result.complete is False
 
     def test_try_parse_partial_final_response_incomplete(self):
         """Test parsing incomplete final response."""
@@ -327,8 +327,8 @@ class TestParseStreamingEvents:
 
         final_events = [e for e in events if isinstance(e, AgentFinalResponseEvent)]
         assert len(final_events) >= 1
-        # The last one should be complete
-        assert any(e.complete for e in final_events)
+        # All events should be marked as incomplete (streaming)
+        assert all(not e.complete for e in final_events)
 
     def test_parse_streaming_events_with_tool_results(self):
         """Test that tool result events pass through."""
@@ -391,7 +391,7 @@ class TestParseStreamingEvents:
         # Should have parsed and cleared
         plan_events = [e for e in events if isinstance(e, AgentPlanEvent)]
         assert len(plan_events) >= 1
-        assert plan_events[-1].complete
+        assert not plan_events[-1].complete
 
     def test_parse_streaming_events_handles_passthrough_events(self):
         """Test that already parsed events pass through unchanged."""
