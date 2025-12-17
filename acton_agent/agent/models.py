@@ -77,13 +77,11 @@ class AgentPlan(BaseModel):
     It should outline what the agent intends to do step by step.
 
     Attributes:
-        thought: Agent's reasoning about the task
-        plan: List of planned steps to accomplish the task
+        plan: The planned steps to accomplish the task
     """
 
-    thought: str = Field(..., description="Agent's reasoning about the task")
-    plan: List[str] = Field(
-        ..., description="List of planned steps to accomplish the task"
+    plan: str = Field(
+        default="", description="The planned steps to accomplish the task"
     )
 
 
@@ -95,20 +93,24 @@ class AgentStep(BaseModel):
     to call one or more tools to gather information.
 
     Attributes:
-        thought: Agent's reasoning for this step
+        tool_thought: Agent's reasoning for this step
         tool_calls: List of tools to call
     """
 
-    thought: str = Field(..., description="Agent's reasoning for this step")
-    tool_calls: List[ToolCall] = Field(..., description="Tools to call in this step")
+    tool_thought: Optional[str] = Field(
+        None, description="Agent's reasoning for this step"
+    )
+    tool_calls: List[ToolCall] = Field(
+        default_factory=list, description="Tools to call in this step"
+    )
 
     @property
     def has_tool_calls(self) -> bool:
         """
-        Indicates whether this agent step includes one or more tool calls.
-
+        Determine whether the agent step contains any tool calls.
+        
         Returns:
-            True if the step includes one or more tool calls, False otherwise.
+            `true` if the step contains one or more tool calls, `false` otherwise.
         """
         return len(self.tool_calls) > 0
 
@@ -120,13 +122,15 @@ class AgentFinalResponse(BaseModel):
     This represents the agent's final answer after completing all necessary steps.
 
     Attributes:
-        thought: Agent's final reasoning (optional)
+        thought: Optional reasoning before the final answer
         final_answer: The complete answer to the user's request
     """
 
-    thought: Optional[str] = Field(None, description="Agent's final reasoning")
+    thought: Optional[str] = Field(
+        None, description="Agent's reasoning before providing the final answer"
+    )
     final_answer: str = Field(
-        ...,
+        default="",
         description="The complete answer to the user's request",
     )
 
@@ -186,6 +190,24 @@ class AgentToolResultsEvent(BaseModel):
     results: List[ToolResult] = Field(..., description="Tool execution results")
 
 
+class AgentToolExecutionEvent(BaseModel):
+    """Event for individual tool execution progress."""
+
+    type: Literal["tool_execution"] = "tool_execution"
+    step_id: str = Field(
+        ..., description="Unique identifier for this agent step/iteration"
+    )
+    tool_call_id: str = Field(..., description="ID of the tool call being executed")
+    tool_name: str = Field(..., description="Name of the tool being executed")
+    status: Literal["started", "completed", "failed"] = Field(
+        ..., description="Execution status"
+    )
+    result: Optional[ToolResult] = Field(
+        None,
+        description="Tool result (only present when status is completed or failed)",
+    )
+
+
 class AgentPlanEvent(BaseModel):
     """Event containing a complete agent plan."""
 
@@ -226,6 +248,7 @@ StreamingEvent = Union[
     AgentStreamEnd,
     AgentStepUpdate,
     AgentToolResultsEvent,
+    AgentToolExecutionEvent,
     AgentPlanEvent,
     AgentStepEvent,
     AgentFinalResponseEvent,

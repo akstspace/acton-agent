@@ -85,16 +85,13 @@ class TestAgentPlan:
 
     def test_create_plan(self):
         """Test creating an agent plan."""
-        plan = AgentPlan(
-            thought="Let me plan the solution", plan=["Step 1", "Step 2", "Step 3"]
-        )
-        assert plan.thought == "Let me plan the solution"
-        assert len(plan.plan) == 3
+        plan = AgentPlan(plan="Step 1\nStep 2\nStep 3")
+        assert plan.plan == "Step 1\nStep 2\nStep 3"
 
     def test_plan_validation(self):
-        """Test that plan requires fields."""
-        with pytest.raises(ValidationError):
-            AgentPlan(thought="Test")  # Missing plan field
+        """Test that plan can be created with empty string."""
+        plan = AgentPlan(plan="")
+        assert plan.plan == ""
 
 
 class TestAgentStep:
@@ -103,16 +100,16 @@ class TestAgentStep:
     def test_create_step(self):
         """Test creating an agent step."""
         step = AgentStep(
-            thought="I need to call a tool",
+            tool_thought="I need to call a tool",
             tool_calls=[ToolCall(id="call_1", tool_name="test", parameters={})],
         )
-        assert step.thought == "I need to call a tool"
+        assert step.tool_thought == "I need to call a tool"
         assert step.has_tool_calls
         assert len(step.tool_calls) == 1
 
     def test_step_with_no_tool_calls(self):
         """Test step with empty tool calls."""
-        step = AgentStep(thought="Thinking", tool_calls=[])
+        step = AgentStep(tool_thought="Thinking", tool_calls=[])
         assert not step.has_tool_calls
 
 
@@ -168,14 +165,14 @@ class TestStreamingModels:
         assert AgentStreamEnd(step_id="step-1").type == "stream_end"
 
         plan_event = AgentPlanEvent(
-            step_id="step-1", plan=AgentPlan(thought="test", plan=["step1"])
+            step_id="step-1", plan=AgentPlan(plan="step1")
         )
         assert plan_event.type == "agent_plan"
 
         step_event = AgentStepEvent(
             step_id="step-1",
             step=AgentStep(
-                thought="test", tool_calls=[ToolCall(id="1", tool_name="test")]
+                tool_thought="test", tool_calls=[ToolCall(id="1", tool_name="test")]
             ),
         )
         assert step_event.type == "agent_step"

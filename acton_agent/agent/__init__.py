@@ -33,6 +33,7 @@ from .models import (
 )
 from .parser import ResponseParser
 from .retry import RetryConfig
+from .streaming_parser import parse_streaming_events
 from .tools import FunctionTool, Tool, ToolRegistry
 
 __all__ = [
@@ -58,7 +59,6 @@ __all__ = [
     "ResponseParseError",
     "MaxIterationsError",
     "InvalidToolSchemaError",
-    # Streaming events
     "StreamingEvent",
     "AgentStreamStart",
     "AgentToken",
@@ -68,4 +68,5 @@ __all__ = [
     "AgentPlanEvent",
     "AgentStepEvent",
     "AgentFinalResponseEvent",
+    "parse_streaming_events",
 ]

@@ -89,8 +89,7 @@ class TestAgentStreamingEvents:
         """Test that run_stream yields AgentPlanEvent."""
         plan_response = """```json
 {
-  "thought": "Let me plan the solution",
-  "plan": ["Step 1: Calculate", "Step 2: Return answer"]
+  "plan": "Step 1: Calculate\\nStep 2: Return answer"
 }
 ```"""
 
@@ -108,7 +107,7 @@ class TestAgentStreamingEvents:
         # Should have AgentPlanEvent
         plan_events = [e for e in events if isinstance(e, AgentPlanEvent)]
         assert len(plan_events) == 1
-        assert len(plan_events[0].plan.plan) == 2
+        assert "Step 1" in plan_events[0].plan.plan
 
     def test_run_stream_yields_step_event_and_tool_results(
         self, mock_llm_client_with_responses

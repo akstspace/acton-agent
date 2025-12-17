@@ -208,14 +208,13 @@ class TestAgentRun:
         """Test agent run with planning step."""
         plan_response = """```json
 {
-  "thought": "Let me plan the solution",
-  "plan": ["Step 1: Calculate", "Step 2: Return answer"]
+  "plan": "Step 1: Calculate\\nStep 2: Return answer"
 }
 ```"""
 
         tool_response = """```json
 {
-  "thought": "Executing step 1",
+  "tool_thought": "Executing step 1",
   "tool_calls": [
     {
       "id": "call_1",
