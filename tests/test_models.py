@@ -164,9 +164,7 @@ class TestStreamingModels:
         assert AgentStreamStart(step_id="step-1").type == "stream_start"
         assert AgentStreamEnd(step_id="step-1").type == "stream_end"
 
-        plan_event = AgentPlanEvent(
-            step_id="step-1", plan=AgentPlan(plan="step1")
-        )
+        plan_event = AgentPlanEvent(step_id="step-1", plan=AgentPlan(plan="step1"))
         assert plan_event.type == "agent_plan"
 
         step_event = AgentStepEvent(

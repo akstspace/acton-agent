@@ -47,14 +47,12 @@ class StreamingTokenParser:
     def __init__(self):
         """
         Create a StreamingTokenParser and initialize internal state.
-        
+
         Initializes:
         - step_buffers (Dict[str, bytearray]): per-step byte buffers used to accumulate incoming tokens efficiently.
         - detected_types (Dict[str, EventType]): map of step_id to a heuristically detected event type ("plan", "step", "final_response", or "unknown").
         """
-        self.step_buffers: Dict[
-            str, bytearray
-        ] = {}  # Use bytearray for faster concatenation
+        self.step_buffers: Dict[str, bytearray] = {}
         self.detected_types: Dict[str, EventType] = {}
 
     def add_token(self, step_id: str, token: str) -> None:
@@ -66,7 +64,7 @@ class StreamingTokenParser:
     def get_buffer(self, step_id: str) -> bytes:
         """
         Get the accumulated bytes buffer for the specified step identifier.
-        
+
         Returns:
             bytes: The accumulated bytes for the step, or b"" if no buffer exists.
         """
@@ -76,98 +74,28 @@ class StreamingTokenParser:
     def clear_buffer(self, step_id: str) -> None:
         """
         Remove and discard any accumulated token buffer and detected event type for the given step.
-        
+
         Parameters:
             step_id (str): Identifier of the step whose buffer and detected event type should be removed.
         """
         self.step_buffers.pop(step_id, None)
         self.detected_types.pop(step_id, None)
 
-    def _complete_partial_json(self, json_bytes: bytes) -> bytes:
-        """
-        Complete a possibly truncated JSON byte sequence by appending minimal tokens to produce a valid JSON value.
-        
-        This function makes targeted fixes for common truncation cases: it returns b"{}" for empty input, appends a closing quote if a string is left open, closes any unmatched arrays or objects, and inserts a simple empty value for trailing keys or colons when a key/value pattern is incomplete. If no completion is required the original bytes are returned unchanged.
-        
-        Parameters:
-            json_bytes (bytes): Partial JSON data as UTF-8 bytes.
-        
-        Returns:
-            bytes: The original bytes augmented with the minimal suffix needed to form a complete JSON value (or the original bytes if no changes were necessary).
-        """
-        if not json_bytes:
-            return b"{}"
-
-        # Strip whitespace
-        json_bytes = json_bytes.strip()
-        if json_bytes == b"{":
-            return b"{}"
-
-        # Fast byte-level counting
-        open_braces = open_brackets = quote_count = 0
-        has_colon = False
-        escape_next = False
-        ends_with_colon = False
-
-        for i, byte in enumerate(json_bytes):
-            if escape_next:
-                escape_next = False
-                continue
-
-            if byte == BACKSLASH:
-                escape_next = True
-            elif byte == QUOTE:
-                quote_count += 1
-            elif byte == OPEN_BRACE:
-                open_braces += 1
-            elif byte == CLOSE_BRACE:
-                open_braces -= 1
-            elif byte == OPEN_BRACKET:
-                open_brackets += 1
-            elif byte == CLOSE_BRACKET:
-                open_brackets -= 1
-            elif byte == COLON:
-                has_colon = True
-                ends_with_colon = i == len(json_bytes) - 1
-
-        # Build completion suffix
-        suffix = bytearray()
-
-        # Handle incomplete key-value patterns
-        if not has_colon and quote_count > 0:
-            suffix.extend(b':"" ')
-        elif ends_with_colon:
-            suffix.extend(b'""')
-
-        # Close unclosed string
-        if quote_count % 2 == 1:
-            suffix.append(QUOTE)
-
-        # Close arrays and objects
-        if open_brackets > 0:
-            suffix.extend(b"]" * open_brackets)
-        if open_braces > 0:
-            suffix.extend(b"}" * open_braces)
-
-        if suffix:
-            return json_bytes + bytes(suffix)
-        return json_bytes
-
     def _extract_json_from_markdown(self, data: bytes) -> bytes:
         """
         Extract the JSON payload from a fenced markdown code block, if present.
-        
+
         This method trims surrounding whitespace, detects an opening fence of either ``` or ```json,
         and returns the bytes inside the code fence (with surrounding whitespace removed). If a
         closing fence is not found, returns the bytes after the opening fence trimmed. If the input
         does not start with a markdown fence, returns the trimmed input unchanged.
-        
+
         Parameters:
-        	data (bytes): Bytes that may contain a fenced markdown code block.
-        
+                data (bytes): Bytes that may contain a fenced markdown code block.
+
         Returns:
-        	bytes: The extracted and trimmed JSON bytes from inside the markdown fence, or the
-        	trimmed original data if no fence is present or no closing fence is found.
+                bytes: The extracted and trimmed JSON bytes from inside the markdown fence, or the
+                trimmed original data if no fence is present or no closing fence is found.
         """
         data = data.strip()
 
@@ -199,10 +127,10 @@ class StreamingTokenParser:
     def _detect_event_type_from_partial(self, data: Dict[str, Any]) -> EventType:
         """
         Determine the agent event type based on keys present in a partially parsed JSON payload.
-        
+
         Parameters:
             data (Dict[str, Any]): Partially parsed JSON object to inspect for indicative keys.
-        
+
         Returns:
             EventType: `'plan'` if `data` contains the key `"plan"`, `'step'` if it contains `"tool_calls"` or `"tool_thought"`, `'final_response'` if it contains `"final_answer"`, and `'unknown'` otherwise.
         """
@@ -218,12 +146,12 @@ class StreamingTokenParser:
     def try_parse_partial(self, step_id: str) -> Optional[StreamingEvent]:
         """
         Attempt to parse the accumulated token buffer for a step into a structured streaming event.
-        
+
         Given the current buffered tokens for `step_id`, this method extracts JSON-like content (including from markdown code fences), attempts to complete any partial JSON, and parses it into one of the structured streaming event types (AgentPlanEvent, AgentStepEvent, or AgentFinalResponseEvent) when enough information is present.
-        
+
         Parameters:
             step_id (str): Identifier of the step whose buffer will be parsed.
-        
+
         Returns:
             Optional[StreamingEvent]: A fully formed streaming event (AgentPlanEvent, AgentStepEvent, or AgentFinalResponseEvent) when the buffer contains sufficient parseable information; `None` if the buffer is empty, incomplete, contains unsupported data, or cannot yet be converted into a structured event.
         """
@@ -232,10 +160,9 @@ class StreamingTokenParser:
             return None
 
         json_bytes = self._extract_json_from_markdown(buffer)
-        completed_json = self._complete_partial_json(json_bytes)
 
         try:
-            data = jiter.from_json(completed_json)
+            data = jiter.from_json(json_bytes, partial_mode="trailing-strings")
 
             if not isinstance(data, dict):
                 return None
@@ -306,12 +233,12 @@ def parse_streaming_events(
 ) -> Generator[StreamingEvent, None, None]:
     """
     Produce structured streaming events from an agent's raw streaming-event generator.
-    
+
     This function consumes an upstream generator of StreamingEvent objects, accumulates token payloads per step, attempts incremental parsing of partial JSON payloads into structured events (AgentPlanEvent, AgentStepEvent, AgentFinalResponseEvent), and yields either parsed events or pass-through events from the original stream.
-    
+
     Parameters:
         agent_stream (Generator[StreamingEvent, None, None]): Source generator producing streaming events from the agent.
-    
+
     Returns:
         Generator[StreamingEvent, None, None]: A generator that yields structured StreamingEvent instances as they become available (parsed incremental events or original pass-through events).
     """

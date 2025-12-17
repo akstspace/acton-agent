@@ -2,7 +2,6 @@
 Tests for the streaming_parser module.
 """
 
-import pytest
 
 from acton_agent.agent.models import (
     AgentFinalResponse,
@@ -73,44 +72,6 @@ class TestStreamingTokenParser:
         """Test clearing nonexistent buffer doesn't error."""
         parser = StreamingTokenParser()
         parser.clear_buffer("nonexistent")  # Should not raise
-
-    def test_complete_partial_json_empty(self):
-        """Test completing empty JSON."""
-        parser = StreamingTokenParser()
-        result = parser._complete_partial_json(b"")
-        assert result == b"{}"
-
-    def test_complete_partial_json_only_opening_brace(self):
-        """Test completing JSON with only opening brace."""
-        parser = StreamingTokenParser()
-        result = parser._complete_partial_json(b"{")
-        assert result == b"{}"
-
-    def test_complete_partial_json_unclosed_string(self):
-        """Test completing JSON with unclosed string."""
-        parser = StreamingTokenParser()
-        result = parser._complete_partial_json(b'{"key": "val')
-        assert b'"' in result  # Should close the string
-        assert result.endswith(b"}")
-
-    def test_complete_partial_json_unclosed_object(self):
-        """Test completing JSON with unclosed object."""
-        parser = StreamingTokenParser()
-        result = parser._complete_partial_json(b'{"key": "value"')
-        assert result.endswith(b"}")
-
-    def test_complete_partial_json_unclosed_array(self):
-        """Test completing JSON with unclosed array."""
-        parser = StreamingTokenParser()
-        result = parser._complete_partial_json(b'{"arr": [1, 2, 3')
-        assert b"]" in result
-        assert result.endswith(b"}")
-
-    def test_complete_partial_json_incomplete_key_value(self):
-        """Test completing JSON with incomplete key-value."""
-        parser = StreamingTokenParser()
-        result = parser._complete_partial_json(b'{"key":')
-        assert b'""' in result  # Should add empty string value
 
     def test_extract_json_from_markdown_with_json_marker(self):
         """Test extracting JSON from markdown with json marker."""
@@ -295,10 +256,10 @@ class TestStreamingTokenParser:
     def test_try_parse_partial_caches_detected_type(self):
         """Test that detected type is cached."""
         parser = StreamingTokenParser()
-        parser.add_token("step-1", '{"plan":')
+        parser.add_token("step-1", '{"plan": "h')
 
         # First parse
-        result1 = parser.try_parse_partial("step-1")
+        parser.try_parse_partial("step-1")
         assert "step-1" in parser.detected_types
         assert parser.detected_types["step-1"] == "plan"
 
@@ -414,9 +375,7 @@ class TestParseStreamingEvents:
 
         events = list(parse_streaming_events(mock_stream()))
 
-        execution_events = [
-            e for e in events if isinstance(e, AgentToolExecutionEvent)
-        ]
+        execution_events = [e for e in events if isinstance(e, AgentToolExecutionEvent)]
         assert len(execution_events) == 2
         assert execution_events[0].status == "started"
         assert execution_events[1].status == "completed"
