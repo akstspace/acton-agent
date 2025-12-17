@@ -166,10 +166,10 @@ class TestExtractThought:
         assert thought == "step thought"
 
     def test_extract_thought_from_final_response(self):
-        """Test extracting thought from final response."""
-        response = AgentFinalResponse(thought="final thought", final_answer="answer")
+        """Test extracting thought from final response (should return None since thought field removed)."""
+        response = AgentFinalResponse(final_answer="answer")
         thought = ResponseParser.extract_thought(response)
-        assert thought == "final thought"
+        assert thought is None
 
     def test_extract_thought_when_none(self):
         """Test extracting thought when it's None."""

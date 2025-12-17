@@ -118,16 +118,12 @@ class TestAgentFinalResponse:
 
     def test_create_final_response(self):
         """Test creating a final response."""
-        response = AgentFinalResponse(
-            thought="I have the answer", final_answer="The answer is 42"
-        )
-        assert response.thought == "I have the answer"
+        response = AgentFinalResponse(final_answer="The answer is 42")
         assert response.final_answer == "The answer is 42"
 
     def test_final_response_without_thought(self):
-        """Test final response without thought."""
+        """Test final response creation."""
         response = AgentFinalResponse(final_answer="The answer is 42")
-        assert response.thought is None
         assert response.final_answer == "The answer is 42"
 
 

@@ -178,9 +178,8 @@ class StreamingTokenParser:
 
             if detected_type == "plan" and "plan" in data:
                 plan_str = str(data["plan"]) if data["plan"] else ""
-                is_complete = bool(plan_str.strip())
                 return AgentPlanEvent(
-                    step_id=step_id, plan=AgentPlan(plan=plan_str), complete=is_complete
+                    step_id=step_id, plan=AgentPlan(plan=plan_str), complete=False
                 )
 
             elif detected_type == "step" and (
@@ -200,25 +199,20 @@ class StreamingTokenParser:
                                     parameters=tc.get("parameters", {}),
                                 )
                             )
-
                 return AgentStepEvent(
                     step_id=step_id,
                     step=AgentStep(
                         tool_thought=data.get("tool_thought"), tool_calls=tool_calls
                     ),
-                    complete=bool(tool_calls),
+                    complete=False,
                 )
 
-            elif detected_type == "final_response" and (
-                "thought" in data or "final_answer" in data
-            ):
+            elif detected_type == "final_response" and "final_answer" in data:
                 final_answer = data.get("final_answer", "")
                 return AgentFinalResponseEvent(
                     step_id=step_id,
-                    response=AgentFinalResponse(
-                        thought=data.get("thought"), final_answer=final_answer
-                    ),
-                    complete=bool(final_answer),
+                    response=AgentFinalResponse(final_answer=final_answer),
+                    complete=False,
                 )
 
         except Exception:
