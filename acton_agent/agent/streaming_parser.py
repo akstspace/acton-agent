@@ -45,7 +45,13 @@ class StreamingTokenParser:
     __slots__ = ("step_buffers", "detected_types")
 
     def __init__(self):
-        """Initialize the streaming token parser."""
+        """
+        Create a StreamingTokenParser and initialize internal state.
+        
+        Initializes:
+        - step_buffers (Dict[str, bytearray]): per-step byte buffers used to accumulate incoming tokens efficiently.
+        - detected_types (Dict[str, EventType]): map of step_id to a heuristically detected event type ("plan", "step", "final_response", or "unknown").
+        """
         self.step_buffers: Dict[
             str, bytearray
         ] = {}  # Use bytearray for faster concatenation
@@ -58,17 +64,37 @@ class StreamingTokenParser:
         self.step_buffers[step_id].extend(token.encode("utf-8"))
 
     def get_buffer(self, step_id: str) -> bytes:
-        """Get the accumulated buffer for a step."""
+        """
+        Get the accumulated bytes buffer for the specified step identifier.
+        
+        Returns:
+            bytes: The accumulated bytes for the step, or b"" if no buffer exists.
+        """
         buf = self.step_buffers.get(step_id)
         return bytes(buf) if buf else b""
 
     def clear_buffer(self, step_id: str) -> None:
-        """Clear the buffer for a specific step."""
+        """
+        Remove and discard any accumulated token buffer and detected event type for the given step.
+        
+        Parameters:
+            step_id (str): Identifier of the step whose buffer and detected event type should be removed.
+        """
         self.step_buffers.pop(step_id, None)
         self.detected_types.pop(step_id, None)
 
     def _complete_partial_json(self, json_bytes: bytes) -> bytes:
-        """Complete partial JSON by adding missing closing brackets/quotes."""
+        """
+        Complete a possibly truncated JSON byte sequence by appending minimal tokens to produce a valid JSON value.
+        
+        This function makes targeted fixes for common truncation cases: it returns b"{}" for empty input, appends a closing quote if a string is left open, closes any unmatched arrays or objects, and inserts a simple empty value for trailing keys or colons when a key/value pattern is incomplete. If no completion is required the original bytes are returned unchanged.
+        
+        Parameters:
+            json_bytes (bytes): Partial JSON data as UTF-8 bytes.
+        
+        Returns:
+            bytes: The original bytes augmented with the minimal suffix needed to form a complete JSON value (or the original bytes if no changes were necessary).
+        """
         if not json_bytes:
             return b"{}"
 
@@ -128,7 +154,21 @@ class StreamingTokenParser:
         return json_bytes
 
     def _extract_json_from_markdown(self, data: bytes) -> bytes:
-        """Extract JSON from markdown code blocks."""
+        """
+        Extract the JSON payload from a fenced markdown code block, if present.
+        
+        This method trims surrounding whitespace, detects an opening fence of either ``` or ```json,
+        and returns the bytes inside the code fence (with surrounding whitespace removed). If a
+        closing fence is not found, returns the bytes after the opening fence trimmed. If the input
+        does not start with a markdown fence, returns the trimmed input unchanged.
+        
+        Parameters:
+        	data (bytes): Bytes that may contain a fenced markdown code block.
+        
+        Returns:
+        	bytes: The extracted and trimmed JSON bytes from inside the markdown fence, or the
+        	trimmed original data if no fence is present or no closing fence is found.
+        """
         data = data.strip()
 
         if not data.startswith(MARKDOWN_START):
@@ -157,7 +197,15 @@ class StreamingTokenParser:
         return data[start:].strip()
 
     def _detect_event_type_from_partial(self, data: Dict[str, Any]) -> EventType:
-        """Detect the event type from partially parsed JSON data."""
+        """
+        Determine the agent event type based on keys present in a partially parsed JSON payload.
+        
+        Parameters:
+            data (Dict[str, Any]): Partially parsed JSON object to inspect for indicative keys.
+        
+        Returns:
+            EventType: `'plan'` if `data` contains the key `"plan"`, `'step'` if it contains `"tool_calls"` or `"tool_thought"`, `'final_response'` if it contains `"final_answer"`, and `'unknown'` otherwise.
+        """
         # Optimized: single pass through keys
         if "plan" in data:
             return "plan"
@@ -168,7 +216,17 @@ class StreamingTokenParser:
         return "unknown"
 
     def try_parse_partial(self, step_id: str) -> Optional[StreamingEvent]:
-        """Try to parse the accumulated tokens into a structured event using jiter."""
+        """
+        Attempt to parse the accumulated token buffer for a step into a structured streaming event.
+        
+        Given the current buffered tokens for `step_id`, this method extracts JSON-like content (including from markdown code fences), attempts to complete any partial JSON, and parses it into one of the structured streaming event types (AgentPlanEvent, AgentStepEvent, or AgentFinalResponseEvent) when enough information is present.
+        
+        Parameters:
+            step_id (str): Identifier of the step whose buffer will be parsed.
+        
+        Returns:
+            Optional[StreamingEvent]: A fully formed streaming event (AgentPlanEvent, AgentStepEvent, or AgentFinalResponseEvent) when the buffer contains sufficient parseable information; `None` if the buffer is empty, incomplete, contains unsupported data, or cannot yet be converted into a structured event.
+        """
         buffer = self.get_buffer(step_id)
         if not buffer:
             return None
@@ -247,7 +305,15 @@ def parse_streaming_events(
     agent_stream: Generator[StreamingEvent, None, None],
 ) -> Generator[StreamingEvent, None, None]:
     """
-    Wrap an agent's streaming output generator to parse and yield structured events.
+    Produce structured streaming events from an agent's raw streaming-event generator.
+    
+    This function consumes an upstream generator of StreamingEvent objects, accumulates token payloads per step, attempts incremental parsing of partial JSON payloads into structured events (AgentPlanEvent, AgentStepEvent, AgentFinalResponseEvent), and yields either parsed events or pass-through events from the original stream.
+    
+    Parameters:
+        agent_stream (Generator[StreamingEvent, None, None]): Source generator producing streaming events from the agent.
+    
+    Returns:
+        Generator[StreamingEvent, None, None]: A generator that yields structured StreamingEvent instances as they become available (parsed incremental events or original pass-through events).
     """
     parser = StreamingTokenParser()
     current_step_id: Optional[str] = None
