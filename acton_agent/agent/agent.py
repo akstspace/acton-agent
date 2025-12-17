@@ -25,6 +25,7 @@ from .models import (
     AgentStreamEnd,
     AgentStreamStart,
     AgentToken,
+    AgentToolExecutionEvent,
     AgentToolResultsEvent,
     Message,
     StreamingEvent,
@@ -278,6 +279,119 @@ class Agent:
 
         return results
 
+    def _execute_tool_calls_stream(
+        self, tool_calls: List[ToolCall], step_id: str
+    ) -> Generator[AgentToolExecutionEvent, None, List[ToolResult]]:
+        """
+        Execute tool calls with streaming progress events.
+
+        Yields AgentToolExecutionEvent for each tool execution (started, completed, or failed).
+
+        Parameters:
+            tool_calls (List[ToolCall]): Tool calls to execute in order.
+            step_id (str): The step identifier for emitted events.
+
+        Yields:
+            AgentToolExecutionEvent: Progress events for each tool execution.
+
+        Returns:
+            List[ToolResult]: Complete list of tool results.
+        """
+        results = []
+
+        for tool_call in tool_calls:
+            # Emit started event
+            yield AgentToolExecutionEvent(
+                step_id=step_id,
+                tool_call_id=tool_call.id,
+                tool_name=tool_call.tool_name,
+                status="started",
+            )
+
+            tool = self.tool_registry.get(tool_call.tool_name)
+
+            if tool is None:
+                result = ToolResult(
+                    tool_call_id=tool_call.id,
+                    tool_name=tool_call.tool_name,
+                    result="",
+                    error=f"Tool '{tool_call.tool_name}' not found",
+                )
+                logger.error(f"Tool not found: {tool_call.tool_name}")
+
+                # Emit failed event
+                yield AgentToolExecutionEvent(
+                    step_id=step_id,
+                    tool_call_id=tool_call.id,
+                    tool_name=tool_call.tool_name,
+                    status="failed",
+                    result=result,
+                )
+            else:
+                try:
+                    # Execute with retry
+                    result_text = self._execute_single_tool(tool, tool_call.parameters)
+
+                    # Check if result indicates an error
+                    error = None
+                    if result_text.startswith("Error"):
+                        error = result_text
+                        result_text = ""
+
+                    result = ToolResult(
+                        tool_call_id=tool_call.id,
+                        tool_name=tool_call.tool_name,
+                        result=result_text,
+                        error=error,
+                    )
+
+                    if result.success:
+                        logger.success(
+                            f"Tool {tool_call.tool_name} executed successfully"
+                        )
+                        # Emit completed event
+                        yield AgentToolExecutionEvent(
+                            step_id=step_id,
+                            tool_call_id=tool_call.id,
+                            tool_name=tool_call.tool_name,
+                            status="completed",
+                            result=result,
+                        )
+                    else:
+                        logger.warning(
+                            f"Tool {tool_call.tool_name} returned error: {error}"
+                        )
+                        # Emit failed event
+                        yield AgentToolExecutionEvent(
+                            step_id=step_id,
+                            tool_call_id=tool_call.id,
+                            tool_name=tool_call.tool_name,
+                            status="failed",
+                            result=result,
+                        )
+
+                except ToolExecutionError as e:
+                    logger.error(f"Tool {tool_call.tool_name} execution failed: {e}")
+                    result = ToolResult(
+                        tool_call_id=tool_call.id,
+                        tool_name=tool_call.tool_name,
+                        result="",
+                        error=str(e),
+                    )
+
+                    # Emit failed event
+                    yield AgentToolExecutionEvent(
+                        step_id=step_id,
+                        tool_call_id=tool_call.id,
+                        tool_name=tool_call.tool_name,
+                        status="failed",
+                        result=result,
+                    )
+
+            results.append(result)
+
+        return results
+
     def _format_tool_results(self, results: List[ToolResult]) -> str:
         """
         Format multiple tool execution results into a readable multi-line string suitable for appending to conversation history.
@@ -457,15 +571,20 @@ class Agent:
                 logger.info(f"Executing {len(agent_response.tool_calls)} tool call(s)")
                 yield AgentStepEvent(step_id=step_id, step=agent_response)
 
-                # Execute tools and add results to conversation
-                tool_results = self._execute_tool_calls(agent_response.tool_calls)
+                tool_results = []
+                for event in self._execute_tool_calls_stream(
+                    agent_response.tool_calls, step_id
+                ):
+                    yield event
+                    if event.status in ["completed", "failed"] and event.result:
+                        tool_results.append(event.result)
+
                 results_text = self._format_tool_results(tool_results)
 
                 self.conversation_history.append(
                     Message(role="user", content=results_text)
                 )
 
-                # Yield tool results info
                 yield AgentToolResultsEvent(step_id=step_id, results=tool_results)
 
                 continue

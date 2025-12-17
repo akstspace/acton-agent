@@ -84,15 +84,14 @@ RESPONSE FORMAT EXAMPLES:
 For initial planning:
 ```json
 {{{{
-  "thought": "your reasoning about the task",
-  "plan": ["step 1", "step 2", "step 3"]
+  "plan": "Outline of steps to accomplish the task"
 }}}}
 ```
 
 For tool execution:
 ```json
 {{{{
-  "thought": "reasoning for this step",
+  "tool_thought": "reasoning for this step",
   "tool_calls": [
     {{{{
       "id": "call_1",
@@ -106,7 +105,6 @@ For tool execution:
 For final answer:
 ```json
 {{{{
-  "thought": "final reasoning (optional)",
   "final_answer": "your complete answer to the user"
 }}}}
 ```
