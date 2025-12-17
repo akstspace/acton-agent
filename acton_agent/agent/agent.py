@@ -217,12 +217,12 @@ class Agent:
     def _execute_tool_calls(self, tool_calls: List[ToolCall]) -> List[ToolResult]:
         """
         Execute a sequence of ToolCall requests and return their ToolResult entries in order.
-        
+
         Each ToolCall is resolved against the agent's registry and invoked with the call's parameters. If a tool name is not registered, the corresponding ToolResult contains an error "Tool '<name>' not found". If a tool's execution output begins with the literal text "Error", that text is recorded in the ToolResult's `error` field and the `result` is set to an empty string. If execution raises a ToolExecutionError, the exception message is recorded in the `error` field and the `result` is an empty string.
-        
+
         Parameters:
             tool_calls (List[ToolCall]): Ordered tool calls to execute.
-        
+
         Returns:
             List[ToolResult]: ToolResult objects corresponding to each input ToolCall, in the same order.
         """
@@ -284,16 +284,16 @@ class Agent:
     ) -> Generator[AgentToolExecutionEvent, None, List[ToolResult]]:
         """
         Stream execution of a sequence of tool calls and emit progress events for each call.
-        
+
         Executes each ToolCall in order, yielding AgentToolExecutionEvent items with status "started", "completed", or "failed" for that step. Each emitted event includes the provided step_id, the tool call id, the tool name, and—when available—the resulting ToolResult. Execution continues through all provided calls and the final return value is the ordered list of ToolResult objects corresponding to the input calls.
-        
+
         Parameters:
             tool_calls (List[ToolCall]): Ordered tool call requests to execute.
             step_id (str): Identifier included on each emitted AgentToolExecutionEvent to correlate events with a higher-level agent step.
-        
+
         Yields:
             AgentToolExecutionEvent: Progress events for each tool call indicating start, completion, or failure. Completed/failed events include the associated ToolResult when available.
-        
+
         Returns:
             List[ToolResult]: List of ToolResult objects in the same order as `tool_calls`, containing results or error details for each call.
         """
@@ -503,7 +503,7 @@ class Agent:
     def run_stream(self, user_input: str) -> Generator[StreamingEvent, None, None]:
         """
         Stream the agent's processing of a single user input as a sequence of structured streaming events.
-        
+
         Yields streaming events representing LLM activity, agent planning/steps, tool execution progress, aggregated tool results, and the final agent response:
         - AgentStreamStart: emitted when LLM streaming begins for the step.
         - AgentToken: individual token/chunk produced by the LLM stream.
@@ -513,10 +513,10 @@ class Agent:
         - AgentToolExecutionEvent: progress events for individual tool executions (started, completed, failed).
         - AgentToolResultsEvent: aggregated results from executed tools for the step.
         - AgentFinalResponseEvent: the final answer produced by the agent.
-        
+
         Parameters:
             user_input (str): The user's question or request to process.
-        
+
         Raises:
             MaxIterationsError: If the agent exhausts the configured maximum iterations without producing a final response.
         """
