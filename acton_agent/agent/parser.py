@@ -170,7 +170,9 @@ class ResponseParser:
         """
         Retrieve the thought text from a response object.
 
-        For AgentPlan, AgentStep, and AgentFinalResponse, returns the object's `thought` attribute if present.
+        For AgentStep, returns the `tool_thought` attribute.
+        For AgentFinalResponse, returns the `thought` attribute if present.
+        For AgentPlan, returns None (plans don't have thought attribute).
 
         Parameters:
             response (Union[AgentPlan, AgentStep, AgentFinalResponse]): The response to extract thought from.
@@ -178,4 +180,6 @@ class ResponseParser:
         Returns:
             Optional[str]: The thought text if available, `None` otherwise.
         """
+        if isinstance(response, AgentStep):
+            return getattr(response, "tool_thought", None)
         return getattr(response, "thought", None)

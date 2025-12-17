@@ -30,21 +30,19 @@ class TestResponseParser:
         """Test parsing a plan response."""
         response_text = """```json
 {
-  "thought": "Let me plan this",
-  "plan": ["Step 1", "Step 2", "Step 3"]
+  "plan": "Step 1: Do this\\nStep 2: Do that\\nStep 3: Complete"
 }
 ```"""
 
         result = ResponseParser.parse(response_text)
         assert isinstance(result, AgentPlan)
-        assert result.thought == "Let me plan this"
-        assert len(result.plan) == 3
+        assert "Step 1" in result.plan
 
     def test_parse_step_with_tool_calls(self):
         """Test parsing a step with tool calls."""
         response_text = """```json
 {
-  "thought": "I need to call a tool",
+  "tool_thought": "I need to call a tool",
   "tool_calls": [
     {
       "id": "call_1",
@@ -57,7 +55,7 @@ class TestResponseParser:
 
         result = ResponseParser.parse(response_text)
         assert isinstance(result, AgentStep)
-        assert result.thought == "I need to call a tool"
+        assert result.tool_thought == "I need to call a tool"
         assert len(result.tool_calls) == 1
         assert result.tool_calls[0].tool_name == "calculator"
 
@@ -118,25 +116,25 @@ class TestResponseValidation:
 
     def test_validate_valid_plan(self):
         """Test validating a valid plan."""
-        plan = AgentPlan(thought="test", plan=["step1", "step2"])
+        plan = AgentPlan(plan="step1\nstep2")
         assert ResponseParser.validate_response(plan)
 
     def test_validate_invalid_plan(self):
         """Test validating invalid plan (empty)."""
-        plan = AgentPlan(thought="test", plan=[])
+        plan = AgentPlan(plan="")
         assert not ResponseParser.validate_response(plan)
 
     def test_validate_valid_step(self):
         """Test validating a valid step."""
         step = AgentStep(
-            thought="test",
+            tool_thought="test",
             tool_calls=[ToolCall(id="1", tool_name="test", parameters={})],
         )
         assert ResponseParser.validate_response(step)
 
     def test_validate_invalid_step(self):
         """Test validating invalid step (no tool calls)."""
-        step = AgentStep(thought="test", tool_calls=[])
+        step = AgentStep(tool_thought="test", tool_calls=[])
         assert not ResponseParser.validate_response(step)
 
     def test_validate_valid_final_response(self):
@@ -154,15 +152,15 @@ class TestExtractThought:
     """Tests for extracting thought from responses."""
 
     def test_extract_thought_from_plan(self):
-        """Test extracting thought from plan."""
-        plan = AgentPlan(thought="planning thought", plan=["step"])
+        """Test extracting thought from plan - plans don't have thought field."""
+        plan = AgentPlan(plan="planning thought")
         thought = ResponseParser.extract_thought(plan)
-        assert thought == "planning thought"
+        assert thought is None
 
     def test_extract_thought_from_step(self):
         """Test extracting thought from step."""
         step = AgentStep(
-            thought="step thought", tool_calls=[ToolCall(id="1", tool_name="test")]
+            tool_thought="step thought", tool_calls=[ToolCall(id="1", tool_name="test")]
         )
         thought = ResponseParser.extract_thought(step)
         assert thought == "step thought"
