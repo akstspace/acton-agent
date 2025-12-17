@@ -284,25 +284,6 @@ This project is in **experimental phase** and is primarily for personal use. The
 - **Documentation**: Documentation is being actively developed
 - **Testing**: Test coverage is being expanded
 
-### Known Limitations
-
-- Limited to text-based interactions (no multimodal support yet)
-- Tool execution is synchronous (no async support yet)
-- Limited error recovery strategies for complex tool chains
-- No built-in conversation persistence
-
-### Planned Features
-
-- Asynchronous tool execution
-- Multimodal support (images, audio)
-- Built-in conversation persistence and memory
-- More pre-built tools for common tasks
-- Better error handling and recovery
-- Support for more LLM providers
-- Tool composition and chaining utilities
-- Improved streaming capabilities
-- Plugin system for extensions
-
 ### Contributing
 
 As this is a personal experimental project, contributions are not actively sought at this time. However, if you find bugs or have suggestions, feel free to open an issue on GitHub.
