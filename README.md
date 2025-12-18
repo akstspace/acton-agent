@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/acton-icon.jpg" alt="Acton Agent Logo" width="200"/>
+  <img src="images/acton-icon.jpg" alt="Acton Agent" width="200"/>
 </p>
 
 # Acton Agent
