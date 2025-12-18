@@ -63,8 +63,6 @@ This project is in **experimental phase** and is primarily for personal use. The
 
 - **API Stability**: The API may change between versions without notice
 - **Production Readiness**: Not recommended for production use yet
-- **Documentation**: Documentation is being actively developed
-- **Testing**: Test coverage is being expanded
 
 ### Contributing
 
