@@ -356,3 +356,65 @@ class TestConversationHistory:
         # The agent should have a way to clear history
         agent.conversation_history.clear()
         assert len(agent.conversation_history) == 0
+
+    def test_add_message_user(self, mock_llm_client):
+        """Test adding a user message to conversation history."""
+        agent = Agent(llm_client=mock_llm_client)
+
+        agent.add_message("user", "Hello, how are you?")
+
+        assert len(agent.conversation_history) == 1
+        assert agent.conversation_history[0].role == "user"
+        assert agent.conversation_history[0].content == "Hello, how are you?"
+
+    def test_add_message_assistant(self, mock_llm_client):
+        """Test adding an assistant message to conversation history."""
+        agent = Agent(llm_client=mock_llm_client)
+
+        agent.add_message("assistant", "I'm doing well, thank you!")
+
+        assert len(agent.conversation_history) == 1
+        assert agent.conversation_history[0].role == "assistant"
+        assert agent.conversation_history[0].content == "I'm doing well, thank you!"
+
+    def test_add_message_system(self, mock_llm_client):
+        """Test adding a system message to conversation history."""
+        agent = Agent(llm_client=mock_llm_client)
+
+        agent.add_message("system", "This is a system message")
+
+        assert len(agent.conversation_history) == 1
+        assert agent.conversation_history[0].role == "system"
+        assert agent.conversation_history[0].content == "This is a system message"
+
+    def test_add_multiple_messages(self, mock_llm_client):
+        """Test adding multiple messages to conversation history."""
+        agent = Agent(llm_client=mock_llm_client)
+
+        agent.add_message("user", "First message")
+        agent.add_message("assistant", "Second message")
+        agent.add_message("user", "Third message")
+
+        assert len(agent.conversation_history) == 3
+        assert agent.conversation_history[0].content == "First message"
+        assert agent.conversation_history[1].content == "Second message"
+        assert agent.conversation_history[2].content == "Third message"
+
+    def test_add_message_preserves_order(self, mock_llm_client):
+        """Test that messages are added in the correct order."""
+        agent = Agent(llm_client=mock_llm_client)
+
+        messages = [
+            ("user", "Message 1"),
+            ("assistant", "Message 2"),
+            ("user", "Message 3"),
+            ("assistant", "Message 4"),
+        ]
+
+        for role, content in messages:
+            agent.add_message(role, content)
+
+        assert len(agent.conversation_history) == 4
+        for i, (role, content) in enumerate(messages):
+            assert agent.conversation_history[i].role == role
+            assert agent.conversation_history[i].content == content

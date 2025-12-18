@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="images/acton-icon.jpg" alt="Acton Agent Logo" width="200"/>
+</p>
+
 # Acton Agent
 
 > ⚠️ **Experimental Project**: This is a personal project currently in an experimental phase. The API may change without notice, and features may be incomplete or unstable. Use at your own discretion.
