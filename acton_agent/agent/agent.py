@@ -630,10 +630,22 @@ class Agent:
         self.conversation_history = []
         logger.info("Agent conversation history reset")
 
+    def add_message(self, role: str, content: str) -> None:
+        """
+        Append a message with the given role and content to the agent's conversation history.
+        
+        Parameters:
+            role (str): The message role (e.g., 'user', 'assistant', 'system').
+            content (str): The message text to append.
+        """
+        message = Message(role=role, content=content)
+        self.conversation_history.append(message)
+        logger.info(f"Added {role} message to conversation history")
+
     def get_conversation_history(self) -> List[Message]:
         """
-        Retrieve a shallow copy of the agent's conversation history.
-
+        Return a shallow copy of the agent's conversation history.
+        
         Returns:
             List[Message]: A shallow copy of the conversation history as a list of Message objects in chronological order.
         """

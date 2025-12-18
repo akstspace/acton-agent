@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="images/acton-icon.jpg" alt="Acton Agent" width="200"/>
+</p>
+
 # Acton Agent
 
 > ⚠️ **Experimental Project**: This is a personal project currently in an experimental phase. The API may change without notice, and features may be incomplete or unstable. Use at your own discretion.
@@ -59,8 +63,6 @@ This project is in **experimental phase** and is primarily for personal use. The
 
 - **API Stability**: The API may change between versions without notice
 - **Production Readiness**: Not recommended for production use yet
-- **Documentation**: Documentation is being actively developed
-- **Testing**: Test coverage is being expanded
 
 ### Contributing
 
