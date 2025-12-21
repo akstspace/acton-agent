@@ -17,29 +17,22 @@ This guide explains the fundamental concepts and architecture of Acton Agent. Un
 
 Acton Agent follows a modular architecture with clear separation of concerns:
 
-```
-┌─────────────────────────────────────────────┐
-│              Your Application               │
-└─────────────────┬───────────────────────────┘
-                  │
-         ┌────────▼─────────┐
-         │      Agent       │  ← Orchestrates everything
-         │                  │
-         │  - Planning      │
-         │  - Tool calling  │
-         │  - Memory mgmt   │
-         └──┬────────────┬──┘
-            │            │
-    ┌───────▼──┐    ┌───▼────────┐
-    │ LLM      │    │ Tools      │
-    │ Client   │    │ Registry   │
-    └──────────┘    └────────────┘
-         │               │
-    ┌────▼───────┐  ┌───▼─────────┐
-    │  Provider  │  │  Individual  │
-    │  (OpenAI,  │  │  Tools       │
-    │   etc.)    │  │             │
-    └────────────┘  └─────────────┘
+```mermaid
+graph TD
+    A[Your Application] --> B[Agent]
+    B --> C[LLM Client]
+    B --> D[Tool Registry]
+    C --> E[Provider<br/>OpenAI, etc.]
+    D --> F[Individual Tools]
+    
+    style B fill:#e1f5ff,stroke:#01579b
+    style C fill:#fff3e0,stroke:#e65100
+    style D fill:#f3e5f5,stroke:#4a148c
+    
+    Note1[Agent: Orchestrates everything<br/>- Planning<br/>- Tool calling<br/>- Memory management]
+    
+    class Note1 note
+    classDef note fill:#fffde7,stroke:#f57f17,stroke-width:2px
 ```
 
 ### Key Design Principles
@@ -81,6 +74,23 @@ agent.reset()  # Clears conversation history
 
 When you call `agent.run(user_input)`:
 
+```mermaid
+graph LR
+    A[User Input] --> B[Message Building]
+    B --> C[LLM Call]
+    C --> D[Response Parsing]
+    D --> E{Tool Needed?}
+    E -->|Yes| F[Tool Execution]
+    F --> G[Add Results to History]
+    G --> C
+    E -->|No| H[Final Answer]
+    
+    style A fill:#e3f2fd,stroke:#1565c0
+    style H fill:#c8e6c9,stroke:#2e7d32
+    style F fill:#fff9c4,stroke:#f57f17
+```
+
+**Process Details:**
 1. **Message Building**: Constructs the message list including system prompt, tools, and history
 2. **LLM Call**: Sends messages to the LLM and receives a response
 3. **Response Parsing**: Parses the response into AgentPlan, AgentStep, or AgentFinalResponse
@@ -119,13 +129,25 @@ result = agent.run("What's the weather in Seattle?")
 ```
 
 **Behind the scenes:**
-1. User message added to history
-2. LLM receives: system prompt + tool schemas + user message
-3. LLM responds with AgentStep containing tool call for "get_weather"
-4. Agent executes tool, gets "The weather in Seattle is sunny and 72°F"
-5. Tool result added to history
-6. LLM receives updated history with tool result
-7. LLM responds with AgentFinalResponse: "The weather in Seattle is sunny with a temperature of 72°F."
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Agent
+    participant LLM
+    participant Tool
+    
+    User->>Agent: "What's the weather in Seattle?"
+    Agent->>Agent: Add user message to history
+    Agent->>LLM: System prompt + tools + history
+    LLM->>Agent: AgentStep (call get_weather)
+    Agent->>Tool: get_weather(city="Seattle")
+    Tool->>Agent: "Weather is sunny and 72°F"
+    Agent->>Agent: Add tool result to history
+    Agent->>LLM: Updated history with tool result
+    LLM->>Agent: AgentFinalResponse
+    Agent->>User: "The weather in Seattle is sunny and 72°F"
+```
 
 ## LLM Clients
 
