@@ -25,17 +25,26 @@ class ToolRegistry:
     """
 
     def __init__(self):
-        """Initialize an empty tool registry."""
+        """
+        Create an empty ToolRegistry and initialize internal mappings.
+        
+        Initializes:
+        - _tools: mapping of tool name to Tool
+        - _toolsets: mapping of toolset name to ToolSet
+        - _tool_to_toolset: mapping of tool name to its containing toolset name
+        """
         self._tools: dict[str, Tool] = {}
         self._toolsets: dict[str, ToolSet] = {}
         self._tool_to_toolset: dict[str, str] = {}  # Maps tool_name -> toolset_name
 
     def register(self, tool: Tool) -> None:
         """
-        Register a Tool under its name in the registry, overwriting any existing registration.
-
+        Register a tool in the registry under its name.
+        
+        If a tool with the same name already exists, it will be overwritten.
+        
         Parameters:
-            tool (Tool): The Tool instance to add to the registry.
+            tool (Tool): The Tool instance to register.
         """
         if tool.name in self._tools:
             logger.warning(f"Tool '{tool.name}' already registered, overwriting")
@@ -45,13 +54,10 @@ class ToolRegistry:
 
     def unregister(self, tool_name: str) -> None:
         """
-        Remove a registered tool from the registry by name.
-
-        Parameters:
-                tool_name (str): Name of the tool to remove.
-
+        Remove the tool with the given name from the registry.
+        
         Raises:
-                ToolNotFoundError: If no tool with `tool_name` is registered.
+            ToolNotFoundError: If no tool with the given name is registered.
         """
         if tool_name not in self._tools:
             raise ToolNotFoundError(tool_name)
@@ -61,13 +67,13 @@ class ToolRegistry:
 
     def get(self, tool_name: str) -> Tool | None:
         """
-        Retrieve a registered tool by name.
-
+        Retrieve the Tool registered under the given name.
+        
         Parameters:
-            tool_name (str): The name of the tool to retrieve.
-
+            tool_name (str): Name of the tool to look up.
+        
         Returns:
-            Optional[Tool]: The Tool instance if found, otherwise None.
+            The registered Tool if found, otherwise None.
         """
         return self._tools.get(tool_name)
 
@@ -100,12 +106,12 @@ class ToolRegistry:
 
     def register_toolset(self, toolset: "ToolSet") -> None:
         """
-        Register a ToolSet and add all tools contained in it to the registry.
-
-        If a ToolSet with the same name already exists, it is overwritten and its tools are replaced; each tool from the provided ToolSet is registered individually.
-
+        Register a ToolSet and add its tools to the registry.
+        
+        If a ToolSet with the same name exists it is overwritten; each tool in the provided ToolSet is registered and associated with the toolset in the registry's internal mappings.
+        
         Parameters:
-            toolset (ToolSet): The ToolSet instance whose tools should be added to the registry.
+            toolset (ToolSet): The ToolSet to register and whose contained tools will be added.
         """
 
         if toolset.name in self._toolsets:
@@ -156,13 +162,13 @@ class ToolRegistry:
 
     def get_toolset_params(self, tool_name: str) -> dict[str, Any] | None:
         """
-        Get the toolset parameters for a specific tool, if it belongs to a toolset.
-
+        Retrieve the toolset's parameter mapping for the given tool if it belongs to a registered toolset.
+        
         Parameters:
-            tool_name (str): The name of the tool to get toolset parameters for.
-
+            tool_name (str): Name of the tool to query.
+        
         Returns:
-            Optional[Dict[str, Any]]: The toolset parameters if the tool belongs to a toolset, None otherwise.
+            dict[str, Any] | None: The toolset parameters dictionary if the tool belongs to a toolset, `None` otherwise.
         """
         toolset_name = self._tool_to_toolset.get(tool_name)
         if toolset_name:
@@ -233,7 +239,11 @@ class ToolRegistry:
         return tools_text
 
     def clear(self) -> None:
-        """Remove all registered tools and toolsets."""
+        """
+        Clear all registered tools, toolsets, and the internal tool-to-toolset mapping.
+        
+        Removes every entry from the registry's internal storage for tools, toolsets, and the mapping that tracks which tool belongs to which toolset.
+        """
         self._tools.clear()
         self._toolsets.clear()
         self._tool_to_toolset.clear()
@@ -241,18 +251,21 @@ class ToolRegistry:
 
     def __len__(self) -> int:
         """
-        Return the number of registered tools.
-
+        Get the number of registered tools.
+        
         Returns:
-            count (int): The number of tools currently registered in the registry.
+            int: The number of registered tools in the registry.
         """
         return len(self._tools)
 
     def __contains__(self, tool_name: str) -> bool:
         """
-        Determine whether a tool name is registered in the registry.
-
+        Check whether a tool name is registered in the registry.
+        
+        Parameters:
+            tool_name (str): Name of the tool to check.
+        
         Returns:
-            `true` if the tool name is registered, `false` otherwise.
+            bool: True if the tool name is registered, False otherwise.
         """
         return tool_name in self._tools

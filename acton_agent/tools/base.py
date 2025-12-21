@@ -28,24 +28,23 @@ class Tool(ABC):
     @abstractmethod
     def execute(self, parameters: dict[str, Any], toolset_params: dict[str, Any] | None = None) -> str:
         """
-        Run the tool with the provided parameter mapping and return its textual output.
-
+        Execute the tool using the provided parameters.
+        
         Parameters:
-            parameters (Dict[str, Any]): Mapping of parameter names to values to be used as inputs for execution.
-            toolset_params (Optional[Dict[str, Any]]): Hidden parameters from the ToolSet that are automatically
-                injected during execution. These are not visible to the LLM but can be used by the tool implementation.
-
+            parameters (dict[str, Any]): Mapping of parameter names to values used for execution.
+            toolset_params (dict[str, Any] | None): Optional hidden parameters injected by the ToolSet; not exposed to the LLM but available to the implementation.
+        
         Returns:
-            str: The tool's textual result.
+            str: The textual output produced by the tool.
         """
 
     @abstractmethod
     def get_schema(self) -> dict[str, Any]:
         """
-        Retrieve the JSON Schema describing this tool's parameters.
-
+        Provide a JSON Schema describing the tool's parameters.
+        
         Returns:
-            schema (Dict[str, Any]): The JSON Schema object that specifies expected parameter names, types, and validation rules.
+            dict[str, Any]: A dictionary representing a JSON Schema that describes expected parameter names, types, constraints, and validation rules.
         """
 
     def process_output(self, output: str) -> str:

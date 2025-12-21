@@ -21,12 +21,12 @@ class SimpleTool(Tool):
 
     def execute(self, parameters: dict, toolset_params: dict | None = None) -> str:
         """
-        Return a formatted result using the "value" entry from parameters.
-
+        Format and return a result string using the "value" entry from parameters.
+        
         Parameters:
             parameters (dict): Mapping that may contain the key "value"; when absent, "default" is used.
-            toolset_params (dict): Optional toolset parameters (not used in this test tool).
-
+            toolset_params (dict | None): Optional toolset-level parameters; ignored by this tool.
+        
         Returns:
             str: The string "Result: {value}" where {value} is the resolved parameter.
         """

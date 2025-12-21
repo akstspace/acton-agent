@@ -44,17 +44,17 @@ class OpenAIClient:
         default_headers: dict | None = None,
     ):
         """
-        Create an OpenAI client configured with the provided API key and connection settings.
-
+        Initialize the OpenAIClient with API credentials and connection settings.
+        
         Parameters:
-            api_key (Optional[str]): OpenAI API key; if omitted, read from OPENAI_API_KEY environment variable.
+            api_key (str | None): OpenAI API key; if None, the OPENAI_API_KEY environment variable is used.
             model (str): Model identifier to use for requests (e.g., "gpt-4o", "gpt-3.5-turbo").
             base_url (str): Base URL for the OpenAI-compatible API.
-            organization (Optional[str]): Optional organization ID to include with requests.
-            default_headers (Optional[dict]): Optional default HTTP headers to include on all requests.
-
+            organization (str | None): Optional organization ID to include with requests.
+            default_headers (dict | None): Optional default HTTP headers to include on all requests.
+        
         Raises:
-            ValueError: If no API key is provided and OPENAI_API_KEY environment variable is not set.
+            ValueError: If no API key is provided via the `api_key` parameter or the OPENAI_API_KEY environment variable.
         """
         # Get API key from parameter or environment variable
         final_api_key = api_key or os.environ.get("OPENAI_API_KEY")

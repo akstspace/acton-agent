@@ -10,13 +10,13 @@ from acton_agent.tools import ToolRegistry
 
 def sample_function_1(param1: str) -> str:
     """
-    Create a result string that includes the provided parameter.
-
+    Constructs a message that embeds the given text.
+    
     Parameters:
-        param1 (str): Input text to include in the returned message.
-
+        param1 (str): Text to embed in the returned message.
+    
     Returns:
-        str: A message string containing `param1`.
+        str: Message containing the provided `param1`.
     """
     return f"Result from function 1: {param1}"
 

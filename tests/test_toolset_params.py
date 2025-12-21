@@ -20,13 +20,27 @@ class CustomToolWithParams(Tool):
     """A custom tool that uses toolset parameters."""
 
     def __init__(self):
+        """
+        Create a CustomToolWithParams configured with a fixed name and description.
+        
+        Sets the tool's name to "custom_tool" and its description to indicate the tool uses toolset parameters.
+        """
         super().__init__(
             name="custom_tool",
             description="A tool that uses toolset parameters",
         )
 
     def execute(self, parameters: dict, toolset_params: dict | None = None) -> str:
-        """Execute with both user params and toolset params."""
+        """
+        Merge user-provided parameters with optional toolset parameters and produce a brief diagnostic summary.
+        
+        Parameters:
+            parameters (dict): User-supplied parameters for the tool.
+            toolset_params (dict | None): Optional toolset-level parameters to be merged; user parameters take precedence when keys conflict.
+        
+        Returns:
+            str: A summary string that includes the original user parameters, the provided toolset parameters, and the resulting merged mapping.
+        """
         # Merge toolset_params with parameters, with parameters taking precedence
         merged = {}
         if toolset_params:
@@ -37,7 +51,12 @@ class CustomToolWithParams(Tool):
         return f"User params: {parameters}, Toolset params: {toolset_params}, Merged: {merged}"
 
     def get_schema(self) -> dict:
-        """Return schema (should not include toolset params)."""
+        """
+        Schema describing only the tool's user-visible parameters.
+        
+        Returns:
+            dict: JSON Schema for the tool's user-visible parameters; does not include toolset parameters.
+        """
         return {
             "type": "object",
             "properties": {
@@ -113,7 +132,16 @@ def test_function_tool_merges_toolset_params():
     """Test that FunctionTool correctly merges toolset params with user params."""
 
     def my_function(user_param: str, api_key: str | None = None) -> str:
-        """A function that uses both user and toolset params."""
+        """
+        Format a display string combining a user-provided value and an optional API key.
+        
+        Parameters:
+            user_param (str): The user-provided value to include in the output.
+            api_key (str | None): Optional API key to include; may be None.
+        
+        Returns:
+            str: A string containing the `user_param` and the `api_key`.
+        """
         return f"User: {user_param}, API Key: {api_key}"
 
     tool = FunctionTool(
@@ -140,6 +168,15 @@ def test_user_params_override_toolset_params():
     """Test that user-provided parameters override toolset parameters."""
 
     def my_function(param: str) -> str:
+        """
+        Format a parameter string by prefixing it with "Value: ".
+        
+        Parameters:
+            param (str): The input string to format.
+        
+        Returns:
+            str: The input string prefixed with "Value: ".
+        """
         return f"Value: {param}"
 
     tool = FunctionTool(
@@ -244,7 +281,17 @@ def test_toolset_params_with_agent_execution(mock_llm_client):
     received_params = {}
 
     def capture_params(user_param: str, api_key: str | None = None, endpoint: str | None = None) -> str:
-        """Function that captures all received parameters."""
+        """
+        Record received parameters into the shared `received_params` mapping and return a short confirmation message.
+        
+        Parameters:
+            user_param (str): User-provided parameter value; stored in `received_params["user_param"]`.
+            api_key (str | None): Optional API key; stored in `received_params["api_key"]` when provided.
+            endpoint (str | None): Optional endpoint URL; stored in `received_params["endpoint"]` when provided.
+        
+        Returns:
+            str: Confirmation message that includes the supplied `user_param`.
+        """
         received_params["user_param"] = user_param
         received_params["api_key"] = api_key
         received_params["endpoint"] = endpoint
@@ -301,7 +348,12 @@ def test_toolset_params_with_agent_execution(mock_llm_client):
 
 @pytest.fixture
 def mock_llm_client():
-    """Create a mock LLM client for testing."""
+    """
+    Create a mock LLM client configured for tests.
+    
+    Returns:
+        mock_client (unittest.mock.Mock): Mock client whose `create_completion` method returns a response with content "Mock response" (`{"choices": [{"message": {"content": "Mock response"}}]}`).
+    """
     mock_client = Mock()
     mock_client.create_completion.return_value = {"choices": [{"message": {"content": "Mock response"}}]}
     return mock_client
@@ -331,6 +383,16 @@ def test_multiple_toolsets_different_params():
     """Test that different toolsets can have different params for similar tools."""
 
     def api_function(user_input: str, api_key: str | None = None) -> str:
+        """
+        Indicates which API key was provided.
+        
+        Parameters:
+            user_input (str): User-provided input (not used in the returned string).
+            api_key (str | None): Optional API key; its value is included in the returned message.
+        
+        Returns:
+            str: A message of the form "Called with key: {api_key}" showing the provided `api_key`.
+        """
         return f"Called with key: {api_key}"
 
     tool1 = FunctionTool(
