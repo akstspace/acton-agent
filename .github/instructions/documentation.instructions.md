@@ -15,6 +15,41 @@ When a PR introduces changes to the codebase:
 4. **Maintain consistency** - Keep the same style, tone, and structure as existing docs
 5. **Add examples** - Include code examples for new features or changed behavior
 
+## Critical: Documentation Philosophy
+
+**Documentation should always reflect the CURRENT state of the code, not its history.**
+
+✅ **DO:**
+- Modify existing content in-place to reflect current functionality
+- Update examples to show current API usage
+- Replace outdated information with current information
+- Treat the documentation as the current truth, not a historical record
+
+❌ **DON'T:**
+- Add markers like "New in version X.X" or "Added in PR #123"
+- Use phrases like "we added", "newly available", "now supports"
+- Create separate sections for "new features" vs "existing features"
+- Mark changes with "Update:" or "Changed:" annotations
+- Maintain version-specific documentation sections
+
+**Example:**
+
+❌ **Wrong:**
+```markdown
+## Features
+- Basic authentication (existing)
+- Token refresh (new in v2.0)
+- OAuth support (added recently)
+```
+
+✅ **Correct:**
+```markdown
+## Features
+- Basic authentication
+- Token refresh
+- OAuth support
+```
+
 ---
 
 ## Step 1: Analyze the PR Changes
@@ -59,7 +94,6 @@ Determine which documentation sections require changes:
 - **API Reference:** New or modified APIs? Parameter changes? New exceptions?
 - **Examples:** Do existing examples still work? New examples needed?
 - **Advanced Topics:** New patterns or best practices?
-- **Changelog:** New entry for this version?
 
 > **Note:** Since this is an experimental project, breaking changes are expected and normal. Focus on keeping documentation accurate to the current API rather than maintaining migration paths.
 
@@ -75,11 +109,11 @@ Determine which documentation sections require changes:
 - Match the existing writing style and tone
 - Keep the same structure and formatting
 - Preserve working examples (update them if needed)
-- Update version-specific information
-- Add deprecation warnings for old features
 - Cross-reference related changes in other sections
 - Update code examples to reflect new syntax/patterns
 - Verify examples still compile/run correctly
+- **Modify content in-place** - don't mark things as "new" or "updated"
+- **Write in present tense** - describe what the code does NOW
 
 ❌ **DON'T:**
 - Change the overall documentation structure without good reason
@@ -88,6 +122,8 @@ Determine which documentation sections require changes:
 - Add incomplete or untested examples
 - Break internal links between docs
 - Change the tone or writing style drastically
+- **Add temporal markers** - no "new", "recently added", "now available"
+- **Reference PR numbers or versions** - just state current functionality
 
 ### Adding New Content
 
@@ -101,6 +137,7 @@ Determine which documentation sections require changes:
 - Link to related concepts
 - Add troubleshooting tips if relevant
 - Include both basic and advanced usage
+- **Integrate seamlessly** - new content should blend with existing docs
 
 ❌ **DON'T:**
 - Add documentation without examples
@@ -108,6 +145,7 @@ Determine which documentation sections require changes:
 - Create orphaned sections without context
 - Duplicate content that exists elsewhere
 - Use different terminology for the same concepts
+- **Mark sections as "new"** - just add them naturally to the appropriate location
 
 ---
 
@@ -120,7 +158,6 @@ Determine which documentation sections require changes:
 2. **API Reference:** Full documentation for new APIs
 3. **Examples:** Create 1-3 examples showing usage
 4. **Getting Started:** Mention if it affects initial setup
-5. **Changelog:** Add entry
 
 **Example Documentation Pattern:**
 ```markdown
@@ -153,8 +190,7 @@ code_example_with_options()
 1. **README.md:** Update quick start if affected
 2. **API Reference:** Update signatures, parameters, behavior with current information
 3. **Examples:** Update all affected examples to use new API
-4. **Changelog:** Note breaking change
-5. **Getting Started:** Update if affects basic usage
+4. **Getting Started:** Update if affects basic usage
 
 > **Note:** As an experimental project, simply update documentation to reflect the current API. No need to document migration paths from old versions.
 
@@ -163,31 +199,27 @@ code_example_with_options()
 **Update:**
 1. **API Reference:** Add new parameters with defaults
 2. **Examples:** Add examples showing new parameters
-3. **Changelog:** Note enhancement
-4. **Advanced Topics:** Add if introduces new patterns
+3. **Advanced Topics:** Add if introduces new patterns
 
 ### Bug Fix
 
 **Update:**
-1. **Changelog:** Note fix
-2. **Troubleshooting:** Remove workaround if it existed
-3. **Examples:** Update if example demonstrated buggy behavior
-4. **API Reference:** Clarify correct behavior if needed
+1. **Troubleshooting:** Remove workaround if it existed
+2. **Examples:** Update if example demonstrated buggy behavior
+3. **API Reference:** Clarify correct behavior if needed
 
 ### Performance Improvement
 
 **Update:**
-1. **Changelog:** Note improvement
-2. **Advanced Topics:** Update performance guidance
-3. **API Reference:** Update if API changed
-4. **Examples:** Update if best practices changed
+1. **Advanced Topics:** Update performance guidance
+2. **API Reference:** Update if API changed
+3. **Examples:** Update if best practices changed
 
 ### Deprecation
 
 **Update:**
 1. **API Reference:** Note if feature is removed, update if behavior changed
 2. **Examples:** Update to current approach
-3. **Changelog:** Note removal or change
 
 > **Note:** In experimental phase, features may be removed without deprecation warnings. Simply update docs to reflect current state.
 
@@ -196,7 +228,6 @@ code_example_with_options()
 **Update:**
 1. **README.md:** Update installation if needed
 2. **Getting Started:** Update prerequisites
-3. **Changelog:** Note dependency changes
 
 ---
 
@@ -220,7 +251,6 @@ Before submitting documentation updates:
 - [ ] All new public APIs are documented
 - [ ] All modified APIs reflect changes
 - [ ] Breaking changes have migration guides
-- [ ] Changelog is updated
 
 ### ✓ Consistency
 - [ ] Same terminology used throughout
@@ -254,7 +284,6 @@ In your PR description or commit message, note:
 - README.md: Updated quick start example for new API
 - docs/api-reference.md: Added documentation for `NewClass`
 - docs/examples.md: Added 2 examples for new feature
-- docs/changelog.md: Added v2.1.0 entry
 
 ### Changes:
 - Documented new `NewClass` with parameters, returns, and exceptions
@@ -272,22 +301,22 @@ In your PR description or commit message, note:
 ## Common Scenarios
 
 ### Scenario: Small Bug Fix
-**Action:** Update changelog, maybe troubleshooting if there was a known workaround
+**Action:** Update troubleshooting if there was a known workaround
 
 ### Scenario: New Public Class/Function
-**Action:** Full API reference entry + 2-3 examples + changelog entry + possibly README mention
+**Action:** Full API reference entry + 2-3 examples + possibly README mention
 
 ### Scenario: Changed Function Signature
-**Action:** Update API reference + update all examples + changelog + README if in quick start
+**Action:** Update API reference + update all examples + README if in quick start
 
 ### Scenario: New Configuration Option
-**Action:** Update getting started + API reference + example showing usage + changelog
+**Action:** Update getting started + API reference + example showing usage
 
 ### Scenario: Deprecated Feature
-**Action:** Update API reference to remove old feature + update examples + changelog
+**Action:** Update API reference to remove old feature + update examples
 
 ### Scenario: Performance Optimization (No API Change)
-**Action:** Changelog entry + possibly update advanced topics with new benchmarks/patterns
+**Action:** Update advanced topics with new benchmarks/patterns if applicable
 
 ---
 
