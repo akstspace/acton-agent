@@ -7,9 +7,14 @@ from pydantic import ValidationError
 
 from acton_agent.agent.models import (
     AgentFinalResponse,
+    AgentFinalResponseEvent,
     AgentPlan,
+    AgentPlanEvent,
     AgentStep,
+    AgentStepEvent,
     AgentStepUpdate,
+    AgentStreamEnd,
+    AgentStreamStart,
     AgentToken,
     Message,
     ToolCall,
@@ -143,14 +148,6 @@ class TestStreamingModels:
 
     def test_streaming_event_types(self):
         """Test that all streaming events have correct type."""
-        from acton_agent.agent.models import (
-            AgentFinalResponseEvent,
-            AgentPlanEvent,
-            AgentStepEvent,
-            AgentStreamEnd,
-            AgentStreamStart,
-        )
-
         assert AgentStreamStart(step_id="step-1").type == "stream_start"
         assert AgentStreamEnd(step_id="step-1").type == "stream_end"
 

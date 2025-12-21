@@ -105,7 +105,7 @@ class TestRetryConfig:
 
         wrapped = config.wrap_function(always_fails, exception_types=(ValueError,))
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Always fails"):
             wrapped()
 
         assert call_count[0] == 3  # Should try max_attempts times

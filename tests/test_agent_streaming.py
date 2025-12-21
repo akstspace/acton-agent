@@ -7,6 +7,7 @@ from acton_agent.agent.models import (
     AgentFinalResponseEvent,
     AgentPlanEvent,
     AgentStepEvent,
+    AgentStepUpdate,
     AgentStreamEnd,
     AgentStreamStart,
     AgentToken,
@@ -188,17 +189,6 @@ class TestAgentStreamingEvents:
         assert len(dict_events) == 0
 
         # All events should be instances of the streaming event models
-        from acton_agent.agent.models import (
-            AgentFinalResponseEvent,
-            AgentPlanEvent,
-            AgentStepEvent,
-            AgentStepUpdate,
-            AgentStreamEnd,
-            AgentStreamStart,
-            AgentToken,
-            AgentToolResultsEvent,
-        )
-
         valid_event_types = (
             AgentStreamStart,
             AgentToken,

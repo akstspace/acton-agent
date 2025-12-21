@@ -67,7 +67,7 @@ include = ["acton_agent*"]
 [tool.ruff]
 line-length = 120
 target-version = "py39"
-include = ["acton_agent/**/*.py"]
+include = ["acton_agent/**/*.py", "tests/**/*.py"]
 exclude = [
     "examples/**",
     ".git",

@@ -2,7 +2,7 @@
 Test configuration and fixtures for pytest.
 """
 
-from typing import List
+from typing import Optional
 
 import pytest
 
@@ -12,7 +12,7 @@ from acton_agent.agent.models import Message
 class MockLLMClient:
     """Mock LLM client for testing."""
 
-    def __init__(self, responses: List[str] = None):
+    def __init__(self, responses: Optional[list[str]] = None):
         """
         Create a MockLLMClient configured with an optional sequence of preset responses.
 
@@ -26,7 +26,7 @@ class MockLLMClient:
         self.call_count = 0
         self.calls = []  # Store all calls for inspection
 
-    def call(self, messages: List[Message], **kwargs) -> str:
+    def call(self, messages: list[Message], **kwargs) -> str:
         """
         Record the invocation and return the next mock response.
 
@@ -49,7 +49,7 @@ class MockLLMClient:
         # Default response if no more predefined responses
         return '```json\n{"final_answer": "Mock response"}\n```'
 
-    def call_stream(self, messages: List[Message], **kwargs):
+    def call_stream(self, messages: list[Message], **kwargs):
         """
         Stream the client's response one character at a time.
 
@@ -61,8 +61,7 @@ class MockLLMClient:
         """
         response = self.call(messages, **kwargs)
         # Yield character by character
-        for char in response:
-            yield char
+        yield from response
 
 
 @pytest.fixture
@@ -80,7 +79,7 @@ def mock_llm_client():
 def mock_llm_client_with_responses():
     """Fixture factory for mock LLM client with custom responses."""
 
-    def _create_client(responses: List[str]):
+    def _create_client(responses: list[str]):
         """
         Create a MockLLMClient preloaded with the given responses.
 
@@ -181,7 +180,7 @@ def mock_streaming_llm_client():
         _create_client (Callable[[List[str]], MockLLMClient]): Factory function that constructs a MockLLMClient configured to return the provided responses in sequence.
     """
 
-    def _create_client(responses: List[str]):
+    def _create_client(responses: list[str]):
         """
         Create a MockLLMClient that supports streaming.
 

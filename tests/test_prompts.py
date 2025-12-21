@@ -3,6 +3,7 @@ Tests for the prompts module.
 """
 
 import json
+import re
 
 import pytest
 
@@ -108,8 +109,6 @@ class TestPromptFormat:
         prompt = build_system_prompt()
 
         # Extract JSON code blocks
-        import re
-
         json_blocks = re.findall(r"```json\s*(.*?)\s*```", prompt, re.DOTALL)
 
         # Each should be valid JSON
