@@ -6,8 +6,9 @@ from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, Field, field_validator
 
+
 if TYPE_CHECKING:
-    from ..tools.models import ToolCall, ToolResult
+    pass
 
 
 class Message(BaseModel):
@@ -58,10 +59,10 @@ class AgentStep(BaseModel):
         """Convert dict tool calls to ToolCall objects."""
         if not v:
             return []
-        
+
         # Import here to avoid circular dependency
         from ..tools.models import ToolCall
-        
+
         result = []
         for item in v:
             if isinstance(item, dict):
@@ -145,10 +146,10 @@ class AgentToolResultsEvent(BaseModel):
         """Convert dict results to ToolResult objects."""
         if not v:
             return []
-        
+
         # Import here to avoid circular dependency
         from ..tools.models import ToolResult
-        
+
         result = []
         for item in v:
             if isinstance(item, dict):
