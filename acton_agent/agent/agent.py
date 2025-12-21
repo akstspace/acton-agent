@@ -7,7 +7,7 @@ tool execution, and conversation management.
 
 import uuid
 from datetime import datetime
-from typing import Generator, List, Optional
+from typing import TYPE_CHECKING, Generator, List, Optional
 from zoneinfo import ZoneInfo
 
 from loguru import logger
@@ -36,6 +36,9 @@ from .parser import ResponseParser
 from .prompts import build_system_prompt, get_default_format_instructions
 from .retry import RetryConfig
 from .tools import Tool, ToolRegistry
+
+if TYPE_CHECKING:
+    from .models import ToolSet
 
 
 class Agent:
@@ -117,6 +120,20 @@ class Agent:
             tool (Tool): The tool instance to add to the agent's registry.
         """
         self.tool_registry.register(tool)
+
+    def register_toolset(self, toolset: "ToolSet") -> None:
+        """
+        Register a toolset in the agent's tool registry.
+
+        A toolset is a collection of related tools with a shared description.
+        All tools in the toolset are registered and can be invoked in future tool calls.
+        The toolset's general description is included in the prompt to provide context.
+
+        Parameters:
+            toolset (ToolSet): The toolset instance containing related tools to register.
+        """
+
+        self.tool_registry.register_toolset(toolset)
 
     def unregister_tool(self, tool_name: str) -> None:
         """
@@ -633,7 +650,7 @@ class Agent:
     def add_message(self, role: str, content: str) -> None:
         """
         Append a message with the given role and content to the agent's conversation history.
-        
+
         Parameters:
             role (str): The message role (e.g., 'user', 'assistant', 'system').
             content (str): The message text to append.
@@ -645,7 +662,7 @@ class Agent:
     def get_conversation_history(self) -> List[Message]:
         """
         Return a shallow copy of the agent's conversation history.
-        
+
         Returns:
             List[Message]: A shallow copy of the conversation history as a list of Message objects in chronological order.
         """

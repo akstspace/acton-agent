@@ -102,9 +102,6 @@ from acton_agent import OpenRouterClient
 client = OpenRouterClient(api_key="your-key", model="anthropic/claude-3-opus")
 ```
 
-### 📋 **Structured Response Parsing**
-Agents can plan, execute tool calls, and provide final answers with structured output.
-
 ## Documentation
 
 - **[Getting Started](docs/getting-started.md)** - Installation and first steps
@@ -119,15 +116,6 @@ Explore complete examples in the [`examples/`](examples/) directory:
 - **[Function Tools](examples/function_tool_example.py)** - Wrap Python functions as agent tools
 - **[API Integration](examples/requests_tool_example.py)** - Connect to REST APIs
 - **[Custom Tools](examples/custom_tool_example.py)** - Build custom tool classes
-
-## Community & Contributing
-
-This is a personal experimental project, but feedback is welcome:
-
-- **Issues & Bugs**: [GitHub Issues](https://github.com/akstspace/acton-agent/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/akstspace/acton-agent/discussions)
-
-Contributions are not actively sought at this time, but bug reports and suggestions are appreciated.
 
 ## License
 

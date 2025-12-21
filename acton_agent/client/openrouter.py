@@ -59,7 +59,6 @@ class OpenRouterClient(OpenAIClient):
         Raises:
             ValueError: If no API key is provided via parameter or the OPENROUTER_API_KEY environment variable.
         """
-        # Get API key from parameter or environment variable
         final_api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
 
         if not final_api_key:
@@ -68,18 +67,15 @@ class OpenRouterClient(OpenAIClient):
                 "or via OPENROUTER_API_KEY environment variable"
             )
 
-        # Prepare OpenRouter-specific headers
         default_headers = {}
         if site_url:
             default_headers["HTTP-Referer"] = site_url
         if site_name:
             default_headers["X-Title"] = site_name
 
-        # Store for reference
         self.site_url = site_url
         self.site_name = site_name
 
-        # Initialize parent OpenAIClient with OpenRouter configuration
         super().__init__(
             api_key=final_api_key,
             model=model,

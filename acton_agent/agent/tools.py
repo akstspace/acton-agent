@@ -7,11 +7,14 @@ and FunctionTool for easily wrapping Python functions as tools.
 
 import json
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 from loguru import logger
 
 from .exceptions import InvalidToolSchemaError, ToolNotFoundError
+
+if TYPE_CHECKING:
+    from .models import ToolSet
 
 
 class Tool(ABC):
@@ -107,15 +110,17 @@ class Tool(ABC):
 
 class ToolRegistry:
     """
-    Registry for managing tools.
+    Registry for managing tools and toolsets.
 
     Provides methods to register, unregister, and retrieve tools,
     as well as format tool information for LLM prompts.
+    Supports organizing tools into toolsets with shared descriptions.
     """
 
     def __init__(self):
         """Initialize an empty tool registry."""
         self._tools: Dict[str, Tool] = {}
+        self._toolsets: Dict[str, "ToolSet"] = {}
 
     def register(self, tool: Tool) -> None:
         """
@@ -185,28 +190,125 @@ class ToolRegistry:
         """
         return tool_name in self._tools
 
-    def format_for_prompt(self) -> str:
+    def register_toolset(self, toolset: "ToolSet") -> None:
         """
-        Builds a concise, human-readable text block that describes all registered tools for use in a prompt.
+        Register a ToolSet instance, adding all its tools to the registry.
 
-        Each tool entry contains the tool's name, description, and the tool's JSON schema pretty-printed when available.
+        The toolset and its tools are registered together. All tools in the toolset
+        are added to the registry and can be called individually.
+
+        Parameters:
+            toolset (ToolSet): The ToolSet instance containing tools to register.
+        """
+
+        if toolset.name in self._toolsets:
+            logger.warning(f"ToolSet '{toolset.name}' already registered, overwriting")
+
+        # Register the toolset
+        self._toolsets[toolset.name] = toolset
+
+        # Register all tools in the toolset
+        for tool in toolset.tools:
+            self.register(tool)
+
+        logger.info(
+            f"Registered toolset: {toolset.name} with {len(toolset.tools)} tools"
+        )
+
+    def unregister_toolset(self, toolset_name: str) -> None:
+        """
+        Remove a registered toolset and all its tools from the registry.
+
+        Parameters:
+            toolset_name (str): Name of the toolset to remove.
+
+        Raises:
+            ValueError: If no toolset with the given name is registered.
+        """
+        if toolset_name not in self._toolsets:
+            raise ValueError(f"ToolSet '{toolset_name}' not found")
+
+        toolset = self._toolsets[toolset_name]
+
+        # Unregister all tools in the toolset
+        for tool in toolset.tools:
+            if tool.name in self._tools:
+                del self._tools[tool.name]
+
+        # Remove the toolset
+        del self._toolsets[toolset_name]
+        logger.info(f"Unregistered toolset: {toolset_name}")
+
+    def list_toolsets(self) -> List[str]:
+        """
+        List the names of all registered toolsets.
 
         Returns:
-            str: Formatted listing of available tools; "No tools available." when the registry is empty.
+            A list of registered toolset names.
         """
-        if not self._tools:
+        return list(self._toolsets.keys())
+
+    def format_for_prompt(self) -> str:
+        """
+        Builds a concise, human-readable text block that describes all registered tools and toolsets for use in a prompt.
+
+        Toolsets are listed first with their general description, followed by individual tools.
+        Each tool entry contains the tool's name, description, and JSON schema when available.
+
+        Returns:
+            str: Formatted listing of available toolsets and tools; "No tools available." when the registry is empty.
+        """
+        if not self._tools and not self._toolsets:
             return "No tools available."
 
-        tools_text = "AVAILABLE TOOLS:\n\n"
-        for tool in self._tools.values():
-            tools_text += f"Tool: {tool.name}\n"
-            tools_text += f"Description: {tool.description}\n"
+        tools_text = ""
 
-            schema = tool.get_schema()
-            if schema:
-                tools_text += f"Schema: {json.dumps(schema, indent=2)}\n"
+        # Format toolsets first
+        if self._toolsets:
+            tools_text += "AVAILABLE TOOLSETS:\n\n"
+            for toolset_name, toolset in self._toolsets.items():
+                tools_text += f"ToolSet: {toolset.name}\n"
+                tools_text += f"Description: {toolset.description}\n"
+                tools_text += f"Tools in this set: {', '.join([tool.name for tool in toolset.tools])}\n\n"
 
-            tools_text += "\n"
+        # Format individual tools
+        tools_text += "AVAILABLE TOOLS:\n\n"
+
+        # Group tools by toolset
+        toolset_tools = set()
+        for toolset in self._toolsets.values():
+            for tool in toolset.tools:
+                toolset_tools.add(tool.name)
+
+        # Format tools that belong to toolsets
+        for toolset in self._toolsets.values():
+            tools_text += f"--- Tools from {toolset.name} ---\n"
+            for tool in toolset.tools:
+                tools_text += f"Tool: {tool.name}\n"
+                tools_text += f"Description: {tool.description}\n"
+
+                schema = tool.get_schema()
+                if schema:
+                    tools_text += f"Schema: {json.dumps(schema, indent=2)}\n"
+
+                tools_text += "\n"
+
+        # Format standalone tools (not in any toolset)
+        standalone_tools = [
+            tool for tool in self._tools.values() if tool.name not in toolset_tools
+        ]
+
+        if standalone_tools:
+            tools_text += "--- Standalone Tools ---\n"
+            for tool in standalone_tools:
+                tools_text += f"Tool: {tool.name}\n"
+                tools_text += f"Description: {tool.description}\n"
+
+                schema = tool.get_schema()
+                if schema:
+                    tools_text += f"Schema: {json.dumps(schema, indent=2)}\n"
+
+                tools_text += "\n"
 
         return tools_text
 

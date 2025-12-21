@@ -30,6 +30,7 @@ from .models import (
     StreamingEvent,
     ToolCall,
     ToolResult,
+    ToolSet,
 )
 from .parser import ResponseParser
 from .retry import RetryConfig
@@ -41,6 +42,7 @@ __all__ = [
     "Message",
     "ToolCall",
     "ToolResult",
+    "ToolSet",
     "AgentPlan",
     "AgentStep",
     "AgentFinalResponse",
