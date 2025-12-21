@@ -250,7 +250,6 @@ Before submitting documentation updates:
 ### ✓ Completeness
 - [ ] All new public APIs are documented
 - [ ] All modified APIs reflect changes
-- [ ] Breaking changes have migration guides
 
 ### ✓ Consistency
 - [ ] Same terminology used throughout
