@@ -20,7 +20,7 @@ This directory contains practical examples demonstrating various features and us
 - [Custom Tool Class](#custom-tool-class) - Build custom tools
 - [OpenAPI Integration](#openapi-integration) - Auto-generate tools from specs
 - [Error Handling](#error-handling) - Robust error management
-- [Production Patterns](#production-patterns) - Production-ready code
+- [Advanced Patterns](#advanced-patterns) - Comprehensive agent setup
 
 ---
 
@@ -640,19 +640,19 @@ response = safe_run(
 print(response)
 ```
 
-### Production Patterns
+### Advanced Patterns
 
-Production-ready agent setup:
+Comprehensive agent setup with retry logic, logging, and error handling:
 
 ```python
-from acton_agent import Agent
+from acton_agent import Agent, SimpleAgentMemory
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import RetryConfig, SimpleAgentMemory
+from acton_agent.agent import RetryConfig
 import os
 import logging
 
-class ProductionAgent:
-    """Production-ready agent wrapper."""
+class RobustAgent:
+    """Agent wrapper with comprehensive error handling and configuration."""
 
     def __init__(self):
         # Configuration from environment
@@ -666,13 +666,13 @@ class ProductionAgent:
         )
         self.logger = logging.getLogger(__name__)
 
-        # Create agent with production settings
+        # Create agent with robust settings
         self.agent = self._create_agent()
 
     def _create_agent(self) -> Agent:
-        """Create agent with production configuration."""
+        """Create agent with robust configuration."""
 
-        # Production retry config
+        # Retry configuration
         retry_config = RetryConfig(
             max_attempts=5,
             min_wait=2.0,
@@ -719,7 +719,7 @@ class ProductionAgent:
 
     def run(self, query: str, user_id: str = None) -> dict:
         """
-        Run agent with full production features.
+        Run agent with full error handling and logging.
 
         Returns:
             dict with response, metadata, and status
@@ -775,7 +775,7 @@ class ProductionAgent:
 
 # Usage
 if __name__ == "__main__":
-    agent = ProductionAgent()
+    agent = RobustAgent()
 
     # Health check
     health = agent.health_check()

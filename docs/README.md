@@ -36,7 +36,7 @@ Welcome to the Acton Agent documentation! This guide will help you build AI agen
 **[Examples](examples/README.md)** - Learning by doing
 - **Basic**: Simple agent, function tools, API integration
 - **Intermediate**: Multi-tool agents, conversation context, streaming
-- **Advanced**: Custom tools, OpenAPI integration, production patterns
+- **Advanced**: Custom tools, OpenAPI integration, advanced patterns
 
 ### Reference
 

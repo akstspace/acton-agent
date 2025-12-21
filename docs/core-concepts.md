@@ -788,7 +788,7 @@ Acton Agent is built on these principles:
 3. **Type Safety**: Leverage Python typing and Pydantic
 4. **Observability**: Built-in logging for debugging
 5. **Extensibility**: Easy to customize any component
-6. **Production Ready**: Retry logic, error handling, memory management
+6. **Reliability**: Retry logic, error handling, memory management
 
 ## Next Steps
 
