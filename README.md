@@ -111,7 +111,6 @@ Agents can plan, execute tool calls, and provide final answers with structured o
 - **[Core Concepts](docs/core-concepts.md)** - Understanding agents, tools, and memory
 - **[API Reference](docs/api-reference.md)** - Complete API documentation
 - **[Examples](docs/examples/)** - Practical examples from basic to advanced
-- **[Advanced Topics](docs/advanced-topics.md)** - Performance, deployment, and best practices
 
 ## Examples
 

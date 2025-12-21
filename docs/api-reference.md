@@ -935,4 +935,3 @@ for tool in tools:
 - [Getting Started](getting-started.md) - Quick start guide
 - [Core Concepts](core-concepts.md) - Understanding the framework
 - [Examples](examples/) - Practical examples
-- [Advanced Topics](advanced-topics.md) - Performance and best practices

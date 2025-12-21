@@ -49,22 +49,6 @@ Works with:
 - LocalAI
 - Any OpenAI-compatible endpoint
 
-### How does Acton Agent compare to LangChain?
-
-**Acton Agent:**
-- Simpler, more focused API
-- Lightweight dependencies
-- Tool execution focused
-- Easier to understand and debug
-
-**LangChain:**
-- More features and integrations
-- Larger ecosystem
-- Steeper learning curve
-- More abstractions
-
-Choose Acton Agent if you want simplicity. Choose LangChain if you need the full ecosystem.
-
 ### Can agents use multiple tools?
 
 Yes! Register as many tools as you need:
@@ -560,5 +544,4 @@ agent = Agent(
 
 - [Getting Started](getting-started.md) - Installation and setup
 - [Core Concepts](core-concepts.md) - Understanding the framework
-- [Advanced Topics](advanced-topics.md) - Production patterns
 - [Examples](examples/README.md) - Working code examples

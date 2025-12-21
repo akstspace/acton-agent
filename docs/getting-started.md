@@ -291,11 +291,8 @@ Now that you have a basic agent running, explore:
 - **[Core Concepts](core-concepts.md)** - Deep dive into agents, tools, and memory
 - **[API Reference](api-reference.md)** - Complete API documentation
 - **[Examples](examples/)** - More practical examples
-- **[Advanced Topics](advanced-topics.md)** - Streaming, custom tools, and optimization
 
 ### Quick Links
 
 - [Creating Custom Tools](core-concepts.md#creating-tools)
-- [Working with HTTP APIs](examples/api-integration.md)
-- [Streaming Responses](advanced-topics.md#streaming)
 - [Memory Management](core-concepts.md#memory-management)

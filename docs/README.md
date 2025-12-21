@@ -38,26 +38,7 @@ Welcome to the Acton Agent documentation! This guide will help you build AI agen
 - **Intermediate**: Multi-tool agents, conversation context, streaming
 - **Advanced**: Custom tools, OpenAPI integration, production patterns
 
-**[Advanced Topics](advanced-topics.md)** - Production-ready patterns
-- Streaming responses in depth
-- Custom tool development
-- Error handling strategies
-- Performance optimization
-- Production deployment
-- Security considerations
-- Testing agents
-- Debugging and logging
-- Multi-agent systems
-
 ### Reference
-
-**[Architecture](architecture.md)** - How it works
-- High-level architecture
-- Core components
-- Data flow diagrams
-- Design patterns
-- Extension points
-- Performance considerations
 
 **[FAQ & Troubleshooting](faq.md)** - Common questions
 - General questions
@@ -66,13 +47,6 @@ Welcome to the Acton Agent documentation! This guide will help you build AI agen
 - Tool problems
 - Performance issues
 - Common error messages
-
-**[Contributing](../CONTRIBUTING.md)** - Help improve Acton Agent
-- Reporting bugs
-- Suggesting features
-- Development setup
-- Code style guide
-- Testing guidelines
 
 ## 🚀 Quick Navigation
 
@@ -83,8 +57,6 @@ Welcome to the Acton Agent documentation! This guide will help you build AI agen
 - **Create a tool** → [Core Concepts - Tools](core-concepts.md#tools)
 - **See code examples** → [Examples](examples/README.md)
 - **Look up API details** → [API Reference](api-reference.md)
-- **Use streaming** → [Advanced Topics - Streaming](advanced-topics.md#streaming-responses)
-- **Deploy to production** → [Advanced Topics - Production](advanced-topics.md#production-deployment)
 - **Troubleshoot an issue** → [FAQ](faq.md)
 
 ### By Use Case
@@ -106,13 +78,7 @@ Welcome to the Acton Agent documentation! This guide will help you build AI agen
 
 **Custom tools:**
 1. [Core Concepts - Custom Tool Classes](core-concepts.md#tools)
-2. [Advanced Topics - Custom Tool Development](advanced-topics.md#custom-tool-development)
-3. [Examples - Custom Tool Class](examples/README.md#custom-tool-class)
-
-**Production deployment:**
-1. [Advanced Topics - Production Deployment](advanced-topics.md#production-deployment)
-2. [Advanced Topics - Security](advanced-topics.md#security-considerations)
-3. [Examples - Production Patterns](examples/README.md#production-patterns)
+2. [Examples - Custom Tool Class](examples/README.md#custom-tool-class)
 
 ## 📖 Reading Path
 
@@ -125,16 +91,8 @@ Welcome to the Acton Agent documentation! This guide will help you build AI agen
 
 ### For Advanced Users
 
-1. **[Architecture](architecture.md)** - Understand the design
-2. **[Advanced Topics](advanced-topics.md)** - Production patterns
-3. **[API Reference](api-reference.md)** - Complete reference
-4. **[Examples - Advanced](examples/README.md#advanced-examples)** - Complex patterns
-
-### For Contributors
-
-1. **[Contributing](../CONTRIBUTING.md)** - Contribution guidelines
-2. **[Architecture](architecture.md)** - System design
-3. **[API Reference](api-reference.md)** - Implementation details
+1. **[API Reference](api-reference.md)** - Complete reference
+2. **[Examples - Advanced](examples/README.md#advanced-examples)** - Complex patterns
 
 ## 🔍 Search Tips
 

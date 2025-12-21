@@ -659,4 +659,3 @@ python example_name.py
 - [Getting Started](../getting-started.md) - Installation and setup
 - [Core Concepts](../core-concepts.md) - Understanding the framework
 - [API Reference](../api-reference.md) - Complete API docs
-- [Advanced Topics](../advanced-topics.md) - Production patterns

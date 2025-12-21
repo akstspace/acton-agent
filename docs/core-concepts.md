@@ -622,4 +622,3 @@ Acton Agent is built on these principles:
 
 - **[API Reference](api-reference.md)** - Detailed API documentation
 - **[Examples](examples/)** - Practical code examples
-- **[Advanced Topics](advanced-topics.md)** - Performance, deployment, and best practices
