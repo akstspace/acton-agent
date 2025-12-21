@@ -2,9 +2,12 @@
 Core models for the AI Agent Framework.
 """
 
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    from ..tools.models import ToolCall
 
 
 class Message(BaseModel):
@@ -48,6 +51,18 @@ class AgentStep(BaseModel):
 
     tool_thought: str | None = Field(None, description="Agent's reasoning for this step")
     tool_calls: list[Any] = Field(default_factory=list, description="Tools to call in this step")
+
+    def model_post_init(self, __context: Any) -> None:
+        """Convert dict tool_calls to ToolCall objects after validation."""
+        from ..tools.models import ToolCall
+
+        converted_calls = []
+        for call in self.tool_calls:
+            if isinstance(call, dict):
+                converted_calls.append(ToolCall(**call))
+            else:
+                converted_calls.append(call)
+        self.tool_calls = converted_calls
 
     @property
     def has_tool_calls(self) -> bool:

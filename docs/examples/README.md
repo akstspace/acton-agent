@@ -569,9 +569,9 @@ print(response)
 Production-ready agent setup:
 
 ```python
-from acton_agent import Agent
+from acton_agent import Agent, SimpleAgentMemory
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import RetryConfig, SimpleAgentMemory
+from acton_agent.agent import RetryConfig
 import os
 import logging
 

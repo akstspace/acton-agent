@@ -225,7 +225,7 @@ export PYTHONHTTPSVERIFY=0
 
 1. **Increase memory limit:**
    ```python
-   from acton_agent.agent import SimpleAgentMemory
+   from acton_agent import SimpleAgentMemory
 
    memory = SimpleAgentMemory(max_history_tokens=15000)
    agent = Agent(llm_client=client, memory=memory)

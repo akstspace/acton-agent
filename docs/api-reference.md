@@ -45,9 +45,9 @@ class Agent:
 
 **Example:**
 ```python
-from acton_agent import Agent
+from acton_agent import Agent, SimpleAgentMemory
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import RetryConfig, SimpleAgentMemory
+from acton_agent.agent import RetryConfig
 
 client = OpenAIClient(api_key="sk-...", model="gpt-4o")
 agent = Agent(
@@ -840,7 +840,7 @@ class SimpleAgentMemory(AgentMemory):
 
 **Example:**
 ```python
-from acton_agent.agent import SimpleAgentMemory
+from acton_agent import SimpleAgentMemory
 
 memory = SimpleAgentMemory(max_history_tokens=10000)
 agent = Agent(llm_client=client, memory=memory)

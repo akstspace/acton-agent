@@ -520,7 +520,7 @@ class AgentMemory(ABC):
 Built-in token-based truncation:
 
 ```python
-from acton_agent.agent import SimpleAgentMemory
+from acton_agent import SimpleAgentMemory
 
 # Create memory manager
 memory = SimpleAgentMemory(max_history_tokens=8000)
@@ -538,9 +538,8 @@ agent = Agent(llm_client=client, memory=memory)
 ### Example: Memory in Action
 
 ```python
-from acton_agent import Agent
+from acton_agent import Agent, SimpleAgentMemory
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import SimpleAgentMemory
 
 client = OpenAIClient(model="gpt-4o")
 memory = SimpleAgentMemory(max_history_tokens=100)  # Very small for demo

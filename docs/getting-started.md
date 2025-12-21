@@ -207,9 +207,9 @@ The result of 156 multiplied by 23 is 3,588.
 You can configure various aspects of your agent:
 
 ```python
-from acton_agent import Agent
+from acton_agent import Agent, SimpleAgentMemory
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import RetryConfig, SimpleAgentMemory
+from acton_agent.agent import RetryConfig
 
 client = OpenAIClient(model="gpt-4o")
 

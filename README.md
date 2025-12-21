@@ -86,7 +86,7 @@ agent = Agent(llm_client=client, retry_config=RetryConfig(max_attempts=5))
 ### 💬 **Conversation Memory Management**
 Automatic token-based history truncation to stay within context limits.
 ```python
-from acton_agent.agent import SimpleAgentMemory
+from acton_agent import SimpleAgentMemory
 
 agent = Agent(llm_client=client, memory=SimpleAgentMemory(max_history_tokens=8000))
 ```
