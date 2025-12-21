@@ -1,0 +1,625 @@
+# Core Concepts
+
+This guide explains the fundamental concepts and architecture of Acton Agent. Understanding these concepts will help you build more sophisticated agents.
+
+## Table of Contents
+
+- [Architecture Overview](#architecture-overview)
+- [The Agent](#the-agent)
+- [LLM Clients](#llm-clients)
+- [Tools](#tools)
+- [Messages and Conversation History](#messages-and-conversation-history)
+- [Memory Management](#memory-management)
+- [Response Types](#response-types)
+- [Streaming Events](#streaming-events)
+
+## Architecture Overview
+
+Acton Agent follows a modular architecture with clear separation of concerns:
+
+```
+┌─────────────────────────────────────────────┐
+│              Your Application               │
+└─────────────────┬───────────────────────────┘
+                  │
+         ┌────────▼─────────┐
+         │      Agent       │  ← Orchestrates everything
+         │                  │
+         │  - Planning      │
+         │  - Tool calling  │
+         │  - Memory mgmt   │
+         └──┬────────────┬──┘
+            │            │
+    ┌───────▼──┐    ┌───▼────────┐
+    │ LLM      │    │ Tools      │
+    │ Client   │    │ Registry   │
+    └──────────┘    └────────────┘
+         │               │
+    ┌────▼───────┐  ┌───▼─────────┐
+    │  Provider  │  │  Individual  │
+    │  (OpenAI,  │  │  Tools       │
+    │   etc.)    │  │             │
+    └────────────┘  └─────────────┘
+```
+
+### Key Design Principles
+
+1. **Protocol-based**: Use Python protocols for flexibility
+2. **Composable**: Mix and match components
+3. **Extensible**: Easy to add custom implementations
+4. **Type-safe**: Leverages Pydantic for data validation
+5. **Observable**: Built-in logging with Loguru
+
+## The Agent
+
+The `Agent` class is the central orchestrator that coordinates LLM calls, tool execution, and conversation management.
+
+### Agent Lifecycle
+
+```python
+from acton_agent import Agent
+from acton_agent.client import OpenAIClient
+
+# 1. Initialize
+client = OpenAIClient(model="gpt-4o")
+agent = Agent(llm_client=client)
+
+# 2. Register tools (optional)
+agent.register_tool(my_tool)
+
+# 3. Run conversations
+response = agent.run("User query here")
+
+# 4. Continue conversation (maintains history)
+response2 = agent.run("Follow-up question")
+
+# 5. Reset when needed
+agent.reset()  # Clears conversation history
+```
+
+### How Agents Work
+
+When you call `agent.run(user_input)`:
+
+1. **Message Building**: Constructs the message list including system prompt, tools, and history
+2. **LLM Call**: Sends messages to the LLM and receives a response
+3. **Response Parsing**: Parses the response into AgentPlan, AgentStep, or AgentFinalResponse
+4. **Tool Execution**: If tools are needed, executes them and adds results to history
+5. **Iteration**: Repeats until a final answer is produced or max iterations reached
+
+### Example: Understanding Agent Flow
+
+```python
+from acton_agent import Agent
+from acton_agent.client import OpenAIClient
+from acton_agent.agent import FunctionTool
+
+def get_weather(city: str) -> str:
+    """Simulated weather lookup."""
+    return f"The weather in {city} is sunny and 72°F"
+
+client = OpenAIClient(model="gpt-4o")
+agent = Agent(llm_client=client, max_iterations=5)
+
+weather_tool = FunctionTool(
+    name="get_weather",
+    description="Get current weather for a city",
+    func=get_weather,
+    schema={
+        "type": "object",
+        "properties": {"city": {"type": "string"}},
+        "required": ["city"]
+    }
+)
+
+agent.register_tool(weather_tool)
+
+# Agent flow when you run this:
+result = agent.run("What's the weather in Seattle?")
+```
+
+**Behind the scenes:**
+1. User message added to history
+2. LLM receives: system prompt + tool schemas + user message
+3. LLM responds with AgentStep containing tool call for "get_weather"
+4. Agent executes tool, gets "The weather in Seattle is sunny and 72°F"
+5. Tool result added to history
+6. LLM receives updated history with tool result
+7. LLM responds with AgentFinalResponse: "The weather in Seattle is sunny with a temperature of 72°F."
+
+## LLM Clients
+
+LLM clients implement the `LLMClient` protocol, providing a consistent interface regardless of the underlying provider.
+
+### The LLMClient Protocol
+
+```python
+from typing import Protocol, List
+from acton_agent.agent import Message
+
+class LLMClient(Protocol):
+    def call(self, messages: List[Message], **kwargs) -> str:
+        """Send messages to LLM and return response."""
+        ...
+```
+
+### Built-in Clients
+
+#### OpenAIClient
+
+For OpenAI and OpenAI-compatible APIs:
+
+```python
+from acton_agent.client import OpenAIClient
+
+# Standard OpenAI
+client = OpenAIClient(
+    api_key="sk-...",
+    model="gpt-4o",
+    base_url="https://api.openai.com/v1"  # default
+)
+
+# OpenAI-compatible (e.g., local models)
+client = OpenAIClient(
+    api_key="not-needed",
+    model="llama-3-70b",
+    base_url="http://localhost:8000/v1"
+)
+```
+
+#### OpenRouterClient
+
+For accessing multiple models through OpenRouter:
+
+```python
+from acton_agent import OpenRouterClient
+
+client = OpenRouterClient(
+    api_key="sk-or-...",
+    model="anthropic/claude-3-opus",
+    site_url="https://myapp.com",  # Optional: for rankings
+    app_name="My App"              # Optional: for rankings
+)
+```
+
+### Creating Custom Clients
+
+Implement the `LLMClient` protocol:
+
+```python
+from typing import List
+from acton_agent.agent import Message
+
+class MyCustomClient:
+    def __init__(self, endpoint: str):
+        self.endpoint = endpoint
+    
+    def call(self, messages: List[Message], **kwargs) -> str:
+        # Your implementation here
+        # Convert messages to your API format
+        # Make API call
+        # Return response string
+        pass
+
+# Use with Agent
+agent = Agent(llm_client=MyCustomClient("http://my-llm.com"))
+```
+
+## Tools
+
+Tools are functions or API endpoints that agents can invoke to gather information or perform actions.
+
+### Tool Types
+
+Acton Agent supports three types of tools:
+
+#### 1. FunctionTool
+
+Wraps Python functions:
+
+```python
+from acton_agent.agent import FunctionTool
+
+def search(query: str, limit: int = 10) -> str:
+    """Search for information."""
+    # Your search implementation
+    return f"Found {limit} results for '{query}'"
+
+tool = FunctionTool(
+    name="search",
+    description="Search for information on the web",
+    func=search,
+    schema={
+        "type": "object",
+        "properties": {
+            "query": {"type": "string", "description": "Search query"},
+            "limit": {"type": "integer", "description": "Max results", "default": 10}
+        },
+        "required": ["query"]
+    }
+)
+```
+
+#### 2. RequestsTool
+
+Makes HTTP API calls:
+
+```python
+from acton_agent.tools import RequestsTool
+
+tool = RequestsTool(
+    name="get_user",
+    description="Fetch user information by ID",
+    method="GET",
+    url_template="https://api.example.com/users/{user_id}",
+    path_params_schema={
+        "user_id": {"type": "integer", "description": "User ID"}
+    }
+)
+```
+
+#### 3. Custom Tool Classes
+
+Inherit from the `Tool` base class:
+
+```python
+from acton_agent.agent import Tool
+from typing import Dict, Any
+
+class DatabaseTool(Tool):
+    def __init__(self, connection_string: str):
+        super().__init__(
+            name="query_database",
+            description="Query the database with SQL"
+        )
+        self.connection_string = connection_string
+    
+    def execute(self, parameters: Dict[str, Any]) -> str:
+        query = parameters.get("query", "")
+        # Execute database query
+        # Return results as string
+        return "Query results..."
+    
+    def get_schema(self) -> Dict[str, Any]:
+        return {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "SQL query"}
+            },
+            "required": ["query"]
+        }
+```
+
+### Tool Registry
+
+Agents maintain a `ToolRegistry` that manages all registered tools:
+
+```python
+# Register a tool
+agent.register_tool(my_tool)
+
+# List registered tools
+tool_names = agent.list_tools()  # Returns: ["tool1", "tool2"]
+
+# Unregister a tool
+agent.unregister_tool("tool_name")
+
+# Check if tool exists
+if "calculator" in agent.tool_registry:
+    print("Calculator is available")
+```
+
+### Tool Schemas
+
+Tool schemas follow JSON Schema format and describe the parameters:
+
+```python
+schema = {
+    "type": "object",
+    "properties": {
+        "city": {
+            "type": "string",
+            "description": "City name"
+        },
+        "units": {
+            "type": "string",
+            "description": "Temperature units",
+            "enum": ["celsius", "fahrenheit"],
+            "default": "celsius"
+        }
+    },
+    "required": ["city"]
+}
+```
+
+**Key Elements:**
+- `type`: Always "object" for tool parameters
+- `properties`: Defines each parameter
+- `required`: List of required parameter names
+- `description`: Helps LLM understand parameter purpose
+- `enum`: Restricts to specific values
+- `default`: Default value if not provided
+
+## Messages and Conversation History
+
+Messages represent the conversation between user, assistant, and system.
+
+### Message Structure
+
+```python
+from acton_agent.agent import Message
+
+# User message
+user_msg = Message(role="user", content="What's the weather?")
+
+# Assistant message
+assistant_msg = Message(role="assistant", content="Let me check...")
+
+# System message (typically set automatically)
+system_msg = Message(role="system", content="You are a helpful assistant.")
+```
+
+### Conversation History
+
+The agent maintains conversation history automatically:
+
+```python
+agent = Agent(llm_client=client)
+
+# First interaction
+agent.run("What is 2+2?")
+
+# History now contains:
+# [Message(role="user", content="What is 2+2?"),
+#  Message(role="assistant", content="...")]
+
+# Second interaction continues the conversation
+agent.run("What about 3+3?")
+
+# Agent has full context of previous conversation
+
+# View history
+history = agent.get_conversation_history()
+for msg in history:
+    print(f"{msg.role}: {msg.content[:50]}...")
+
+# Reset to start fresh
+agent.reset()
+```
+
+### Manual History Management
+
+```python
+# Add messages manually
+agent.add_message("user", "Custom user message")
+agent.add_message("assistant", "Custom assistant response")
+
+# Get and manipulate history
+history = agent.get_conversation_history()
+# Modify as needed (be careful!)
+
+# Clear history
+agent.reset()
+```
+
+## Memory Management
+
+Memory management controls how conversation history is maintained within token limits.
+
+### The AgentMemory Protocol
+
+```python
+from abc import ABC, abstractmethod
+from typing import List
+from acton_agent.agent import Message
+
+class AgentMemory(ABC):
+    @abstractmethod
+    def manage_history(self, history: List[Message]) -> List[Message]:
+        """Process history to fit within limits."""
+        pass
+```
+
+### SimpleAgentMemory
+
+Built-in token-based truncation:
+
+```python
+from acton_agent.agent import SimpleAgentMemory
+
+# Create memory manager
+memory = SimpleAgentMemory(max_history_tokens=8000)
+
+# Use with agent
+agent = Agent(llm_client=client, memory=memory)
+```
+
+**How it works:**
+- Estimates tokens using ~4 characters per token
+- When limit exceeded, removes oldest messages
+- Always preserves at least the 2 most recent messages
+- Automatically applied before each LLM call
+
+### Example: Memory in Action
+
+```python
+from acton_agent import Agent
+from acton_agent.client import OpenAIClient
+from acton_agent.agent import SimpleAgentMemory
+
+client = OpenAIClient(model="gpt-4o")
+memory = SimpleAgentMemory(max_history_tokens=100)  # Very small for demo
+agent = Agent(llm_client=client, memory=memory)
+
+# Add many messages
+for i in range(20):
+    agent.run(f"Tell me about topic {i}")
+
+# Only recent messages are kept in context
+history = agent.get_conversation_history()
+print(f"Kept {len(history)} messages in history")
+```
+
+### Disabling Memory Management
+
+```python
+# No automatic memory management
+agent = Agent(llm_client=client, memory=None)
+```
+
+### Creating Custom Memory
+
+Implement the `AgentMemory` protocol:
+
+```python
+from acton_agent.agent import AgentMemory, Message
+from typing import List
+
+class SummarizingMemory(AgentMemory):
+    def __init__(self, max_messages: int = 10):
+        self.max_messages = max_messages
+    
+    def manage_history(self, history: List[Message]) -> List[Message]:
+        if len(history) <= self.max_messages:
+            return history
+        
+        # Keep first (important context) and last messages
+        # Summarize the middle
+        first_few = history[:2]
+        last_few = history[-2:]
+        
+        # Create summary message (simplified)
+        summary = Message(
+            role="system",
+            content="[Previous conversation summarized...]"
+        )
+        
+        return first_few + [summary] + last_few
+
+# Use custom memory
+agent = Agent(llm_client=client, memory=SummarizingMemory())
+```
+
+## Response Types
+
+The agent can produce three types of responses during execution:
+
+### AgentPlan
+
+Initial planning step where the agent outlines its approach:
+
+```python
+from acton_agent.agent import AgentPlan
+
+plan = AgentPlan(
+    plan="1. Call weather API for Seattle\n2. Format the response\n3. Provide answer"
+)
+```
+
+### AgentStep
+
+Intermediate step with tool calls:
+
+```python
+from acton_agent.agent import AgentStep, ToolCall
+
+step = AgentStep(
+    tool_thought="I need to get the weather for Seattle",
+    tool_calls=[
+        ToolCall(
+            id="call_123",
+            tool_name="get_weather",
+            parameters={"city": "Seattle"}
+        )
+    ]
+)
+```
+
+### AgentFinalResponse
+
+Final answer to the user:
+
+```python
+from acton_agent.agent import AgentFinalResponse
+
+response = AgentFinalResponse(
+    final_answer="The weather in Seattle is sunny and 72°F."
+)
+```
+
+## Streaming Events
+
+When using `agent.run_stream()`, you receive structured events:
+
+### Event Types
+
+```python
+from acton_agent.agent import (
+    AgentStreamStart,      # LLM stream begins
+    AgentToken,            # Individual token/chunk
+    AgentStreamEnd,        # LLM stream ends
+    AgentPlanEvent,        # Agent created a plan
+    AgentStepEvent,        # Agent executing tools
+    AgentToolResultsEvent, # Tool results available
+    AgentFinalResponseEvent # Final answer ready
+)
+
+for event in agent.run_stream("Tell me about Python"):
+    if isinstance(event, AgentToken):
+        print(event.content, end="", flush=True)
+    elif isinstance(event, AgentFinalResponseEvent):
+        print(f"\n\nFinal: {event.response.final_answer}")
+```
+
+### Streaming Example
+
+```python
+from acton_agent import Agent
+from acton_agent.client import OpenAIClient
+
+client = OpenAIClient(model="gpt-4o")
+agent = Agent(llm_client=client, stream=True)
+
+print("Agent response: ", end="", flush=True)
+for event in agent.run_stream("Write a haiku about coding"):
+    if isinstance(event, AgentToken):
+        print(event.content, end="", flush=True)
+print("\n")
+```
+
+**Output:**
+```
+Agent response: Lines of code flow,
+Logic weaves through the silence,
+Programs come alive.
+```
+
+## Key Terminology
+
+| Term | Description |
+|------|-------------|
+| **Agent** | Orchestrator that manages LLM calls, tools, and conversation |
+| **Tool** | Function or API that the agent can invoke |
+| **LLM Client** | Interface to language model providers |
+| **Message** | Single conversation entry (user/assistant/system) |
+| **Memory** | System for managing conversation history within limits |
+| **Tool Call** | Request to execute a tool with specific parameters |
+| **Tool Result** | Output from executing a tool |
+| **Iteration** | One cycle of LLM call + optional tool execution |
+
+## Design Philosophy
+
+Acton Agent is built on these principles:
+
+1. **Simplicity First**: Easy to get started, powerful when needed
+2. **Composability**: Mix and match components
+3. **Type Safety**: Leverage Python typing and Pydantic
+4. **Observability**: Built-in logging for debugging
+5. **Extensibility**: Easy to customize any component
+6. **Production Ready**: Retry logic, error handling, memory management
+
+## Next Steps
+
+- **[API Reference](api-reference.md)** - Detailed API documentation
+- **[Examples](examples/)** - Practical code examples
+- **[Advanced Topics](advanced-topics.md)** - Performance, deployment, and best practices
