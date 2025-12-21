@@ -11,6 +11,7 @@ This directory contains practical examples demonstrating various features and us
 
 ### Intermediate Examples
 - [Multi-Tool Agent](#multi-tool-agent) - Agent with multiple tools
+- [Organizing Tools with ToolSets](#organizing-tools-with-toolsets) - Group related tools
 - [Conversation Context](#conversation-context) - Multi-turn conversations
 - [Custom Memory](#custom-memory) - Custom memory management
 - [Streaming Responses](#streaming-responses) - Real-time output
@@ -205,6 +206,77 @@ response = agent.run(
 )
 print(response)
 ```
+
+### Organizing Tools with ToolSets
+
+Group related tools together with ToolSets for better organization:
+
+```python
+from acton_agent import Agent
+from acton_agent.client import OpenAIClient
+from acton_agent.agent import FunctionTool, ToolSet
+
+# Define weather-related functions
+def get_current_weather(city: str) -> str:
+    """Get current weather for a city."""
+    return f"Weather in {city}: Sunny, 72°F"
+
+def get_forecast(city: str, days: int = 3) -> str:
+    """Get weather forecast."""
+    return f"{days}-day forecast for {city}: Sunny with highs around 75°F"
+
+# Create a ToolSet for weather tools
+weather_toolset = ToolSet(
+    name="weather_tools",
+    description="Tools for fetching weather data and forecasts",
+    tools=[
+        FunctionTool(
+            name="current_weather",
+            description="Get current weather for any city",
+            func=get_current_weather,
+            schema={
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string", "description": "City name"}
+                },
+                "required": ["city"]
+            }
+        ),
+        FunctionTool(
+            name="weather_forecast",
+            description="Get multi-day weather forecast",
+            func=get_forecast,
+            schema={
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string", "description": "City name"},
+                    "days": {"type": "integer", "description": "Number of days", "default": 3}
+                },
+                "required": ["city"]
+            }
+        )
+    ]
+)
+
+# Create agent and register the entire toolset
+client = OpenAIClient(model="gpt-4o")
+agent = Agent(llm_client=client)
+agent.register_toolset(weather_toolset)
+
+# Use the tools
+response = agent.run("What's the weather in Seattle? Also give me a 5-day forecast.")
+print(response)
+
+# List registered toolsets
+toolsets = agent.tool_registry.list_toolsets()
+print(f"Available toolsets: {toolsets}")  # ["weather_tools"]
+```
+
+**Benefits of ToolSets:**
+- Organize related tools by domain (weather, database, math, etc.)
+- Provide shared context via toolset description
+- Register/unregister multiple tools at once
+- Improve LLM understanding of tool relationships
 
 ### Conversation Context
 

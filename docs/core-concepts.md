@@ -312,13 +312,85 @@ class DatabaseTool(Tool):
         }
 ```
 
+### ToolSets
+
+ToolSets allow you to group related tools together with a shared description. This is useful for organizing tools by domain or functionality, and helps the LLM understand the context and purpose of groups of tools.
+
+```python
+from acton_agent.agent import ToolSet, FunctionTool
+
+# Create tools
+def get_weather(city: str) -> str:
+    """Get current weather for a city."""
+    return f"Weather in {city}: Sunny, 72°F"
+
+def get_forecast(city: str, days: int = 3) -> str:
+    """Get weather forecast for a city."""
+    return f"{days}-day forecast for {city}: ..."
+
+# Create a toolset
+weather_toolset = ToolSet(
+    name="weather_tools",
+    description="Tools for fetching and analyzing weather data",
+    tools=[
+        FunctionTool(
+            name="get_weather",
+            description="Get current weather for a city",
+            func=get_weather,
+            schema={
+                "type": "object",
+                "properties": {"city": {"type": "string"}},
+                "required": ["city"]
+            }
+        ),
+        FunctionTool(
+            name="get_forecast",
+            description="Get weather forecast",
+            func=get_forecast,
+            schema={
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string"},
+                    "days": {"type": "integer", "default": 3}
+                },
+                "required": ["city"]
+            }
+        )
+    ]
+)
+
+# Register the entire toolset
+agent.register_toolset(weather_toolset)
+```
+
+**Benefits of ToolSets:**
+- **Organization**: Group related tools together
+- **Context**: Provide shared description for related functionality
+- **Management**: Register/unregister multiple tools at once
+- **Clarity**: Help LLM understand tool relationships and purpose
+
+**ToolSet Operations:**
+```python
+# Register a toolset
+agent.register_toolset(my_toolset)
+
+# List toolsets
+toolsets = agent.tool_registry.list_toolsets()
+
+# Unregister a toolset (removes all its tools)
+agent.tool_registry.unregister_toolset("weather_tools")
+```
+
 ### Tool Registry
 
-Agents maintain a `ToolRegistry` that manages all registered tools:
+Agents maintain a `ToolRegistry` that manages all registered tools and toolsets:
 
 ```python
 # Register a tool
 agent.register_tool(my_tool)
+
+# Register a toolset
+agent.register_toolset(my_toolset)
 
 # List registered tools
 tool_names = agent.list_tools()  # Returns: ["tool1", "tool2"]

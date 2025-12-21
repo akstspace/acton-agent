@@ -128,6 +128,32 @@ tool = FunctionTool(name="calc", description="Calculator", func=calculate, schem
 agent.register_tool(tool)
 ```
 
+##### register_toolset
+
+Register a ToolSet with the agent's ToolRegistry.
+
+```python
+def register_toolset(self, toolset: ToolSet) -> None
+```
+
+**Parameters:**
+- `toolset` (ToolSet): Collection of related tools with a shared description
+
+**Example:**
+```python
+from acton_agent.agent import ToolSet, FunctionTool
+
+toolset = ToolSet(
+    name="math_tools",
+    description="Mathematical operations and calculations",
+    tools=[
+        FunctionTool(name="add", description="Add two numbers", func=add, schema={...}),
+        FunctionTool(name="multiply", description="Multiply two numbers", func=multiply, schema={...})
+    ]
+)
+agent.register_toolset(toolset)
+```
+
 ##### unregister_tool
 
 Remove a tool from the agent's registry.
@@ -574,30 +600,54 @@ tool = create_api_tool(
 
 ### ToolRegistry
 
-Registry for managing tools.
+Registry for managing tools and toolsets.
 
 ```python
 class ToolRegistry:
     def __init__(self)
     
     def register(self, tool: Tool) -> None
+    def register_toolset(self, toolset: ToolSet) -> None
     def unregister(self, tool_name: str) -> None
+    def unregister_toolset(self, toolset_name: str) -> None
     def get(self, tool_name: str) -> Optional[Tool]
     def list_tools(self) -> List[Tool]
     def list_tool_names(self) -> List[str]
+    def list_toolsets(self) -> List[str]
     def has_tool(self, tool_name: str) -> bool
     def clear(self) -> None
 ```
 
+**Methods:**
+
+- `register(tool)`: Register a single tool
+- `register_toolset(toolset)`: Register a ToolSet and all its tools
+- `unregister(tool_name)`: Remove a tool by name
+- `unregister_toolset(toolset_name)`: Remove a toolset and all its tools
+- `list_toolsets()`: Get names of all registered toolsets
+
 **Example:**
 ```python
-from acton_agent.agent import ToolRegistry
+from acton_agent.agent import ToolRegistry, ToolSet, FunctionTool
 
 registry = ToolRegistry()
+
+# Register individual tool
 registry.register(my_tool)
-tool = registry.get("my_tool")
-all_tools = registry.list_tools()
-registry.clear()
+
+# Register a toolset
+toolset = ToolSet(
+    name="database_tools",
+    description="Database query and management tools",
+    tools=[query_tool, insert_tool]
+)
+registry.register_toolset(toolset)
+
+# List toolsets
+toolsets = registry.list_toolsets()  # Returns: ["database_tools"]
+
+# Unregister toolset
+registry.unregister_toolset("database_tools")
 ```
 
 ## Models
@@ -667,6 +717,36 @@ result = ToolResult(
     error=None
 )
 print(result.success)  # True
+```
+
+### ToolSet
+
+Represents a collection of related tools with a shared description.
+
+```python
+class ToolSet(BaseModel):
+    name: str
+    description: str
+    tools: List[Tool] = []
+```
+
+**Attributes:**
+- `name` (str): Unique name for the toolset
+- `description` (str): General description of what this group of tools can do
+- `tools` (List[Tool]): List of Tool instances in this toolset
+
+**Example:**
+```python
+from acton_agent.agent import ToolSet, FunctionTool
+
+toolset = ToolSet(
+    name="weather_tools",
+    description="Tools for fetching and analyzing weather data",
+    tools=[
+        FunctionTool(name="get_weather", description="Get current weather", func=get_weather, schema={...}),
+        FunctionTool(name="get_forecast", description="Get weather forecast", func=get_forecast, schema={...})
+    ]
+)
 ```
 
 ### AgentPlan
