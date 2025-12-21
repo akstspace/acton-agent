@@ -114,34 +114,29 @@ class Agent:
 
     def register_tool(self, tool: Tool) -> None:
         """
-        Register a tool in the agent's tool registry so it can be invoked in future tool calls.
-
+        Register a tool so the agent can invoke it in future tool calls.
+        
         Parameters:
-            tool (Tool): The tool instance to add to the agent's registry.
+            tool (Tool): Tool instance to add to the agent's registry.
         """
         self.tool_registry.register(tool)
 
     def register_toolset(self, toolset: "ToolSet") -> None:
         """
-        Register a toolset in the agent's tool registry.
-
-        A toolset is a collection of related tools with a shared description.
-        All tools in the toolset are registered and can be invoked in future tool calls.
-        The toolset's general description is included in the prompt to provide context.
-
+        Register a ToolSet with the agent's ToolRegistry.
+        
+        Registers every tool from the provided ToolSet so they are available for future tool calls and adds the set's description to agent prompts for context.
+        
         Parameters:
-            toolset (ToolSet): The toolset instance containing related tools to register.
+            toolset (ToolSet): Collection of related tools (and an optional shared description) to register.
         """
 
         self.tool_registry.register_toolset(toolset)
 
     def unregister_tool(self, tool_name: str) -> None:
         """
-        Remove a registered tool from the agent's tool registry.
-
-        Parameters:
-            tool_name (str): Name of the tool to remove.
-
+        Unregister a tool by name from the agent's tool registry.
+        
         Raises:
             ToolNotFoundError: If no tool with the given name is registered.
         """
@@ -661,10 +656,10 @@ class Agent:
 
     def get_conversation_history(self) -> List[Message]:
         """
-        Return a shallow copy of the agent's conversation history.
-
+        Get a shallow copy of the agent's conversation history in chronological order.
+        
         Returns:
-            List[Message]: A shallow copy of the conversation history as a list of Message objects in chronological order.
+            List[Message]: A list of Message objects representing the conversation history from oldest to newest.
         """
         return self.conversation_history.copy()
 
