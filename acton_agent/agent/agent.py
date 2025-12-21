@@ -38,7 +38,7 @@ from .retry import RetryConfig
 
 class Agent:
     """
-    Production-ready LLM agent with tool execution capabilities.
+    LLM agent with tool execution capabilities.
 
     Features:
     - Extensible tool system
@@ -46,6 +46,8 @@ class Agent:
     - Structured conversation history
     - Comprehensive error handling
     - Loguru logging throughout
+
+    Note: This is an experimental framework. The API may change without notice.
 
     Example:
         ```python

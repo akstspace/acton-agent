@@ -20,7 +20,7 @@ This directory contains practical examples demonstrating various features and us
 - [Custom Tool Class](#custom-tool-class) - Build custom tools
 - [OpenAPI Integration](#openapi-integration) - Auto-generate tools from specs
 - [Error Handling](#error-handling) - Robust error management
-- [Production Patterns](#production-patterns) - Production-ready code
+- [Advanced Patterns](#advanced-patterns) - Comprehensive agent setup
 
 ---
 
@@ -49,9 +49,8 @@ print(response)
 Turn any Python function into a tool:
 
 ```python
-from acton_agent import Agent
+from acton_agent import Agent, FunctionTool
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import FunctionTool
 
 # Define your function
 def calculate(a: float, b: float, operation: str) -> float:
@@ -138,9 +137,8 @@ print(response)
 Agent with multiple tools working together:
 
 ```python
-from acton_agent import Agent
+from acton_agent import Agent, FunctionTool
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import FunctionTool
 import datetime
 
 # Define multiple tools
@@ -212,9 +210,8 @@ print(response)
 Group related tools together with ToolSets for better organization:
 
 ```python
-from acton_agent import Agent, ToolSet
+from acton_agent import Agent, ToolSet, FunctionTool
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import FunctionTool
 
 # Define weather-related functions
 def get_current_weather(city: str) -> str:
@@ -277,6 +274,85 @@ print(f"Available toolsets: {toolsets}")  # ["weather_tools"]
 - Provide shared context via toolset description
 - Register/unregister multiple tools at once
 - Improve LLM understanding of tool relationships
+
+### ToolSet Parameters (Hidden Configuration)
+
+Pass hidden parameters to tools using `toolset_params`. This is perfect for API keys, credentials, or configuration that shouldn't be exposed to the LLM:
+
+```python
+from acton_agent import Agent, ToolSet, FunctionTool
+from acton_agent.client import OpenAIClient
+
+# Tools that need an API key
+def fetch_weather(city: str, api_key: str, units: str = "metric") -> str:
+    """Fetch real weather data from API."""
+    # api_key will be auto-injected from toolset_params
+    return f"Weather in {city}: 22°C (fetched with key: {api_key[:8]}...)"
+
+def fetch_forecast(city: str, days: int, api_key: str) -> str:
+    """Fetch forecast from API."""
+    return f"{days}-day forecast for {city} (authenticated)"
+
+# Create ToolSet with hidden API key
+weather_api_toolset = ToolSet(
+    name="weather_api",
+    description="Weather data from WeatherAPI.com",
+    tools=[
+        FunctionTool(
+            name="current_weather",
+            description="Get current weather for a city",
+            func=fetch_weather,
+            schema={
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string", "description": "City name"},
+                    "units": {
+                        "type": "string",
+                        "enum": ["metric", "imperial"],
+                        "default": "metric",
+                        "description": "Temperature units"
+                    }
+                },
+                "required": ["city"]
+                # Note: 'api_key' is NOT in schema - hidden from LLM
+            }
+        ),
+        FunctionTool(
+            name="forecast",
+            description="Get weather forecast",
+            func=fetch_forecast,
+            schema={
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string"},
+                    "days": {"type": "integer", "minimum": 1, "maximum": 10}
+                },
+                "required": ["city", "days"]
+                # Note: 'api_key' is NOT in schema
+            }
+        )
+    ],
+    toolset_params={
+        "api_key": "sk-weather-api-key-12345678"  # Hidden from LLM
+    }
+)
+
+# Register and use
+client = OpenAIClient(model="gpt-4o")
+agent = Agent(llm_client=client)
+agent.register_toolset(weather_api_toolset)
+
+# When LLM calls: current_weather(city="Paris")
+# Tool receives: fetch_weather(city="Paris", api_key="sk-weather-api-key-12345678", units="metric")
+response = agent.run("What's the weather in Paris?")
+print(response)
+```
+
+**Key Points:**
+- `toolset_params` are merged with LLM-provided parameters
+- LLM parameters override toolset_params if there's a conflict
+- Perfect for API keys, database connections, user context, etc.
+- Keeps sensitive data out of prompts and LLM interactions
 
 ### Conversation Context
 
@@ -564,19 +640,19 @@ response = safe_run(
 print(response)
 ```
 
-### Production Patterns
+### Advanced Patterns
 
-Production-ready agent setup:
+Comprehensive agent setup with retry logic, logging, and error handling:
 
 ```python
-from acton_agent import Agent
+from acton_agent import Agent, SimpleAgentMemory
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import RetryConfig, SimpleAgentMemory
+from acton_agent.agent import RetryConfig
 import os
 import logging
 
-class ProductionAgent:
-    """Production-ready agent wrapper."""
+class RobustAgent:
+    """Agent wrapper with comprehensive error handling and configuration."""
 
     def __init__(self):
         # Configuration from environment
@@ -590,13 +666,13 @@ class ProductionAgent:
         )
         self.logger = logging.getLogger(__name__)
 
-        # Create agent with production settings
+        # Create agent with robust settings
         self.agent = self._create_agent()
 
     def _create_agent(self) -> Agent:
-        """Create agent with production configuration."""
+        """Create agent with robust configuration."""
 
-        # Production retry config
+        # Retry configuration
         retry_config = RetryConfig(
             max_attempts=5,
             min_wait=2.0,
@@ -643,7 +719,7 @@ class ProductionAgent:
 
     def run(self, query: str, user_id: str = None) -> dict:
         """
-        Run agent with full production features.
+        Run agent with full error handling and logging.
 
         Returns:
             dict with response, metadata, and status
@@ -699,7 +775,7 @@ class ProductionAgent:
 
 # Usage
 if __name__ == "__main__":
-    agent = ProductionAgent()
+    agent = RobustAgent()
 
     # Health check
     health = agent.health_check()

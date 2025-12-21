@@ -1,5 +1,5 @@
 """
-AI Agent subpackage - Production-ready LLM Agent Framework
+AI Agent subpackage - Experimental LLM Agent Framework
 """
 
 from acton_agent.tools import FunctionTool, Tool, ToolCall, ToolRegistry, ToolResult, ToolSet

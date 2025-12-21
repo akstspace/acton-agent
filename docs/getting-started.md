@@ -15,14 +15,14 @@ Welcome to Acton Agent! This guide will help you install the framework and creat
 
 Before you begin, ensure you have:
 
-- **Python 3.9 or higher** installed on your system
+- **Python 3.10 or higher** installed on your system
 - An **API key** from a supported LLM provider (OpenAI, OpenRouter, etc.)
 - Basic familiarity with Python programming
 
 ### Verify Python Version
 
 ```bash
-python --version  # Should show 3.9 or higher
+python --version  # Should show 3.10 or higher
 ```
 
 If you need to install or upgrade Python, visit [python.org](https://www.python.org/downloads/).
@@ -144,7 +144,7 @@ Agents become powerful when they can use tools. Let's add a calculator tool.
 ```python
 from acton_agent import Agent
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import FunctionTool
+from acton_agent import FunctionTool
 
 # Define a calculator function
 def calculate(a: float, b: float, operation: str) -> float:
@@ -207,9 +207,9 @@ The result of 156 multiplied by 23 is 3,588.
 You can configure various aspects of your agent:
 
 ```python
-from acton_agent import Agent
+from acton_agent import Agent, SimpleAgentMemory
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import RetryConfig, SimpleAgentMemory
+from acton_agent.agent import RetryConfig
 
 client = OpenAIClient(model="gpt-4o")
 

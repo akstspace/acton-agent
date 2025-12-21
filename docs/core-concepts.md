@@ -100,9 +100,8 @@ graph LR
 ### Example: Understanding Agent Flow
 
 ```python
-from acton_agent import Agent
+from acton_agent import Agent, FunctionTool
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import FunctionTool
 
 def get_weather(city: str) -> str:
     """Simulated weather lookup."""
@@ -240,7 +239,7 @@ Acton Agent supports three types of tools:
 Wraps Python functions:
 
 ```python
-from acton_agent.agent import FunctionTool
+from acton_agent import FunctionTool
 
 def search(query: str, limit: int = 10) -> str:
     """Search for information."""
@@ -285,7 +284,7 @@ tool = RequestsTool(
 Inherit from the `Tool` base class:
 
 ```python
-from acton_agent.agent import Tool
+from acton_agent import Tool
 from typing import Dict, Any
 
 class DatabaseTool(Tool):
@@ -317,8 +316,7 @@ class DatabaseTool(Tool):
 ToolSets allow you to group related tools together with a shared description. This is useful for organizing tools by domain or functionality, and helps the LLM understand the context and purpose of groups of tools.
 
 ```python
-from acton_agent import ToolSet
-from acton_agent.agent import FunctionTool
+from acton_agent import ToolSet, FunctionTool
 
 # Create tools
 def get_weather(city: str) -> str:
@@ -380,6 +378,86 @@ toolsets = agent.tool_registry.list_toolsets()
 
 # Unregister a toolset (removes all its tools)
 agent.tool_registry.unregister_toolset("weather_tools")
+```
+
+### ToolSet Parameters
+
+ToolSets support `toolset_params` - hidden parameters that are automatically injected into all tools in the toolset during execution. These parameters are not visible to the LLM but are merged with user-provided parameters when tools are called.
+
+This is particularly useful for:
+- **API credentials**: Pass API keys without exposing them to the LLM
+- **Configuration**: Share common settings across related tools
+- **Context**: Provide runtime context like user IDs, session data, etc.
+
+```python
+from acton_agent import ToolSet, FunctionTool
+
+# Define tools that use an API key
+def get_weather(city: str, api_key: str) -> str:
+    """Fetch weather using the API key."""
+    # api_key will be automatically injected from toolset_params
+    # The LLM only needs to provide the 'city' parameter
+    return f"Weather in {city}: Sunny (fetched with key: {api_key[:8]}...)"
+
+def get_forecast(city: str, days: int, api_key: str) -> str:
+    """Fetch forecast using the API key."""
+    return f"{days}-day forecast for {city} (using API key)"
+
+# Create toolset with hidden parameters
+weather_toolset = ToolSet(
+    name="weather_api",
+    description="Weather data from external API",
+    tools=[
+        FunctionTool(
+            name="current_weather",
+            description="Get current weather for a city",
+            func=get_weather,
+            schema={
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string", "description": "City name"}
+                },
+                "required": ["city"]
+                # Note: 'api_key' is NOT in the schema - it's hidden from LLM
+            }
+        ),
+        FunctionTool(
+            name="forecast",
+            description="Get weather forecast",
+            func=get_forecast,
+            schema={
+                "type": "object",
+                "properties": {
+                    "city": {"type": "string"},
+                    "days": {"type": "integer"}
+                },
+                "required": ["city", "days"]
+                # Note: 'api_key' is NOT in the schema
+            }
+        )
+    ],
+    toolset_params={"api_key": "secret-api-key-12345"}  # Hidden from LLM
+)
+
+agent.register_toolset(weather_toolset)
+
+# When the LLM calls the tool:
+# LLM provides: {"city": "Seattle"}
+# Tool receives: {"city": "Seattle", "api_key": "secret-api-key-12345"}
+```
+
+**How Parameter Merging Works:**
+1. The LLM calls a tool with visible parameters (e.g., `{"city": "Paris"}`)
+2. The ToolRegistry checks if the tool belongs to a ToolSet with `toolset_params`
+3. Parameters are merged: `toolset_params` are added first, then LLM parameters override if there's a conflict
+4. The merged parameters are passed to the tool's `execute()` method
+
+**Example with Override:**
+```python
+# If toolset_params has: {"api_key": "default-key", "timeout": 30}
+# And LLM provides: {"city": "Paris", "timeout": 60}
+# Tool receives: {"api_key": "default-key", "timeout": 60, "city": "Paris"}
+# Note: LLM's timeout (60) overrides the toolset's timeout (30)
 ```
 
 ### Tool Registry
@@ -520,7 +598,7 @@ class AgentMemory(ABC):
 Built-in token-based truncation:
 
 ```python
-from acton_agent.agent import SimpleAgentMemory
+from acton_agent import SimpleAgentMemory
 
 # Create memory manager
 memory = SimpleAgentMemory(max_history_tokens=8000)
@@ -538,9 +616,8 @@ agent = Agent(llm_client=client, memory=memory)
 ### Example: Memory in Action
 
 ```python
-from acton_agent import Agent
+from acton_agent import Agent, SimpleAgentMemory
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import SimpleAgentMemory
 
 client = OpenAIClient(model="gpt-4o")
 memory = SimpleAgentMemory(max_history_tokens=100)  # Very small for demo
@@ -711,7 +788,7 @@ Acton Agent is built on these principles:
 3. **Type Safety**: Leverage Python typing and Pydantic
 4. **Observability**: Built-in logging for debugging
 5. **Extensibility**: Easy to customize any component
-6. **Production Ready**: Retry logic, error handling, memory management
+6. **Reliability**: Retry logic, error handling, memory management
 
 ## Next Steps
 
