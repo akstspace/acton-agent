@@ -51,16 +51,19 @@ class ResponseParser:
             # Step 3: Detect response type and create appropriate model
             if "plan" in data:
                 # This is an AgentPlan
-                AgentPlan(**data)
+                response = AgentPlan(**data)
                 logger.debug("Parsed as AgentPlan")
+                return response
             elif "final_answer" in data and data["final_answer"] is not None:
                 # This is an AgentFinalResponse
-                AgentFinalResponse(**data)
+                response = AgentFinalResponse(**data)
                 logger.debug("Parsed as AgentFinalResponse")
+                return response
             elif "tool_calls" in data and len(data.get("tool_calls", [])) > 0:
                 # This is an AgentStep
-                AgentStep(**data)
+                response = AgentStep(**data)
                 logger.debug("Parsed as AgentStep")
+                return response
             else:
                 # If no recognizable structure, treat as final answer
                 logger.debug("No recognizable structure, treating as AgentFinalResponse")
