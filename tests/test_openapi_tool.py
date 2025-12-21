@@ -140,13 +140,7 @@ SPEC_WITH_REFS = {
             "post": {
                 "operationId": "createItem",
                 "summary": "Create item",
-                "requestBody": {
-                    "content": {
-                        "application/json": {
-                            "schema": {"$ref": "#/components/schemas/Item"}
-                        }
-                    }
-                },
+                "requestBody": {"content": {"application/json": {"schema": {"$ref": "#/components/schemas/Item"}}}},
                 "responses": {"201": {"description": "Created"}},
             }
         }
@@ -238,9 +232,7 @@ class TestOpenAPIToolGenerator:
 
         generator = OpenAPIToolGenerator(spec="https://api.example.com/openapi.json")
         assert generator.spec == MINIMAL_OPENAPI_SPEC
-        mock_get.assert_called_once_with(
-            "https://api.example.com/openapi.json", timeout=30
-        )
+        mock_get.assert_called_once_with("https://api.example.com/openapi.json", timeout=30)
 
     @patch("acton_agent.tools.openapi_tool.requests.get")
     def test_load_spec_from_url_http_error(self, mock_get):
@@ -278,11 +270,10 @@ class TestOpenAPIToolGenerator:
     @patch("builtins.open", new_callable=mock_open, read_data="openapi: 3.0.0")
     def test_load_spec_yaml_without_pyyaml(self, mock_file):
         """Test that loading YAML without PyYAML raises helpful error."""
-        with patch("acton_agent.tools.openapi_tool.yaml", None):
-            with patch.dict("sys.modules", {"yaml": None}):
-                # This will try JSON first, fail, then try YAML import
-                with pytest.raises((ValueError, ImportError)):
-                    OpenAPIToolGenerator(spec="/path/to/spec.yaml")
+        with patch("acton_agent.tools.openapi_tool.yaml", None), patch.dict("sys.modules", {"yaml": None}):
+            # This will try JSON first, fail, then try YAML import
+            with pytest.raises((ValueError, ImportError)):
+                OpenAPIToolGenerator(spec="/path/to/spec.yaml")
 
     def test_extract_base_url_simple(self):
         """Test extracting base URL from simple server definition."""
@@ -534,15 +525,11 @@ class TestOpenAPIToolGenerator:
                                         "oneOf": [
                                             {
                                                 "type": "object",
-                                                "properties": {
-                                                    "type_a": {"type": "string"}
-                                                },
+                                                "properties": {"type_a": {"type": "string"}},
                                             },
                                             {
                                                 "type": "object",
-                                                "properties": {
-                                                    "type_b": {"type": "integer"}
-                                                },
+                                                "properties": {"type_b": {"type": "integer"}},
                                             },
                                         ]
                                     }
@@ -692,9 +679,7 @@ class TestOpenAPIToolGenerator:
                     }
                 }
             },
-            "components": {
-                "securitySchemes": {"BearerAuth": {"type": "http", "scheme": "bearer"}}
-            },
+            "components": {"securitySchemes": {"BearerAuth": {"type": "http", "scheme": "bearer"}}},
         }
         generator = OpenAPIToolGenerator(spec=spec)
         operation = spec["paths"]["/test"]["get"]
@@ -765,9 +750,7 @@ class TestOpenAPIToolGenerator:
         schema = tool.get_schema()
 
         # Header parameters should be in schema
-        assert "x_custom_header" in schema["properties"] or "X-Custom-Header" in str(
-            schema
-        )
+        assert "x_custom_header" in schema["properties"] or "X-Custom-Header" in str(schema)
 
     def test_tool_with_cookie_parameters(self):
         """Test tool creation with cookie parameters."""
@@ -812,17 +795,13 @@ class TestOpenAPIToolGenerator:
                                 "application/x-www-form-urlencoded": {
                                     "schema": {
                                         "type": "object",
-                                        "properties": {
-                                            "form_field": {"type": "string"}
-                                        },
+                                        "properties": {"form_field": {"type": "string"}},
                                     }
                                 },
                                 "application/json": {
                                     "schema": {
                                         "type": "object",
-                                        "properties": {
-                                            "json_field": {"type": "string"}
-                                        },
+                                        "properties": {"json_field": {"type": "string"}},
                                     }
                                 },
                             }
@@ -929,9 +908,7 @@ class TestOpenAPIToolGenerator:
             # Only include operations with 'Admin' tag
             return "Admin" in operation.get("tags", [])
 
-        generator = OpenAPIToolGenerator(
-            spec=COMPLEX_OPENAPI_SPEC, operation_filter=my_filter
-        )
+        generator = OpenAPIToolGenerator(spec=COMPLEX_OPENAPI_SPEC, operation_filter=my_filter)
         tools = generator.generate_tools()
 
         # Only deleteUser has Admin tag
@@ -1028,9 +1005,7 @@ class TestCreateToolsFromOpenAPI:
     def test_create_tools_with_base_url_override(self):
         """Test creating tools with base URL override."""
         custom_url = "https://custom.example.com"
-        tools = create_tools_from_openapi(
-            spec=MINIMAL_OPENAPI_SPEC, base_url=custom_url
-        )
+        tools = create_tools_from_openapi(spec=MINIMAL_OPENAPI_SPEC, base_url=custom_url)
 
         assert len(tools) == 1
         assert custom_url in tools[0].url_template
@@ -1052,9 +1027,7 @@ class TestCreateToolsFromOpenAPI:
 
     def test_create_tools_with_operation_id_filter(self):
         """Test creating tools with operation ID filter."""
-        tools = create_tools_from_openapi(
-            spec=COMPLEX_OPENAPI_SPEC, operation_ids=["getUser"]
-        )
+        tools = create_tools_from_openapi(spec=COMPLEX_OPENAPI_SPEC, operation_ids=["getUser"])
 
         assert len(tools) == 1
         assert tools[0].name == "getuser"
@@ -1222,11 +1195,7 @@ class TestEdgeCases:
                     "post": {
                         "operationId": "testOp",
                         "requestBody": {
-                            "content": {
-                                "application/json": {
-                                    "schema": {"$ref": "#/components/schemas/Node"}
-                                }
-                            }
+                            "content": {"application/json": {"schema": {"$ref": "#/components/schemas/Node"}}}
                         },
                         "responses": {"200": {"description": "OK"}},
                     }

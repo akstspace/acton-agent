@@ -3,7 +3,8 @@ Test suite for the memory management system.
 """
 
 import pytest
-from acton_agent.agent import AgentMemory, SimpleAgentMemory, Message
+
+from acton_agent.agent import AgentMemory, Message, SimpleAgentMemory
 
 
 class TestAgentMemory:

@@ -125,7 +125,7 @@ class RequestsTool(Tool):
             for key, value in parameters.items():
                 if key in self.path_params:
                     continue  # Already used for URL
-                elif key in self.query_params_schema:
+                if key in self.query_params_schema:
                     query_params[key] = value
                 elif key in self.header_params_schema:
                     header_params[key] = value
@@ -146,9 +146,7 @@ class RequestsTool(Tool):
                 method=self.method,
                 url=url,
                 params=query_params if query_params else None,
-                json=body_data
-                if body_data and self.method in ["POST", "PUT", "PATCH"]
-                else None,
+                json=body_data if body_data and self.method in ["POST", "PUT", "PATCH"] else None,
                 headers=request_headers,
                 auth=self.auth,
                 timeout=self.timeout,

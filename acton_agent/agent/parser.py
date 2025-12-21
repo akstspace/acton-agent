@@ -63,17 +63,13 @@ class ResponseParser:
                 logger.debug("Parsed as AgentStep")
             else:
                 # If no recognizable structure, treat as final answer
-                logger.debug(
-                    "No recognizable structure, treating as AgentFinalResponse"
-                )
+                logger.debug("No recognizable structure, treating as AgentFinalResponse")
                 response = AgentFinalResponse(final_answer=response_text)
 
             return response
 
         except json.JSONDecodeError as e:
-            logger.warning(
-                f"Failed to parse JSON response, treating as final answer: {e}"
-            )
+            logger.warning(f"Failed to parse JSON response, treating as final answer: {e}")
             logger.debug(f"Raw response text: {response_text[:200]}...")
             # Fallback: treat entire response as final answer
             return AgentFinalResponse(final_answer=response_text)
@@ -82,7 +78,7 @@ class ResponseParser:
             logger.error(f"Error parsing response: {e}")
             logger.debug(f"Raw response text: {response_text[:200]}...")
             # Last resort fallback
-            return AgentFinalResponse(final_answer=f"Error parsing response: {str(e)}")
+            return AgentFinalResponse(final_answer=f"Error parsing response: {e!s}")
 
     @staticmethod
     def _extract_json_from_markdown(text: str) -> str:

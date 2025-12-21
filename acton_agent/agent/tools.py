@@ -13,6 +13,7 @@ from loguru import logger
 
 from .exceptions import InvalidToolSchemaError, ToolNotFoundError
 
+
 if TYPE_CHECKING:
     from .models import ToolSet
 
@@ -47,7 +48,6 @@ class Tool(ABC):
         Returns:
             str: The tool's textual result.
         """
-        pass
 
     @abstractmethod
     def get_schema(self) -> Dict[str, Any]:
@@ -57,7 +57,6 @@ class Tool(ABC):
         Returns:
             schema (Dict[str, Any]): The JSON Schema object that specifies expected parameter names, types, and validation rules.
         """
-        pass
 
     def process_output(self, output: str) -> str:
         """
@@ -120,12 +119,12 @@ class ToolRegistry:
     def __init__(self):
         """Initialize an empty tool registry."""
         self._tools: Dict[str, Tool] = {}
-        self._toolsets: Dict[str, "ToolSet"] = {}
+        self._toolsets: Dict[str, ToolSet] = {}
 
     def register(self, tool: Tool) -> None:
         """
         Register a Tool under its name in the registry, overwriting any existing registration.
-        
+
         Parameters:
             tool (Tool): The Tool instance to add to the registry.
         """
@@ -193,9 +192,9 @@ class ToolRegistry:
     def register_toolset(self, toolset: "ToolSet") -> None:
         """
         Register a ToolSet and add all tools contained in it to the registry.
-        
+
         If a ToolSet with the same name already exists, it is overwritten and its tools are replaced; each tool from the provided ToolSet is registered individually.
-        
+
         Parameters:
             toolset (ToolSet): The ToolSet instance whose tools should be added to the registry.
         """
@@ -210,9 +209,7 @@ class ToolRegistry:
         for tool in toolset.tools:
             self.register(tool)
 
-        logger.info(
-            f"Registered toolset: {toolset.name} with {len(toolset.tools)} tools"
-        )
+        logger.info(f"Registered toolset: {toolset.name} with {len(toolset.tools)} tools")
 
     def unregister_toolset(self, toolset_name: str) -> None:
         """
@@ -241,7 +238,7 @@ class ToolRegistry:
     def list_toolsets(self) -> List[str]:
         """
         Get the names of all registered toolsets.
-        
+
         Returns:
             A list of registered toolset names.
         """
@@ -250,9 +247,9 @@ class ToolRegistry:
     def format_for_prompt(self) -> str:
         """
         Builds a human-readable listing of registered toolsets and tools for inclusion in a prompt.
-        
+
         Toolsets are listed first with their name, description, and contained tool names; tools are then grouped by toolset and standalone tools follow. Each tool entry includes its name, description, and the tool's JSON schema when available.
-        
+
         Returns:
             str: Formatted text describing available toolsets and tools, or "No tools available." if the registry is empty.
         """
@@ -292,9 +289,7 @@ class ToolRegistry:
                 tools_text += "\n"
 
         # Format standalone tools (not in any toolset)
-        standalone_tools = [
-            tool for tool in self._tools.values() if tool.name not in toolset_tools
-        ]
+        standalone_tools = [tool for tool in self._tools.values() if tool.name not in toolset_tools]
 
         if standalone_tools:
             tools_text += "--- Standalone Tools ---\n"
@@ -342,9 +337,7 @@ class FunctionTool(Tool):
     without having to create a custom Tool subclass.
     """
 
-    def __init__(
-        self, name: str, description: str, func: Callable, schema: Dict[str, Any]
-    ):
+    def __init__(self, name: str, description: str, func: Callable, schema: Dict[str, Any]):
         """
         Initialize a FunctionTool that wraps a Python callable together with a JSON Schema describing its parameters.
 
@@ -403,8 +396,7 @@ class FunctionTool(Tool):
             # Convert result to string
             if isinstance(result, str):
                 return result
-            else:
-                return json.dumps(result)
+            return json.dumps(result)
 
         except Exception as e:
             logger.error(f"Function tool {self.name} execution error: {e}")

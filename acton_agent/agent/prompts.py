@@ -133,9 +133,7 @@ def get_default_format_instructions() -> str:
     return DEFAULT_FORMAT_INSTRUCTIONS
 
 
-def build_system_prompt(
-    custom_instructions: str = None, final_answer_format_instructions: str = None
-) -> str:
+def build_system_prompt(custom_instructions: str = None, final_answer_format_instructions: str = None) -> str:
     """
     Builds the complete system prompt for the Agent, injecting response-format instructions, examples, critical rules, and the JSON schemas for response types.
 
@@ -160,9 +158,7 @@ def build_system_prompt(
 
     prompt_parts.append("\n" + SEPARATOR + "\n")
 
-    formatted_template = RESPONSE_FORMAT_INSTRUCTIONS_TEMPLATE.replace(
-        "{{{{", "{{"
-    ).replace("}}}}", "}}")
+    formatted_template = RESPONSE_FORMAT_INSTRUCTIONS_TEMPLATE.replace("{{{{", "{{").replace("}}}}", "}}")
     formatted_template = formatted_template.format(
         plan_schema=plan_schema, step_schema=step_schema, final_schema=final_schema
     )

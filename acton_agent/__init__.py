@@ -8,4 +8,5 @@ with tool calling capabilities.
 from .agent import Agent, ToolSet
 from .client import OpenRouterClient
 
+
 __all__ = ["Agent", "OpenRouterClient", "ToolSet"]

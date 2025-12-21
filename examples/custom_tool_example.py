@@ -8,9 +8,10 @@ for more complex or specialized functionality.
 
 import os
 import random
+
 from acton_agent import Agent
-from acton_agent.client import OpenAIClient
 from acton_agent.agent import Tool
+from acton_agent.client import OpenAIClient
 
 
 class WeatherTool(Tool):
@@ -55,9 +56,7 @@ class WeatherTool(Tool):
         """
         return {
             "type": "object",
-            "properties": {
-                "city": {"type": "string", "description": "Name of the city"}
-            },
+            "properties": {"city": {"type": "string", "description": "Name of the city"}},
             "required": ["city"],
         }
 
@@ -184,11 +183,7 @@ class TextAnalyzerTool(Tool):
         result += f"- Sentences: {sentence_count}\n"
         result += f"- Lines: {line_count}\n"
         result += f"- Longest word: '{longest_word}' ({len(longest_word)} characters)\n"
-        result += (
-            f"- Average word length: {char_count / word_count:.2f} characters"
-            if word_count > 0
-            else "N/A"
-        )
+        result += f"- Average word length: {char_count / word_count:.2f} characters" if word_count > 0 else "N/A"
 
         return result
 
@@ -200,9 +195,7 @@ class TextAnalyzerTool(Tool):
         """
         return {
             "type": "object",
-            "properties": {
-                "text": {"type": "string", "description": "The text to analyze"}
-            },
+            "properties": {"text": {"type": "string", "description": "The text to analyze"}},
             "required": ["text"],
         }
 

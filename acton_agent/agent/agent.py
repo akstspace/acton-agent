@@ -6,8 +6,9 @@ tool execution, and conversation management.
 """
 
 import uuid
+from collections.abc import Generator
 from datetime import datetime
-from typing import TYPE_CHECKING, Generator, List, Optional
+from typing import TYPE_CHECKING, List, Optional
 from zoneinfo import ZoneInfo
 
 from loguru import logger
@@ -36,6 +37,7 @@ from .parser import ResponseParser
 from .prompts import build_system_prompt, get_default_format_instructions
 from .retry import RetryConfig
 from .tools import Tool, ToolRegistry
+
 
 if TYPE_CHECKING:
     from .models import ToolSet
@@ -91,20 +93,14 @@ class Agent:
         """
         self.llm_client = llm_client
         self.custom_instructions = system_prompt  # Store custom instructions separately
-        self.final_answer_format_instructions = (
-            final_answer_format_instructions or get_default_format_instructions()
-        )
+        self.final_answer_format_instructions = final_answer_format_instructions or get_default_format_instructions()
         self.timezone = timezone
-        self.system_prompt = build_system_prompt(
-            system_prompt, self.final_answer_format_instructions
-        )
+        self.system_prompt = build_system_prompt(system_prompt, self.final_answer_format_instructions)
         self.max_iterations = max_iterations
         self.retry_config = retry_config or RetryConfig()
         self.stream = stream
         # Use SimpleAgentMemory by default if no custom memory provided
-        self.memory: Optional[AgentMemory] = (
-            memory if memory is not None else SimpleAgentMemory()
-        )
+        self.memory: Optional[AgentMemory] = memory if memory is not None else SimpleAgentMemory()
 
         self.tool_registry = ToolRegistry()
         self.conversation_history: List[Message] = []
@@ -115,7 +111,7 @@ class Agent:
     def register_tool(self, tool: Tool) -> None:
         """
         Register a tool so the agent can invoke it in future tool calls.
-        
+
         Parameters:
             tool (Tool): Tool instance to add to the agent's registry.
         """
@@ -124,9 +120,9 @@ class Agent:
     def register_toolset(self, toolset: "ToolSet") -> None:
         """
         Register a ToolSet with the agent's ToolRegistry.
-        
+
         Registers every tool from the provided ToolSet so they are available for future tool calls and adds the set's description to agent prompts for context.
-        
+
         Parameters:
             toolset (ToolSet): Collection of related tools (and an optional shared description) to register.
         """
@@ -136,7 +132,7 @@ class Agent:
     def unregister_tool(self, tool_name: str) -> None:
         """
         Unregister a tool by name from the agent's tool registry.
-        
+
         Raises:
             ToolNotFoundError: If no tool with the given name is registered.
         """
@@ -174,9 +170,7 @@ class Agent:
             current_datetime = datetime.now(tz)
             datetime_str = current_datetime.strftime("%A, %B %d, %Y at %I:%M:%S %p %Z")
         except Exception as e:
-            logger.warning(
-                f"Failed to get timezone '{self.timezone}': {e}. Falling back to UTC."
-            )
+            logger.warning(f"Failed to get timezone '{self.timezone}': {e}. Falling back to UTC.")
             current_datetime = datetime.now(ZoneInfo("UTC"))
             datetime_str = current_datetime.strftime("%A, %B %d, %Y at %I:%M:%S %p UTC")
 
@@ -221,9 +215,7 @@ class Agent:
             wrapped_func = self.retry_config.wrap_function(_execute)
             return wrapped_func()
         except Exception as e:
-            logger.error(
-                f"Tool {tool.name} failed after {self.retry_config.max_attempts} attempts: {e}"
-            )
+            logger.error(f"Tool {tool.name} failed after {self.retry_config.max_attempts} attempts: {e}")
             raise ToolExecutionError(tool.name, e)
 
     def _execute_tool_calls(self, tool_calls: List[ToolCall]) -> List[ToolResult]:
@@ -270,13 +262,9 @@ class Agent:
                     )
 
                     if result.success:
-                        logger.success(
-                            f"Tool {tool_call.tool_name} executed successfully"
-                        )
+                        logger.success(f"Tool {tool_call.tool_name} executed successfully")
                     else:
-                        logger.warning(
-                            f"Tool {tool_call.tool_name} returned error: {error}"
-                        )
+                        logger.warning(f"Tool {tool_call.tool_name} returned error: {error}")
 
                 except ToolExecutionError as e:
                     logger.error(f"Tool {tool_call.tool_name} execution failed: {e}")
@@ -358,9 +346,7 @@ class Agent:
                     )
 
                     if result.success:
-                        logger.success(
-                            f"Tool {tool_call.tool_name} executed successfully"
-                        )
+                        logger.success(f"Tool {tool_call.tool_name} executed successfully")
                         # Emit completed event
                         yield AgentToolExecutionEvent(
                             step_id=step_id,
@@ -370,9 +356,7 @@ class Agent:
                             result=result,
                         )
                     else:
-                        logger.warning(
-                            f"Tool {tool_call.tool_name} returned error: {error}"
-                        )
+                        logger.warning(f"Tool {tool_call.tool_name} returned error: {error}")
                         # Emit failed event
                         yield AgentToolExecutionEvent(
                             step_id=step_id,
@@ -456,14 +440,10 @@ class Agent:
             wrapped_func = self.retry_config.wrap_function(_call)
             return wrapped_func()
         except Exception as e:
-            logger.error(
-                f"LLM call failed after {self.retry_config.max_attempts} attempts: {e}"
-            )
+            logger.error(f"LLM call failed after {self.retry_config.max_attempts} attempts: {e}")
             raise LLMCallError(e, self.retry_config.max_attempts)
 
-    def _call_llm_with_retry_stream(
-        self, messages: List[Message]
-    ) -> Generator[str, None, str]:
+    def _call_llm_with_retry_stream(self, messages: List[Message]) -> Generator[str, None, str]:
         """
         Stream token chunks from the configured LLM for the given message sequence.
 
@@ -559,7 +539,7 @@ class Agent:
             except LLMCallError as e:
                 logger.error(f"LLM call failed: {e}")
                 error_response = AgentFinalResponse(
-                    final_answer=f"Error: Failed to get response from LLM - {str(e.original_error)}"
+                    final_answer=f"Error: Failed to get response from LLM - {e.original_error!s}"
                 )
                 yield AgentFinalResponseEvent(step_id=step_id, response=error_response)
                 return
@@ -568,9 +548,7 @@ class Agent:
             agent_response = self.response_parser.parse(llm_response_text)
 
             # Add to history
-            self.conversation_history.append(
-                Message(role="assistant", content=llm_response_text)
-            )
+            self.conversation_history.append(Message(role="assistant", content=llm_response_text))
 
             # Handle different response types
             if isinstance(agent_response, AgentPlan):
@@ -584,18 +562,14 @@ class Agent:
                 yield AgentStepEvent(step_id=step_id, step=agent_response)
 
                 tool_results = []
-                for event in self._execute_tool_calls_stream(
-                    agent_response.tool_calls, step_id
-                ):
+                for event in self._execute_tool_calls_stream(agent_response.tool_calls, step_id):
                     yield event
                     if event.status in ["completed", "failed"] and event.result:
                         tool_results.append(event.result)
 
                 results_text = self._format_tool_results(tool_results)
 
-                self.conversation_history.append(
-                    Message(role="user", content=results_text)
-                )
+                self.conversation_history.append(Message(role="user", content=results_text))
 
                 yield AgentToolResultsEvent(step_id=step_id, results=tool_results)
 
@@ -657,7 +631,7 @@ class Agent:
     def get_conversation_history(self) -> List[Message]:
         """
         Get a shallow copy of the agent's conversation history in chronological order.
-        
+
         Returns:
             List[Message]: A list of Message objects representing the conversation history from oldest to newest.
         """
@@ -668,9 +642,7 @@ class Agent:
         Update the agent's custom instructions and rebuild the system prompt using the current final-answer format instructions.
         """
         self.custom_instructions = prompt
-        self.system_prompt = build_system_prompt(
-            prompt, self.final_answer_format_instructions
-        )
+        self.system_prompt = build_system_prompt(prompt, self.final_answer_format_instructions)
         logger.info("System prompt updated")
 
     def set_final_answer_format(self, format_instructions: str) -> None:
@@ -681,9 +653,7 @@ class Agent:
             format_instructions (str): New formatting instructions for final answers.
         """
         self.final_answer_format_instructions = format_instructions
-        self.system_prompt = build_system_prompt(
-            self.custom_instructions, format_instructions
-        )
+        self.system_prompt = build_system_prompt(self.custom_instructions, format_instructions)
         logger.info("Final answer format instructions updated")
 
     def set_timezone(self, timezone: str) -> None:

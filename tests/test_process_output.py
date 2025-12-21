@@ -3,10 +3,11 @@ Tests for the process_output method in tools.
 """
 
 import json
-import pytest
 from unittest.mock import Mock, patch
 
-from acton_agent.agent.tools import Tool, FunctionTool
+import pytest
+
+from acton_agent.agent.tools import FunctionTool, Tool
 from acton_agent.tools import RequestsTool
 
 
@@ -167,10 +168,7 @@ class TestProcessOutputMethod:
                     summary = {
                         "total": len(items),
                         "names": [item.get("name") for item in items],
-                        "average_value": sum(item.get("value", 0) for item in items)
-                        / len(items)
-                        if items
-                        else 0,
+                        "average_value": sum(item.get("value", 0) for item in items) / len(items) if items else 0,
                     }
 
                     return json.dumps(summary, indent=2)

@@ -11,10 +11,10 @@ from acton_agent.agent.tools import ToolRegistry
 def sample_function_1(param1: str) -> str:
     """
     Create a result string that includes the provided parameter.
-    
+
     Parameters:
         param1 (str): Input text to include in the returned message.
-    
+
     Returns:
         str: A message string containing `param1`.
     """
@@ -24,10 +24,10 @@ def sample_function_1(param1: str) -> str:
 def sample_function_2(param2: int) -> str:
     """
     Builds a formatted message that includes the provided integer.
-    
+
     Parameters:
         param2 (int): Integer value to include in the returned message.
-    
+
     Returns:
         str: A string in the form "Result from function 2: {param2}" where {param2} is the provided integer.
     """
@@ -38,9 +38,9 @@ def sample_function_2(param2: int) -> str:
 def sample_tools():
     """
     Constructs two sample FunctionTool instances used by the test suite.
-    
+
     Each tool is populated with a name, description, callable, and a JSON schema describing its required parameter.
-    
+
     Returns:
         list[FunctionTool]: A list containing two tools:
             - "tool1": requires "param1" (string)
@@ -75,10 +75,10 @@ def sample_tools():
 def sample_toolset(sample_tools):
     """
     Constructs a ToolSet named "test_toolset" containing the provided tools.
-    
+
     Parameters:
         sample_tools (list): List of tool instances (typically FunctionTool) to include in the created ToolSet.
-    
+
     Returns:
         ToolSet: A ToolSet instance named "test_toolset" with the given tools and description "A test toolset containing sample tools".
     """

@@ -240,9 +240,7 @@ class TestCreateApiTool:
             description="Search",
             endpoint="https://api.example.com/search",
             method="GET",
-            parameters={
-                "q": {"type": "string", "description": "Query", "required": True}
-            },
+            parameters={"q": {"type": "string", "description": "Query", "required": True}},
         )
 
         schema = tool.get_schema()

@@ -78,9 +78,7 @@ class TestGetDefaultSystemPrompt:
     def test_default_prompt_equals_build_with_default(self):
         """Test that get_default matches build with default instructions."""
         default_prompt = get_default_system_prompt()
-        built_prompt = build_system_prompt(
-            custom_instructions=DEFAULT_CUSTOM_INSTRUCTIONS
-        )
+        built_prompt = build_system_prompt(custom_instructions=DEFAULT_CUSTOM_INSTRUCTIONS)
 
         assert default_prompt == built_prompt
 

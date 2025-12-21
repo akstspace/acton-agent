@@ -7,6 +7,7 @@ to make HTTP API calls. We'll use the JSONPlaceholder API as an example.
 """
 
 import os
+
 from acton_agent import Agent
 from acton_agent.client import OpenAIClient
 from acton_agent.tools import RequestsTool, create_api_tool
@@ -106,9 +107,7 @@ def main():
     print("🌐 Welcome to the API Integration Example!")
     print("=" * 70)
     print("\nThis demo shows how your agent can interact with REST APIs.")
-    print(
-        "We'll be using JSONPlaceholder API with route parameters and query params.\n"
-    )
+    print("We'll be using JSONPlaceholder API with route parameters and query params.\n")
     input("Press Enter to start the demo...")
     print()
 
@@ -172,9 +171,7 @@ def main():
     print()
 
     print("\n" + "=" * 70)
-    print(
-        "✅ Demo completed! The agent used route parameters & query params seamlessly."
-    )
+    print("✅ Demo completed! The agent used route parameters & query params seamlessly.")
     print("=" * 70)
     print()
 

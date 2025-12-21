@@ -126,7 +126,7 @@ export PYTHONHTTPSVERIFY=0
        description="Does stuff",
        ...
    )
-   
+
    # Good: Clear description
    tool = FunctionTool(
        name="calculator",
@@ -148,7 +148,7 @@ export PYTHONHTTPSVERIFY=0
    ```python
    # This doesn't need a calculator
    agent.run("What is two plus two?")  # Agent knows: 4
-   
+
    # This makes tool use more likely
    agent.run("Calculate 1523 * 847")  # Agent uses calculator
    ```
@@ -168,7 +168,7 @@ export PYTHONHTTPSVERIFY=0
    ```python
    # Instead of:
    "Research X, analyze Y, compare Z, and write a report"
-   
+
    # Break into steps:
    agent.run("First, research X")
    agent.run("Now analyze Y")
@@ -226,7 +226,7 @@ export PYTHONHTTPSVERIFY=0
 1. **Increase memory limit:**
    ```python
    from acton_agent.agent import SimpleAgentMemory
-   
+
    memory = SimpleAgentMemory(max_history_tokens=15000)
    agent = Agent(llm_client=client, memory=memory)
    ```
@@ -251,7 +251,7 @@ export PYTHONHTTPSVERIFY=0
    ```python
    # Tool registered as "calculator"
    agent.register_tool(calculator_tool)
-   
+
    # LLM tries to call "calc" - won't work
    # Make description clear about name
    ```

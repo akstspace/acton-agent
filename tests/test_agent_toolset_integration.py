@@ -12,7 +12,7 @@ from acton_agent.agent import Agent, FunctionTool, ToolSet
 def sample_func_1() -> str:
     """
     Return a fixed sentinel string used by tests.
-    
+
     Returns:
         result (str): The literal string "result1".
     """
@@ -28,7 +28,7 @@ def sample_func_2() -> str:
 def mock_llm_client():
     """
     Create a Mock object that simulates an LLM client for use in tests.
-    
+
     Returns:
         unittest.mock.Mock: A Mock instance representing the LLM client.
     """
@@ -39,12 +39,12 @@ def mock_llm_client():
 def sample_toolset():
     """
     Constructs a ToolSet containing two simple FunctionTool instances for testing.
-    
+
     The returned ToolSet is named "sample_toolset", has the description "A sample toolset for testing",
     and includes two FunctionTool entries:
     - "func1": wraps sample_func_1 with description "Function 1"
     - "func2": wraps sample_func_2 with description "Function 2"
-    
+
     Returns:
         ToolSet: A ToolSet with the two FunctionTool objects described above.
     """

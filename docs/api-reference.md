@@ -410,11 +410,11 @@ Abstract base class for all tools.
 ```python
 class Tool(ABC):
     def __init__(self, name: str, description: str)
-    
+
     @abstractmethod
     def execute(self, parameters: Dict[str, Any]) -> str:
         pass
-    
+
     @abstractmethod
     def get_schema(self) -> Dict[str, Any]:
         pass
@@ -432,11 +432,11 @@ from typing import Dict, Any
 class MyTool(Tool):
     def __init__(self):
         super().__init__(name="my_tool", description="Does something useful")
-    
+
     def execute(self, parameters: Dict[str, Any]) -> str:
         # Implementation
         return "Result"
-    
+
     def get_schema(self) -> Dict[str, Any]:
         return {
             "type": "object",
@@ -607,7 +607,7 @@ Registry for managing tools and toolsets.
 ```python
 class ToolRegistry:
     def __init__(self)
-    
+
     def register(self, tool: Tool) -> None
     def register_toolset(self, toolset: ToolSet) -> None
     def unregister(self, tool_name: str) -> None
@@ -704,7 +704,7 @@ class ToolResult(BaseModel):
     tool_name: str
     result: str
     error: Optional[str] = None
-    
+
     @property
     def success(self) -> bool
 ```

@@ -14,6 +14,7 @@ from loguru import logger
 
 from .requests_tool import RequestsTool
 
+
 # Try to import yaml, but don't fail if it's not available
 try:
     import yaml
@@ -55,9 +56,7 @@ def create_tools_from_openapi(
         ... )
     """
     generator = OpenAPIToolGenerator(spec=spec, base_url=base_url, headers=headers)
-    return generator.generate_tools(
-        tags=tags, operation_ids=operation_ids, max_tools=max_tools
-    )
+    return generator.generate_tools(tags=tags, operation_ids=operation_ids, max_tools=max_tools)
 
 
 class OpenAPIToolGenerator:
@@ -120,7 +119,7 @@ class OpenAPIToolGenerator:
 
         # Try to load from file
         logger.info(f"Loading OpenAPI spec from file: {spec}")
-        with open(spec, "r") as f:
+        with open(spec) as f:
             content = f.read()
 
         # Try JSON first
@@ -129,9 +128,7 @@ class OpenAPIToolGenerator:
         except json.JSONDecodeError:
             # Try YAML
             if yaml is None:
-                raise ValueError(
-                    "PyYAML is required to load YAML specs. Install with: pip install pyyaml"
-                )
+                raise ValueError("PyYAML is required to load YAML specs. Install with: pip install pyyaml")
             return yaml.safe_load(content)
 
     def _get_security_headers(self, operation: Dict[str, Any]) -> Dict[str, str]:
@@ -173,9 +170,7 @@ class OpenAPIToolGenerator:
                     if location == "header":
                         # The actual API key value should be in self.headers already
                         # This just documents that this header is expected
-                        logger.debug(
-                            f"API Key authentication via header: {header_name}"
-                        )
+                        logger.debug(f"API Key authentication via header: {header_name}")
 
                 elif scheme_type == "http":
                     # HTTP authentication (Bearer, Basic, etc.)
@@ -329,9 +324,7 @@ class OpenAPIToolGenerator:
                 param_schema = param.get("schema", {"type": "string"})
 
                 param_def = {
-                    "type": self._openapi_type_to_json_type(
-                        param_schema.get("type", "string")
-                    ),
+                    "type": self._openapi_type_to_json_type(param_schema.get("type", "string")),
                     "description": param.get("description", f"{param_name} parameter"),
                     "required": param.get("required", False),
                 }
@@ -349,9 +342,7 @@ class OpenAPIToolGenerator:
                     param_def["type"] = "array"
                     if "items" in param_schema:
                         param_def["items"] = {
-                            "type": self._openapi_type_to_json_type(
-                                param_schema["items"].get("type", "string")
-                            )
+                            "type": self._openapi_type_to_json_type(param_schema["items"].get("type", "string"))
                         }
 
                 if param_in == "path":
@@ -388,9 +379,7 @@ class OpenAPIToolGenerator:
                     body_schema = self._convert_openapi_schema(schema)
                 # Try form data
                 elif "application/x-www-form-urlencoded" in content:
-                    schema = content["application/x-www-form-urlencoded"].get(
-                        "schema", {}
-                    )
+                    schema = content["application/x-www-form-urlencoded"].get("schema", {})
                     body_schema = self._convert_openapi_schema(schema)
                 # Try multipart/form-data
                 elif "multipart/form-data" in content:
@@ -440,9 +429,7 @@ class OpenAPIToolGenerator:
         }
         return type_map.get(openapi_type, "string")
 
-    def _convert_openapi_schema(
-        self, schema: Dict[str, Any], visited_refs: Optional[set] = None
-    ) -> Dict[str, Any]:
+    def _convert_openapi_schema(self, schema: Dict[str, Any], visited_refs: Optional[set] = None) -> Dict[str, Any]:
         """
         Convert an OpenAPI schema fragment into a JSON Schema-like dictionary suitable for RequestsTool.
 
@@ -509,9 +496,7 @@ class OpenAPIToolGenerator:
             result["properties"] = {}
             for prop_name, prop_schema in schema["properties"].items():
                 prop_converted = {
-                    "type": self._openapi_type_to_json_type(
-                        prop_schema.get("type", "string")
-                    ),
+                    "type": self._openapi_type_to_json_type(prop_schema.get("type", "string")),
                     "description": prop_schema.get("description", f"{prop_name} field"),
                 }
 
@@ -525,23 +510,17 @@ class OpenAPIToolGenerator:
 
                 # Handle nested objects
                 if prop_schema.get("type") == "object" and "properties" in prop_schema:
-                    prop_converted = self._convert_openapi_schema(
-                        prop_schema, visited_refs
-                    )
+                    prop_converted = self._convert_openapi_schema(prop_schema, visited_refs)
 
                 # Handle arrays
                 if prop_schema.get("type") == "array":
                     prop_converted["type"] = "array"
                     if "items" in prop_schema:
-                        prop_converted["items"] = self._convert_openapi_schema(
-                            prop_schema["items"], visited_refs
-                        )
+                        prop_converted["items"] = self._convert_openapi_schema(prop_schema["items"], visited_refs)
 
                 # Handle $ref in properties
                 if "$ref" in prop_schema:
-                    prop_converted = self._convert_openapi_schema(
-                        prop_schema, visited_refs
-                    )
+                    prop_converted = self._convert_openapi_schema(prop_schema, visited_refs)
 
                 result["properties"][prop_name] = prop_converted
 
