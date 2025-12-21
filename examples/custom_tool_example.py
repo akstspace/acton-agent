@@ -10,7 +10,7 @@ import os
 import random
 
 from acton_agent import Agent
-from acton_agent.agent import Tool
+from acton_agent.tools import Tool
 from acton_agent.client import OpenAIClient
 
 
@@ -28,12 +28,13 @@ class WeatherTool(Tool):
             description="Get current weather for a city. Returns temperature and conditions.",
         )
 
-    def execute(self, parameters: dict) -> str:
+    def execute(self, parameters: dict, toolset_params: dict = None) -> str:
         """
         Return a formatted weather summary for the requested city.
 
         Parameters:
             parameters (dict): Input parameters; may include the optional key `"city"` with the city name (defaults to `"Unknown"`).
+            toolset_params (dict): Optional toolset parameters (not used in this example).
 
         Returns:
             str: A human-readable sentence describing simulated current weather for the specified city, including condition and temperature in °F (e.g., "The weather in Seattle is rainy with a temperature of 62°F").
@@ -75,7 +76,7 @@ class DiceRollerTool(Tool):
             description="Roll dice with specified number of sides and count. Returns the results.",
         )
 
-    def execute(self, parameters: dict) -> str:
+    def execute(self, parameters: dict, toolset_params: dict = None) -> str:
         """
         Roll a set of dice according to the provided parameters and return a formatted result.
 
@@ -83,6 +84,7 @@ class DiceRollerTool(Tool):
             parameters (dict): Dict that may contain:
                 - "num_dice" (int, optional): Number of dice to roll; defaults to 1. Must be between 1 and 100.
                 - "num_sides" (int, optional): Number of sides per die; defaults to 6. Must be between 2 and 1000.
+            toolset_params (dict): Optional toolset parameters (not used in this example).
 
         Returns:
             str: A formatted string describing the roll (e.g., "Rolling 3d6:\nRolls: [2, 5, 4]\nTotal: 11"), or an error message if input ranges are invalid.
@@ -152,12 +154,13 @@ class TextAnalyzerTool(Tool):
             description="Analyze text and return various statistics: character count, word count, sentence count, etc.",
         )
 
-    def execute(self, parameters: dict) -> str:
+    def execute(self, parameters: dict, toolset_params: dict = None) -> str:
         """
         Analyze input text and return a formatted summary of basic textual statistics.
 
         Parameters:
             parameters (dict): A dictionary expected to contain the key "text" with the string to analyze.
+            toolset_params (dict): Optional toolset parameters (not used in this example).
 
         Returns:
             str: A formatted report containing character count, word count, sentence count, line count, the longest word with its length, and average word length; if "text" is empty or missing, returns the error string "Error: No text provided".

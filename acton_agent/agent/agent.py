@@ -8,14 +8,15 @@ tool execution, and conversation management.
 import uuid
 from collections.abc import Generator
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
 from zoneinfo import ZoneInfo
 
 from loguru import logger
 
-from .client import LLMClient
+from ..client import LLMClient
+from ..memory import AgentMemory, SimpleAgentMemory
+from ..parsers import ResponseParser
+from ..tools import Tool, ToolCall, ToolRegistry, ToolResult, ToolSet
 from .exceptions import LLMCallError, MaxIterationsError, ToolExecutionError
-from .memory import AgentMemory, SimpleAgentMemory
 from .models import (
     AgentFinalResponse,
     AgentFinalResponseEvent,
@@ -30,17 +31,9 @@ from .models import (
     AgentToolResultsEvent,
     Message,
     StreamingEvent,
-    ToolCall,
-    ToolResult,
 )
-from .parser import ResponseParser
 from .prompts import build_system_prompt, get_default_format_instructions
 from .retry import RetryConfig
-from .tools import Tool, ToolRegistry
-
-
-if TYPE_CHECKING:
-    from .models import ToolSet
 
 
 class Agent:
@@ -70,13 +63,13 @@ class Agent:
     def __init__(
         self,
         llm_client: LLMClient,
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         max_iterations: int = 10,
-        retry_config: Optional[RetryConfig] = None,
+        retry_config: RetryConfig | None = None,
         stream: bool = False,
-        final_answer_format_instructions: Optional[str] = None,
+        final_answer_format_instructions: str | None = None,
         timezone: str = "UTC",
-        memory: Optional[AgentMemory] = None,
+        memory: AgentMemory | None = None,
     ):
         """
         Initialize an Agent for orchestrating LLM interactions, tool execution, retries, and conversation state.
@@ -100,7 +93,7 @@ class Agent:
         self.retry_config = retry_config or RetryConfig()
         self.stream = stream
         # Use SimpleAgentMemory by default if no custom memory provided
-        self.memory: Optional[AgentMemory] = memory if memory is not None else SimpleAgentMemory()
+        self.memory: AgentMemory | None = memory if memory is not None else SimpleAgentMemory()
 
         self.tool_registry = ToolRegistry()
         self.conversation_history: list[Message] = []
@@ -206,7 +199,8 @@ class Agent:
                 The tool's execution result string.
             """
             logger.debug(f"Executing tool: {tool.name} with parameters: {parameters}")
-            result = tool.execute(parameters)
+            toolset_params = self.tool_registry.get_toolset_params(tool.name)
+            result = tool.execute(parameters, toolset_params)
             logger.debug(f"Tool {tool.name} execution completed")
             return result
 

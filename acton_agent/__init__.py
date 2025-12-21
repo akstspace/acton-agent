@@ -1,12 +1,34 @@
 """
-Acton Agent - AI Agent Framework with Tool Integration
+Acton Agent - Production-ready LLM Agent Framework
 
-This package provides a flexible framework for building AI agents
-with tool calling capabilities.
+A powerful, production-ready framework for building AI agents with:
+- Flexible tool system for extending agent capabilities
+- Built-in retry logic and error handling
+- Conversation memory management
+- Support for multiple LLM providers
+- Streaming response support
 """
 
-from .agent import Agent, ToolSet
-from .client import OpenRouterClient
+from .agent import Agent
+from .client import LLMClient, OpenAIClient, OpenRouterClient
+from .memory import AgentMemory, SimpleAgentMemory
+from .parsers import ResponseParser, parse_streaming_events
+from .tools import FunctionTool, RequestsTool, Tool, ToolRegistry, ToolSet, create_api_tool
 
 
-__all__ = ["Agent", "OpenRouterClient", "ToolSet"]
+__all__ = [
+    "Agent",
+    "AgentMemory",
+    "FunctionTool",
+    "LLMClient",
+    "OpenAIClient",
+    "OpenRouterClient",
+    "RequestsTool",
+    "ResponseParser",
+    "SimpleAgentMemory",
+    "Tool",
+    "ToolRegistry",
+    "ToolSet",
+    "create_api_tool",
+    "parse_streaming_events",
+]

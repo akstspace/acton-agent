@@ -4,7 +4,6 @@ OpenAI LLM Client implementation with streaming support.
 
 import os
 from collections.abc import Generator
-from typing import Optional
 
 from openai import OpenAI
 
@@ -38,11 +37,11 @@ class OpenAIClient:
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         model: str = "gpt-4o",
         base_url: str = "https://api.openai.com/v1",
-        organization: Optional[str] = None,
-        default_headers: Optional[dict] = None,
+        organization: str | None = None,
+        default_headers: dict | None = None,
     ):
         """
         Create an OpenAI client configured with the provided API key and connection settings.

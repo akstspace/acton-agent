@@ -2,8 +2,6 @@
 Test configuration and fixtures for pytest.
 """
 
-from typing import Optional
-
 import pytest
 
 from acton_agent.agent.models import Message
@@ -12,7 +10,7 @@ from acton_agent.agent.models import Message
 class MockLLMClient:
     """Mock LLM client for testing."""
 
-    def __init__(self, responses: Optional[list[str]] = None):
+    def __init__(self, responses: list[str] | None = None):
         """
         Create a MockLLMClient configured with an optional sequence of preset responses.
 

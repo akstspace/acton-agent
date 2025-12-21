@@ -1,36 +1,11 @@
 """
-Memory management system for the AI Agent Framework.
-
-This module provides the abstract AgentMemory base class and built-in implementations
-for managing conversation history and token limits.
+Simple token-based memory management implementation.
 """
-
-from abc import ABC, abstractmethod
 
 from loguru import logger
 
-from .models import Message
-
-
-class AgentMemory(ABC):
-    """
-    Abstract base class for agent memory management.
-
-    Memory tools control how conversation history is managed, including
-    truncation, summarization, or other strategies to stay within token limits.
-    """
-
-    @abstractmethod
-    def manage_history(self, history: list[Message]) -> list[Message]:
-        """
-        Process and potentially modify conversation history to manage memory.
-
-        Parameters:
-            history (List[Message]): Current conversation history to manage.
-
-        Returns:
-            List[Message]: Managed conversation history (may be truncated, summarized, etc.).
-        """
+from ..agent.models import Message
+from .base import AgentMemory
 
 
 class SimpleAgentMemory(AgentMemory):

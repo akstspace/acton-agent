@@ -1,110 +1,18 @@
 """
-Tool system for the AI Agent Framework.
-
-This module provides the abstract Tool base class, ToolRegistry for managing tools,
-and FunctionTool for easily wrapping Python functions as tools.
+Tool registry for managing tools and toolsets.
 """
 
 import json
-from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Optional
+from typing import TYPE_CHECKING, Any
 
 from loguru import logger
 
-from .exceptions import InvalidToolSchemaError, ToolNotFoundError
+from ..agent.exceptions import ToolNotFoundError
+from .base import Tool
 
 
 if TYPE_CHECKING:
     from .models import ToolSet
-
-
-class Tool(ABC):
-    """
-    Abstract base class for tools.
-
-    All tools must inherit from this class and implement the execute
-    and get_schema methods.
-    """
-
-    def __init__(self, name: str, description: str):
-        """
-        Initialize the Tool with a unique name and a human-readable description.
-
-        Parameters:
-            name (str): Unique identifier for the tool used for registration and lookup.
-            description (str): Short human-readable description for prompts, listings, and documentation.
-        """
-        self.name = name
-        self.description = description
-
-    @abstractmethod
-    def execute(self, parameters: dict[str, Any]) -> str:
-        """
-        Run the tool with the provided parameter mapping and return its textual output.
-
-        Parameters:
-            parameters (Dict[str, Any]): Mapping of parameter names to values to be used as inputs for execution.
-
-        Returns:
-            str: The tool's textual result.
-        """
-
-    @abstractmethod
-    def get_schema(self) -> dict[str, Any]:
-        """
-        Retrieve the JSON Schema describing this tool's parameters.
-
-        Returns:
-            schema (Dict[str, Any]): The JSON Schema object that specifies expected parameter names, types, and validation rules.
-        """
-
-    def process_output(self, output: str) -> str:
-        """
-        Post-process the raw output from the tool execution.
-
-        This method can be overridden by subclasses to transform, filter, or format
-        the output before it's returned to the agent. By default, it returns the
-        output unchanged.
-
-        Parameters:
-            output (str): The raw output from the tool's execute method.
-
-        Returns:
-            str: The processed output (by default, unchanged).
-        """
-        return output
-
-    def agent_md(self, template: str, tool_output: str) -> str:
-        """
-        Render the tool's values into a Markdown template by replacing placeholders.
-
-        Parameters:
-            template (str): Markdown template that may include `{tool_name}`, `{output}`, and `{description}`.
-            tool_output (str): Text to substitute for the `{output}` placeholder.
-
-        Returns:
-            str: The template with `{tool_name}`, `{output}`, and `{description}` replaced by the tool's name, the provided output, and the tool's description respectively.
-        """
-        replacements = {
-            "{tool_name}": self.name,
-            "{output}": tool_output,
-            "{description}": self.description,
-        }
-
-        result = template
-        for placeholder, value in replacements.items():
-            result = result.replace(placeholder, value)
-
-        return result
-
-    def __repr__(self) -> str:
-        """
-        Provide a concise developer-facing representation of the tool including its name.
-
-        Returns:
-            str: Representation in the form "Tool(name=<name>)".
-        """
-        return f"Tool(name={self.name})"
 
 
 class ToolRegistry:
@@ -120,6 +28,7 @@ class ToolRegistry:
         """Initialize an empty tool registry."""
         self._tools: dict[str, Tool] = {}
         self._toolsets: dict[str, ToolSet] = {}
+        self._tool_to_toolset: dict[str, str] = {}  # Maps tool_name -> toolset_name
 
     def register(self, tool: Tool) -> None:
         """
@@ -150,7 +59,7 @@ class ToolRegistry:
         del self._tools[tool_name]
         logger.info(f"Unregistered tool: {tool_name}")
 
-    def get(self, tool_name: str) -> Optional[Tool]:
+    def get(self, tool_name: str) -> Tool | None:
         """
         Retrieve a registered tool by name.
 
@@ -202,12 +111,11 @@ class ToolRegistry:
         if toolset.name in self._toolsets:
             logger.warning(f"ToolSet '{toolset.name}' already registered, overwriting")
 
-        # Register the toolset
         self._toolsets[toolset.name] = toolset
 
-        # Register all tools in the toolset
         for tool in toolset.tools:
             self.register(tool)
+            self._tool_to_toolset[tool.name] = toolset.name
 
         logger.info(f"Registered toolset: {toolset.name} with {len(toolset.tools)} tools")
 
@@ -226,10 +134,12 @@ class ToolRegistry:
 
         toolset = self._toolsets[toolset_name]
 
-        # Unregister all tools in the toolset
+        # Unregister all tools in the toolset and remove from mapping
         for tool in toolset.tools:
             if tool.name in self._tools:
                 del self._tools[tool.name]
+            if tool.name in self._tool_to_toolset:
+                del self._tool_to_toolset[tool.name]
 
         # Remove the toolset
         del self._toolsets[toolset_name]
@@ -243,6 +153,23 @@ class ToolRegistry:
             A list of registered toolset names.
         """
         return list(self._toolsets.keys())
+
+    def get_toolset_params(self, tool_name: str) -> dict[str, Any] | None:
+        """
+        Get the toolset parameters for a specific tool, if it belongs to a toolset.
+
+        Parameters:
+            tool_name (str): The name of the tool to get toolset parameters for.
+
+        Returns:
+            Optional[Dict[str, Any]]: The toolset parameters if the tool belongs to a toolset, None otherwise.
+        """
+        toolset_name = self._tool_to_toolset.get(tool_name)
+        if toolset_name:
+            toolset = self._toolsets.get(toolset_name)
+            if toolset:
+                return toolset.toolset_params
+        return None
 
     def format_for_prompt(self) -> str:
         """
@@ -306,8 +233,10 @@ class ToolRegistry:
         return tools_text
 
     def clear(self) -> None:
-        """Remove all registered tools."""
+        """Remove all registered tools and toolsets."""
         self._tools.clear()
+        self._toolsets.clear()
+        self._tool_to_toolset.clear()
         logger.info("Cleared all tools from registry")
 
     def __len__(self) -> int:
@@ -327,86 +256,3 @@ class ToolRegistry:
             `true` if the tool name is registered, `false` otherwise.
         """
         return tool_name in self._tools
-
-
-class FunctionTool(Tool):
-    """
-    Tool that wraps a Python function.
-
-    This is a convenient way to create tools from existing Python functions
-    without having to create a custom Tool subclass.
-    """
-
-    def __init__(self, name: str, description: str, func: Callable, schema: dict[str, Any]):
-        """
-        Initialize a FunctionTool that wraps a Python callable together with a JSON Schema describing its parameters.
-
-        Parameters:
-            name (str): Unique tool name.
-            description (str): Human-readable description of the tool.
-            func (Callable): Callable invoked when the tool is executed.
-            schema (Dict[str, Any]): JSON Schema for the callable's parameters; must be a dict whose top-level `"type"` is `"object"`.
-
-        Raises:
-            InvalidToolSchemaError: If `schema` is not a dict, lacks a `"type"` field, or its `"type"` is not `"object"`.
-        """
-        super().__init__(name, description)
-        self.func = func
-        self.schema = schema
-
-        # Validate schema
-        self._validate_schema(schema)
-
-    def _validate_schema(self, schema: dict[str, Any]) -> None:
-        """
-        Ensure the provided JSON Schema describes an object; raise if it is invalid.
-
-        Parameters:
-            schema (Dict[str, Any]): JSON Schema for the tool's parameters.
-
-        Raises:
-            InvalidToolSchemaError: If `schema` is not a dict, if it lacks a `"type"` field,
-                or if `"type"` is not `"object"`.
-        """
-        if not isinstance(schema, dict):
-            raise InvalidToolSchemaError(self.name, "Schema must be a dictionary")
-
-        if "type" not in schema:
-            raise InvalidToolSchemaError(self.name, "Schema must have 'type' field")
-
-        if schema["type"] != "object":
-            raise InvalidToolSchemaError(self.name, "Schema type must be 'object'")
-
-    def execute(self, parameters: dict[str, Any]) -> str:
-        """
-        Run the wrapped function with the provided parameters.
-
-        Parameters:
-            parameters (Dict[str, Any]): Mapping of argument names to values passed as keyword arguments to the wrapped function.
-
-        Returns:
-            str: The wrapped function's return value as a string; non-string results are serialized to JSON.
-
-        Raises:
-            Exception: Re-raises any exception raised by the wrapped function.
-        """
-        try:
-            result = self.func(**parameters)
-
-            # Convert result to string
-            if isinstance(result, str):
-                return result
-            return json.dumps(result)
-
-        except Exception as e:
-            logger.error(f"Function tool {self.name} execution error: {e}")
-            raise
-
-    def get_schema(self) -> dict[str, Any]:
-        """
-        Return the JSON Schema that describes this tool's parameters.
-
-        Returns:
-            schema (Dict[str, Any]): JSON Schema describing the tool's parameters.
-        """
-        return self.schema

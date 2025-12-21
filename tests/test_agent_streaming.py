@@ -13,7 +13,7 @@ from acton_agent.agent.models import (
     AgentToken,
     AgentToolResultsEvent,
 )
-from acton_agent.agent.tools import Tool
+from acton_agent.tools import Tool
 
 
 class SimpleCalculatorTool(Tool):
@@ -23,7 +23,7 @@ class SimpleCalculatorTool(Tool):
         """Initialize the calculator tool."""
         super().__init__(name="calculator", description="Perform basic arithmetic operations")
 
-    def execute(self, parameters: dict) -> str:
+    def execute(self, parameters: dict, toolset_params: dict | None = None) -> str:
         """Execute the calculator."""
         a = parameters.get("a", 0)
         b = parameters.get("b", 0)

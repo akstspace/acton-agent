@@ -5,7 +5,7 @@ Tests for ToolSet functionality.
 import pytest
 
 from acton_agent.agent import FunctionTool, ToolSet
-from acton_agent.agent.tools import ToolRegistry
+from acton_agent.tools import ToolRegistry
 
 
 def sample_function_1(param1: str) -> str:

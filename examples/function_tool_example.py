@@ -10,7 +10,7 @@ import datetime
 import os
 
 from acton_agent import Agent
-from acton_agent.agent import FunctionTool
+from acton_agent.tools import FunctionTool
 from acton_agent.client import OpenAIClient
 
 

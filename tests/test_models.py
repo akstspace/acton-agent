@@ -17,9 +17,8 @@ from acton_agent.agent.models import (
     AgentStreamStart,
     AgentToken,
     Message,
-    ToolCall,
-    ToolResult,
 )
+from acton_agent.tools import ToolCall, ToolResult
 
 
 class TestMessage:

@@ -3,7 +3,6 @@ OpenRouter LLM Client implementation.
 """
 
 import os
-from typing import Optional
 
 from .openai_client import OpenAIClient
 
@@ -40,10 +39,10 @@ class OpenRouterClient(OpenAIClient):
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         model: str = "openai/gpt-4o",
-        site_url: Optional[str] = None,
-        site_name: Optional[str] = None,
+        site_url: str | None = None,
+        site_name: str | None = None,
         base_url: str = "https://openrouter.ai/api/v1",
     ):
         """

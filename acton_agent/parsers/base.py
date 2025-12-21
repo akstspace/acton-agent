@@ -7,11 +7,10 @@ into structured response objects.
 
 import json
 import re
-from typing import Optional, Union
 
 from loguru import logger
 
-from .models import AgentFinalResponse, AgentPlan, AgentStep
+from ..agent.models import AgentFinalResponse, AgentPlan, AgentStep
 
 
 class ResponseParser:
@@ -25,7 +24,7 @@ class ResponseParser:
     @staticmethod
     def parse(
         response_text: str,
-    ) -> Union[AgentPlan, AgentStep, AgentFinalResponse]:
+    ) -> AgentPlan | AgentStep | AgentFinalResponse:
         """
         Parse LLM response text into a structured agent response model.
 
@@ -54,20 +53,19 @@ class ResponseParser:
                 response = AgentPlan(**data)
                 logger.debug("Parsed as AgentPlan")
                 return response
-            elif "final_answer" in data and data["final_answer"] is not None:
+            if "final_answer" in data and data["final_answer"] is not None:
                 # This is an AgentFinalResponse
                 response = AgentFinalResponse(**data)
                 logger.debug("Parsed as AgentFinalResponse")
                 return response
-            elif "tool_calls" in data and len(data.get("tool_calls", [])) > 0:
+            if "tool_calls" in data and len(data.get("tool_calls", [])) > 0:
                 # This is an AgentStep
                 response = AgentStep(**data)
                 logger.debug("Parsed as AgentStep")
                 return response
-            else:
-                # If no recognizable structure, treat as final answer
-                logger.debug("No recognizable structure, treating as AgentFinalResponse")
-                return AgentFinalResponse(final_answer=response_text)
+            # If no recognizable structure, treat as final answer
+            logger.debug("No recognizable structure, treating as AgentFinalResponse")
+            return AgentFinalResponse(final_answer=response_text)
 
         except json.JSONDecodeError as e:
             logger.warning(f"Failed to parse JSON response, treating as final answer: {e}")
@@ -122,7 +120,7 @@ class ResponseParser:
 
     @staticmethod
     def validate_response(
-        response: Union[AgentPlan, AgentStep, AgentFinalResponse],
+        response: AgentPlan | AgentStep | AgentFinalResponse,
     ) -> bool:
         """
         Validate that a parsed agent response has the required fields for its concrete type.
@@ -161,8 +159,8 @@ class ResponseParser:
 
     @staticmethod
     def extract_thought(
-        response: Union[AgentPlan, AgentStep, AgentFinalResponse],
-    ) -> Optional[str]:
+        response: AgentPlan | AgentStep | AgentFinalResponse,
+    ) -> str | None:
         """
         Retrieve the thought text from a response object.
 

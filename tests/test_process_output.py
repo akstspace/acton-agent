@@ -7,8 +7,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from acton_agent.agent.tools import FunctionTool, Tool
-from acton_agent.tools import RequestsTool
+from acton_agent.tools import FunctionTool, RequestsTool, Tool
 
 
 class CustomProcessingTool(RequestsTool):
@@ -32,7 +31,7 @@ class TestProcessOutputMethod:
 
         # Create a minimal Tool subclass for testing
         class MinimalTool(Tool):
-            def execute(self, parameters):
+            def execute(self, parameters, toolset_params=None):
                 return "test output"
 
             def get_schema(self):
@@ -48,7 +47,7 @@ class TestProcessOutputMethod:
         """Default process_output should return input unchanged."""
 
         class DefaultTool(Tool):
-            def execute(self, parameters):
+            def execute(self, parameters, toolset_params=None):
                 return "result"
 
             def get_schema(self):

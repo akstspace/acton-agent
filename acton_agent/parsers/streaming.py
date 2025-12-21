@@ -3,12 +3,12 @@ Streaming parser for agent events.
 """
 
 from collections.abc import Generator
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 import jiter
 from loguru import logger
 
-from .models import (
+from ..agent.models import (
     AgentFinalResponse,
     AgentFinalResponseEvent,
     AgentPlan,
@@ -144,7 +144,7 @@ class StreamingTokenParser:
             return "final_response"
         return "unknown"
 
-    def try_parse_partial(self, step_id: str) -> Optional[StreamingEvent]:
+    def try_parse_partial(self, step_id: str) -> StreamingEvent | None:
         """
         Attempt to parse the accumulated token buffer for a step into a structured streaming event.
 
@@ -230,7 +230,7 @@ def parse_streaming_events(
         Generator[StreamingEvent, None, None]: A generator that yields structured StreamingEvent instances as they become available (parsed incremental events or original pass-through events).
     """
     parser = StreamingTokenParser()
-    current_step_id: Optional[str] = None
+    current_step_id: str | None = None
     stream_active = False
     last_complete = False
 
