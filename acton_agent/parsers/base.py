@@ -11,6 +11,7 @@ import re
 from loguru import logger
 
 from ..agent.models import AgentFinalResponse, AgentPlan, AgentStep
+from ..tools.models import ToolCall
 
 
 class ResponseParser:
@@ -60,6 +61,12 @@ class ResponseParser:
                 return response
             if "tool_calls" in data and len(data.get("tool_calls", [])) > 0:
                 # This is an AgentStep
+                # Convert tool_calls dicts to ToolCall objects
+                tool_calls = [
+                    ToolCall(**tc) if isinstance(tc, dict) else tc
+                    for tc in data.get("tool_calls", [])
+                ]
+                data["tool_calls"] = tool_calls
                 response = AgentStep(**data)
                 logger.debug("Parsed as AgentStep")
                 return response

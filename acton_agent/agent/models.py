@@ -2,13 +2,9 @@
 Core models for the AI Agent Framework.
 """
 
-from typing import TYPE_CHECKING, Any, Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel, Field, field_validator
-
-
-if TYPE_CHECKING:
-    pass
+from pydantic import BaseModel, Field
 
 
 class Message(BaseModel):
@@ -52,24 +48,6 @@ class AgentStep(BaseModel):
 
     tool_thought: str | None = Field(None, description="Agent's reasoning for this step")
     tool_calls: list[Any] = Field(default_factory=list, description="Tools to call in this step")
-
-    @field_validator("tool_calls", mode="before")
-    @classmethod
-    def validate_tool_calls(cls, v: Any) -> list[Any]:
-        """Convert dict tool calls to ToolCall objects."""
-        if not v:
-            return []
-
-        # Import here to avoid circular dependency
-        from ..tools.models import ToolCall
-
-        result = []
-        for item in v:
-            if isinstance(item, dict):
-                result.append(ToolCall(**item))
-            else:
-                result.append(item)
-        return result
 
     @property
     def has_tool_calls(self) -> bool:
@@ -139,24 +117,6 @@ class AgentToolResultsEvent(BaseModel):
     type: Literal["tool_results"] = "tool_results"
     step_id: str = Field(..., description="Unique identifier for this agent step/iteration")
     results: list[Any] = Field(..., description="Tool execution results")
-
-    @field_validator("results", mode="before")
-    @classmethod
-    def validate_results(cls, v: Any) -> list[Any]:
-        """Convert dict results to ToolResult objects."""
-        if not v:
-            return []
-
-        # Import here to avoid circular dependency
-        from ..tools.models import ToolResult
-
-        result = []
-        for item in v:
-            if isinstance(item, dict):
-                result.append(ToolResult(**item))
-            else:
-                result.append(item)
-        return result
 
 
 class AgentToolExecutionEvent(BaseModel):

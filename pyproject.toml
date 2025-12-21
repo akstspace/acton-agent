@@ -119,9 +119,6 @@ force-single-line = false
 lines-after-imports = 2
 
 [tool.ruff.lint.per-file-ignores]
-"acton_agent/agent/models.py" = [
-    "PLC0415", # import in validator to avoid circular dependency
-]
 "tests/**/*.py" = [
     "ARG",     # unused arguments in tests
     "PLR2004", # magic values in tests
