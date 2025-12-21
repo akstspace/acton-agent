@@ -124,10 +124,10 @@ class ToolRegistry:
 
     def register(self, tool: Tool) -> None:
         """
-        Register a Tool instance in the registry, overwriting any existing tool with the same name.
-
+        Register a Tool under its name in the registry, overwriting any existing registration.
+        
         Parameters:
-            tool (Tool): The Tool instance to register.
+            tool (Tool): The Tool instance to add to the registry.
         """
         if tool.name in self._tools:
             logger.warning(f"Tool '{tool.name}' already registered, overwriting")
@@ -192,13 +192,12 @@ class ToolRegistry:
 
     def register_toolset(self, toolset: "ToolSet") -> None:
         """
-        Register a ToolSet instance, adding all its tools to the registry.
-
-        The toolset and its tools are registered together. All tools in the toolset
-        are added to the registry and can be called individually.
-
+        Register a ToolSet and add all tools contained in it to the registry.
+        
+        If a ToolSet with the same name already exists, it is overwritten and its tools are replaced; each tool from the provided ToolSet is registered individually.
+        
         Parameters:
-            toolset (ToolSet): The ToolSet instance containing tools to register.
+            toolset (ToolSet): The ToolSet instance whose tools should be added to the registry.
         """
 
         if toolset.name in self._toolsets:
@@ -241,8 +240,8 @@ class ToolRegistry:
 
     def list_toolsets(self) -> List[str]:
         """
-        List the names of all registered toolsets.
-
+        Get the names of all registered toolsets.
+        
         Returns:
             A list of registered toolset names.
         """
@@ -250,13 +249,12 @@ class ToolRegistry:
 
     def format_for_prompt(self) -> str:
         """
-        Builds a concise, human-readable text block that describes all registered tools and toolsets for use in a prompt.
-
-        Toolsets are listed first with their general description, followed by individual tools.
-        Each tool entry contains the tool's name, description, and JSON schema when available.
-
+        Builds a human-readable listing of registered toolsets and tools for inclusion in a prompt.
+        
+        Toolsets are listed first with their name, description, and contained tool names; tools are then grouped by toolset and standalone tools follow. Each tool entry includes its name, description, and the tool's JSON schema when available.
+        
         Returns:
-            str: Formatted listing of available toolsets and tools; "No tools available." when the registry is empty.
+            str: Formatted text describing available toolsets and tools, or "No tools available." if the registry is empty.
         """
         if not self._tools and not self._toolsets:
             return "No tools available."
