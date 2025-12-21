@@ -51,22 +51,20 @@ class ResponseParser:
             # Step 3: Detect response type and create appropriate model
             if "plan" in data:
                 # This is an AgentPlan
-                response = AgentPlan(**data)
+                AgentPlan(**data)
                 logger.debug("Parsed as AgentPlan")
             elif "final_answer" in data and data["final_answer"] is not None:
                 # This is an AgentFinalResponse
-                response = AgentFinalResponse(**data)
+                AgentFinalResponse(**data)
                 logger.debug("Parsed as AgentFinalResponse")
             elif "tool_calls" in data and len(data.get("tool_calls", [])) > 0:
                 # This is an AgentStep
-                response = AgentStep(**data)
+                AgentStep(**data)
                 logger.debug("Parsed as AgentStep")
             else:
                 # If no recognizable structure, treat as final answer
                 logger.debug("No recognizable structure, treating as AgentFinalResponse")
-                response = AgentFinalResponse(final_answer=response_text)
-
-            return response
+                return AgentFinalResponse(final_answer=response_text)
 
         except json.JSONDecodeError as e:
             logger.warning(f"Failed to parse JSON response, treating as final answer: {e}")
@@ -152,10 +150,9 @@ class ResponseParser:
                     return False
 
         # AgentFinalResponse must have final_answer
-        elif isinstance(response, AgentFinalResponse):
-            if not response.final_answer:
-                logger.warning("Invalid AgentFinalResponse: must have final_answer")
-                return False
+        elif isinstance(response, AgentFinalResponse) and not response.final_answer:
+            logger.warning("Invalid AgentFinalResponse: must have final_answer")
+            return False
 
         return True
 

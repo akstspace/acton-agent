@@ -5,7 +5,7 @@ This module defines protocols (interfaces) that external components
 must implement to work with the agent framework.
 """
 
-from typing import List, Protocol
+from typing import Protocol
 
 from .models import Message
 
@@ -18,7 +18,7 @@ class LLMClient(Protocol):
     this protocol to work with the agent framework.
     """
 
-    def call(self, messages: List[Message], **kwargs) -> str:
+    def call(self, messages: list[Message], **kwargs) -> str:
         """
         Invoke the language model with a sequence of conversation messages and return its reply.
 

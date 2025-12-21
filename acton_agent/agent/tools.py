@@ -7,7 +7,7 @@ and FunctionTool for easily wrapping Python functions as tools.
 
 import json
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 from loguru import logger
 
@@ -38,7 +38,7 @@ class Tool(ABC):
         self.description = description
 
     @abstractmethod
-    def execute(self, parameters: Dict[str, Any]) -> str:
+    def execute(self, parameters: dict[str, Any]) -> str:
         """
         Run the tool with the provided parameter mapping and return its textual output.
 
@@ -50,7 +50,7 @@ class Tool(ABC):
         """
 
     @abstractmethod
-    def get_schema(self) -> Dict[str, Any]:
+    def get_schema(self) -> dict[str, Any]:
         """
         Retrieve the JSON Schema describing this tool's parameters.
 
@@ -118,8 +118,8 @@ class ToolRegistry:
 
     def __init__(self):
         """Initialize an empty tool registry."""
-        self._tools: Dict[str, Tool] = {}
-        self._toolsets: Dict[str, ToolSet] = {}
+        self._tools: dict[str, Tool] = {}
+        self._toolsets: dict[str, ToolSet] = {}
 
     def register(self, tool: Tool) -> None:
         """
@@ -162,7 +162,7 @@ class ToolRegistry:
         """
         return self._tools.get(tool_name)
 
-    def list_tools(self) -> List[Tool]:
+    def list_tools(self) -> list[Tool]:
         """
         Get all registered tools.
 
@@ -171,7 +171,7 @@ class ToolRegistry:
         """
         return list(self._tools.values())
 
-    def list_tool_names(self) -> List[str]:
+    def list_tool_names(self) -> list[str]:
         """
         List the names of all registered tools.
 
@@ -235,7 +235,7 @@ class ToolRegistry:
         del self._toolsets[toolset_name]
         logger.info(f"Unregistered toolset: {toolset_name}")
 
-    def list_toolsets(self) -> List[str]:
+    def list_toolsets(self) -> list[str]:
         """
         Get the names of all registered toolsets.
 
@@ -261,7 +261,7 @@ class ToolRegistry:
         # Format toolsets first
         if self._toolsets:
             tools_text += "AVAILABLE TOOLSETS:\n\n"
-            for toolset_name, toolset in self._toolsets.items():
+            for _toolset_name, toolset in self._toolsets.items():
                 tools_text += f"ToolSet: {toolset.name}\n"
                 tools_text += f"Description: {toolset.description}\n"
                 tools_text += f"Tools in this set: {', '.join([tool.name for tool in toolset.tools])}\n\n"
@@ -337,7 +337,7 @@ class FunctionTool(Tool):
     without having to create a custom Tool subclass.
     """
 
-    def __init__(self, name: str, description: str, func: Callable, schema: Dict[str, Any]):
+    def __init__(self, name: str, description: str, func: Callable, schema: dict[str, Any]):
         """
         Initialize a FunctionTool that wraps a Python callable together with a JSON Schema describing its parameters.
 
@@ -357,7 +357,7 @@ class FunctionTool(Tool):
         # Validate schema
         self._validate_schema(schema)
 
-    def _validate_schema(self, schema: Dict[str, Any]) -> None:
+    def _validate_schema(self, schema: dict[str, Any]) -> None:
         """
         Ensure the provided JSON Schema describes an object; raise if it is invalid.
 
@@ -377,7 +377,7 @@ class FunctionTool(Tool):
         if schema["type"] != "object":
             raise InvalidToolSchemaError(self.name, "Schema type must be 'object'")
 
-    def execute(self, parameters: Dict[str, Any]) -> str:
+    def execute(self, parameters: dict[str, Any]) -> str:
         """
         Run the wrapped function with the provided parameters.
 
@@ -402,7 +402,7 @@ class FunctionTool(Tool):
             logger.error(f"Function tool {self.name} execution error: {e}")
             raise
 
-    def get_schema(self) -> Dict[str, Any]:
+    def get_schema(self) -> dict[str, Any]:
         """
         Return the JSON Schema that describes this tool's parameters.
 

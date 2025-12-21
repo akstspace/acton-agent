@@ -6,6 +6,7 @@ including response format instructions and schema definitions.
 """
 
 import json
+from typing import Optional
 
 from .models import AgentFinalResponse, AgentPlan, AgentStep
 
@@ -133,7 +134,7 @@ def get_default_format_instructions() -> str:
     return DEFAULT_FORMAT_INSTRUCTIONS
 
 
-def build_system_prompt(custom_instructions: str = None, final_answer_format_instructions: str = None) -> str:
+def build_system_prompt(custom_instructions: Optional[str] = None, final_answer_format_instructions: Optional[str] = None) -> str:
     """
     Builds the complete system prompt for the Agent, injecting response-format instructions, examples, critical rules, and the JSON schemas for response types.
 

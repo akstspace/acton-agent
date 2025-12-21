@@ -8,7 +8,7 @@ tool execution, and conversation management.
 import uuid
 from collections.abc import Generator
 from datetime import datetime
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Optional
 from zoneinfo import ZoneInfo
 
 from loguru import logger
@@ -103,7 +103,7 @@ class Agent:
         self.memory: Optional[AgentMemory] = memory if memory is not None else SimpleAgentMemory()
 
         self.tool_registry = ToolRegistry()
-        self.conversation_history: List[Message] = []
+        self.conversation_history: list[Message] = []
         self.response_parser = ResponseParser()
 
         logger.success("Agent initialized successfully")
@@ -138,7 +138,7 @@ class Agent:
         """
         self.tool_registry.unregister(tool_name)
 
-    def list_tools(self) -> List[str]:
+    def list_tools(self) -> list[str]:
         """
         Get list of registered tool names.
 
@@ -147,7 +147,7 @@ class Agent:
         """
         return self.tool_registry.list_tool_names()
 
-    def _build_messages(self) -> List[Message]:
+    def _build_messages(self) -> list[Message]:
         """
         Build the ordered message list to send to the LLM.
 
@@ -216,9 +216,9 @@ class Agent:
             return wrapped_func()
         except Exception as e:
             logger.error(f"Tool {tool.name} failed after {self.retry_config.max_attempts} attempts: {e}")
-            raise ToolExecutionError(tool.name, e)
+            raise ToolExecutionError(tool.name, e) from e
 
-    def _execute_tool_calls(self, tool_calls: List[ToolCall]) -> List[ToolResult]:
+    def _execute_tool_calls(self, tool_calls: list[ToolCall]) -> list[ToolResult]:
         """
         Execute a sequence of ToolCall requests and return their ToolResult entries in order.
 
@@ -280,8 +280,8 @@ class Agent:
         return results
 
     def _execute_tool_calls_stream(
-        self, tool_calls: List[ToolCall], step_id: str
-    ) -> Generator[AgentToolExecutionEvent, None, List[ToolResult]]:
+        self, tool_calls: list[ToolCall], step_id: str
+    ) -> Generator[AgentToolExecutionEvent, None, list[ToolResult]]:
         """
         Stream execution of a sequence of tool calls and emit progress events for each call.
 
@@ -388,7 +388,7 @@ class Agent:
 
         return results
 
-    def _format_tool_results(self, results: List[ToolResult]) -> str:
+    def _format_tool_results(self, results: list[ToolResult]) -> str:
         """
         Format multiple tool execution results into a readable multi-line string suitable for appending to conversation history.
 
@@ -409,7 +409,7 @@ class Agent:
                 results_text += f"Error: {result.error}\n"
         return results_text
 
-    def _call_llm_with_retry(self, messages: List[Message]) -> str:
+    def _call_llm_with_retry(self, messages: list[Message]) -> str:
         """
         Invoke the configured LLM client with retry handling.
 
@@ -441,9 +441,9 @@ class Agent:
             return wrapped_func()
         except Exception as e:
             logger.error(f"LLM call failed after {self.retry_config.max_attempts} attempts: {e}")
-            raise LLMCallError(e, self.retry_config.max_attempts)
+            raise LLMCallError(e, self.retry_config.max_attempts) from e
 
-    def _call_llm_with_retry_stream(self, messages: List[Message]) -> Generator[str, None, str]:
+    def _call_llm_with_retry_stream(self, messages: list[Message]) -> Generator[str, None, str]:
         """
         Stream token chunks from the configured LLM for the given message sequence.
 
@@ -490,7 +490,7 @@ class Agent:
             return _call_stream()
         except Exception as e:
             logger.error(f"LLM streaming call failed: {e}")
-            raise LLMCallError(e, self.retry_config.max_attempts)
+            raise LLMCallError(e, self.retry_config.max_attempts) from e
 
     def run_stream(self, user_input: str) -> Generator[StreamingEvent, None, None]:
         """
@@ -628,7 +628,7 @@ class Agent:
         self.conversation_history.append(message)
         logger.info(f"Added {role} message to conversation history")
 
-    def get_conversation_history(self) -> List[Message]:
+    def get_conversation_history(self) -> list[Message]:
         """
         Get a shallow copy of the agent's conversation history in chronological order.
 
@@ -673,7 +673,7 @@ class Agent:
             logger.info(f"Timezone updated to {timezone}")
         except Exception as e:
             logger.error(f"Invalid timezone '{timezone}': {e}")
-            raise ValueError(f"Invalid timezone: {timezone}")
+            raise ValueError(f"Invalid timezone: {timezone}") from e
 
     def __repr__(self) -> str:
         """

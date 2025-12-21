@@ -3,7 +3,7 @@ Streaming parser for agent events.
 """
 
 from collections.abc import Generator
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Literal, Optional
 
 import jiter
 from loguru import logger
@@ -53,8 +53,8 @@ class StreamingTokenParser:
         - step_buffers (Dict[str, bytearray]): per-step byte buffers used to accumulate incoming tokens efficiently.
         - detected_types (Dict[str, EventType]): map of step_id to a heuristically detected event type ("plan", "step", "final_response", or "unknown").
         """
-        self.step_buffers: Dict[str, bytearray] = {}
-        self.detected_types: Dict[str, EventType] = {}
+        self.step_buffers: dict[str, bytearray] = {}
+        self.detected_types: dict[str, EventType] = {}
 
     def add_token(self, step_id: str, token: str) -> None:
         """Add a token to the buffer for a specific step."""
@@ -125,7 +125,7 @@ class StreamingTokenParser:
         # No closing fence yet - return everything after opening
         return data[start:].strip()
 
-    def _detect_event_type_from_partial(self, data: Dict[str, Any]) -> EventType:
+    def _detect_event_type_from_partial(self, data: dict[str, Any]) -> EventType:
         """
         Determine the agent event type based on keys present in a partially parsed JSON payload.
 

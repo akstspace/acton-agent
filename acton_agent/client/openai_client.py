@@ -4,7 +4,7 @@ OpenAI LLM Client implementation with streaming support.
 
 import os
 from collections.abc import Generator
-from typing import List, Optional
+from typing import Optional
 
 from openai import OpenAI
 
@@ -74,7 +74,7 @@ class OpenAIClient:
         )
         self.model = model
 
-    def call(self, messages: List[Message], **kwargs) -> str:
+    def call(self, messages: list[Message], **kwargs) -> str:
         """
         Request a chat completion from the configured model and return the assistant's reply.
 
@@ -95,7 +95,7 @@ class OpenAIClient:
             return completion.choices[0].message.content
         return ""
 
-    def call_stream(self, messages: List[Message], **kwargs) -> Generator[str, None, None]:
+    def call_stream(self, messages: list[Message], **kwargs) -> Generator[str, None, None]:
         """
         Stream content chunks from a chat completion for the given conversation.
 

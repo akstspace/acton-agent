@@ -6,7 +6,6 @@ for managing conversation history and token limits.
 """
 
 from abc import ABC, abstractmethod
-from typing import List
 
 from loguru import logger
 
@@ -22,7 +21,7 @@ class AgentMemory(ABC):
     """
 
     @abstractmethod
-    def manage_history(self, history: List[Message]) -> List[Message]:
+    def manage_history(self, history: list[Message]) -> list[Message]:
         """
         Process and potentially modify conversation history to manage memory.
 
@@ -67,7 +66,7 @@ class SimpleAgentMemory(AgentMemory):
         """
         return len(text) // 4
 
-    def manage_history(self, history: List[Message]) -> List[Message]:
+    def manage_history(self, history: list[Message]) -> list[Message]:
         """
         Truncate conversation history to stay within max_history_tokens limit.
 
