@@ -130,15 +130,18 @@ class ResponseParser:
         response: AgentPlan | AgentStep | AgentFinalResponse,
     ) -> bool:
         """
-        Validate that a parsed agent response has the required fields for its concrete type.
-
-        AgentPlan requires a non-empty `plan`. AgentStep requires `tool_calls` and each tool call must include `id` and `tool_name`. AgentFinalResponse requires a non-empty `final_answer`.
-
+        Validate that a parsed agent response contains the required fields for its concrete type.
+        
+        Checks:
+        - AgentPlan: requires a non-empty `plan`.
+        - AgentStep: requires `tool_calls` and each tool call must have `id` and `tool_name`.
+        - AgentFinalResponse: requires a non-empty `final_answer`.
+        
         Parameters:
             response (AgentPlan | AgentStep | AgentFinalResponse): The parsed response object to validate.
-
+        
         Returns:
-            bool: `True` if the response meets the validation rules for its type, `False` otherwise.
+            bool: `true` if the response meets the validation rules for its type, `false` otherwise.
         """
         # AgentPlan must have plan
         if isinstance(response, AgentPlan):
@@ -169,17 +172,12 @@ class ResponseParser:
         response: AgentPlan | AgentStep | AgentFinalResponse,
     ) -> str | None:
         """
-        Retrieve the thought text from a response object.
-
-        For AgentStep, returns the `tool_thought` attribute.
-        For AgentFinalResponse, returns the `thought` attribute if present.
-        For AgentPlan, returns None (plans don't have thought attribute).
-
-        Parameters:
-            response (Union[AgentPlan, AgentStep, AgentFinalResponse]): The response to extract thought from.
-
+        Extract the reasoning/thought text from a parsed agent response.
+        
+        For an AgentStep, returns its `tool_thought`; for other response types, returns the `thought` attribute if present. AgentPlan responses do not have thought content and will result in `None`.
+        
         Returns:
-            Optional[str]: The thought text if available, `None` otherwise.
+            The thought text when available, `None` otherwise.
         """
         if isinstance(response, AgentStep):
             return getattr(response, "tool_thought", None)

@@ -127,13 +127,13 @@ class StreamingTokenParser:
 
     def _detect_event_type_from_partial(self, data: dict[str, Any]) -> EventType:
         """
-        Determine the agent event type based on keys present in a partially parsed JSON payload.
-
+        Detects the agent event type from a partially parsed JSON payload.
+        
         Parameters:
-            data (Dict[str, Any]): Partially parsed JSON object to inspect for indicative keys.
-
+            data (dict): Partially parsed JSON object whose top-level keys are inspected for indicative fields.
+        
         Returns:
-            EventType: `'plan'` if `data` contains the key `"plan"`, `'step'` if it contains `"tool_calls"` or `"tool_thought"`, `'final_response'` if it contains `"final_answer"`, and `'unknown'` otherwise.
+            EventType: "plan" if `data` contains the key "plan", "step" if it contains "tool_calls" or "tool_thought", "final_response" if it contains "final_answer", and "unknown" otherwise.
         """
         # Optimized: single pass through keys
         if "plan" in data:
@@ -146,15 +146,12 @@ class StreamingTokenParser:
 
     def try_parse_partial(self, step_id: str) -> StreamingEvent | None:
         """
-        Attempt to parse the accumulated token buffer for a step into a structured streaming event.
-
-        Given the current buffered tokens for `step_id`, this method extracts JSON-like content (including from markdown code fences), attempts to complete any partial JSON, and parses it into one of the structured streaming event types (AgentPlanEvent, AgentStepEvent, or AgentFinalResponseEvent) when enough information is present.
-
-        Parameters:
-            step_id (str): Identifier of the step whose buffer will be parsed.
-
+        Try to parse the buffered tokens for a step into a structured streaming event.
+        
+        Attempts to extract JSON (including from markdown code fences) from the step's buffer and, when sufficient fields are present, constructs and returns an AgentPlanEvent, AgentStepEvent, or AgentFinalResponseEvent with complete=False. Returns `None` when the buffer is empty, contains incomplete or unsupported data, or cannot yet be converted into a structured event.
+        
         Returns:
-            Optional[StreamingEvent]: A fully formed streaming event (AgentPlanEvent, AgentStepEvent, or AgentFinalResponseEvent) when the buffer contains sufficient parseable information; `None` if the buffer is empty, incomplete, contains unsupported data, or cannot yet be converted into a structured event.
+            StreamingEvent | None: A `StreamingEvent` instance when a recognizable event is produced, `None` otherwise.
         """
         buffer = self.get_buffer(step_id)
         if not buffer:

@@ -18,11 +18,10 @@ class AgentMemory(ABC):
     @abstractmethod
     def manage_history(self, history: list[Message]) -> list[Message]:
         """
-        Process and potentially modify conversation history to manage memory.
-
-        Parameters:
-            history (List[Message]): Current conversation history to manage.
-
+        Manage the agent's conversation history according to a memory strategy.
+        
+        This method returns a modified list of Message objects representing the managed conversation history (for example, truncated or summarized to satisfy token or storage constraints).
+        
         Returns:
-            List[Message]: Managed conversation history (may be truncated, summarized, etc.).
+            list[Message]: Managed conversation history (may be truncated, summarized, or otherwise modified).
         """

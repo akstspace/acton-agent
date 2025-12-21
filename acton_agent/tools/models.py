@@ -67,9 +67,9 @@ class ToolResult(BaseModel):
     @property
     def success(self) -> bool:
         """
-        Determine whether the tool execution succeeded.
-
+        Indicates whether the tool execution completed without an error.
+        
         Returns:
-            `true` if the tool produced no error, `false` otherwise.
+            True if the tool produced no error, False otherwise.
         """
         return self.error is None

@@ -30,14 +30,14 @@ class WeatherTool(Tool):
 
     def execute(self, parameters: dict, toolset_params: dict = None) -> str:
         """
-        Return a formatted weather summary for the requested city.
-
+        Produce a human-readable weather summary for the specified city.
+        
         Parameters:
-            parameters (dict): Input parameters; may include the optional key `"city"` with the city name (defaults to `"Unknown"`).
-            toolset_params (dict): Optional toolset parameters (not used in this example).
-
+            parameters (dict): Input parameters; may include the key "city" with the city name (defaults to "Unknown").
+            toolset_params (dict): Optional toolset parameters; not used by this implementation.
+        
         Returns:
-            str: A human-readable sentence describing simulated current weather for the specified city, including condition and temperature in °F (e.g., "The weather in Seattle is rainy with a temperature of 62°F").
+            str: A sentence describing simulated current weather for the specified city, including condition and temperature in °F (e.g., "The weather in Seattle is rainy with a temperature of 62°F").
         """
         city = parameters.get("city", "Unknown")
 
@@ -67,9 +67,7 @@ class DiceRollerTool(Tool):
 
     def __init__(self):
         """
-        Initialize the DiceRollerTool with the name "roll_dice" and a description explaining it rolls dice with configurable count and sides.
-
-        The tool's execute method accepts optional parameters `num_dice` (default 1) and `num_sides` (default 6) to control how many dice are rolled and how many faces each die has.
+        Create a DiceRollerTool configured with name "roll_dice" and a description indicating it rolls dice with configurable count and sides.
         """
         super().__init__(
             name="roll_dice",
@@ -156,14 +154,14 @@ class TextAnalyzerTool(Tool):
 
     def execute(self, parameters: dict, toolset_params: dict = None) -> str:
         """
-        Analyze input text and return a formatted summary of basic textual statistics.
-
+        Analyze text and produce a formatted summary of character, word, sentence, and line counts, the longest word, and average word length.
+        
         Parameters:
-            parameters (dict): A dictionary expected to contain the key "text" with the string to analyze.
-            toolset_params (dict): Optional toolset parameters (not used in this example).
-
+            parameters (dict): Dictionary expected to contain the key "text" with the string to analyze.
+            toolset_params (dict): Optional toolset parameters (unused).
+        
         Returns:
-            str: A formatted report containing character count, word count, sentence count, line count, the longest word with its length, and average word length; if "text" is empty or missing, returns the error string "Error: No text provided".
+            str: A formatted report beginning with "Text Analysis:" that lists characters, words, sentences, lines, longest word (with length), and average word length; if "text" is empty or missing, returns "Error: No text provided".
         """
         text = parameters.get("text", "")
 

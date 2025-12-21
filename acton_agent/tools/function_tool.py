@@ -95,9 +95,9 @@ class FunctionTool(Tool):
 
     def get_schema(self) -> dict[str, Any]:
         """
-        Return the JSON Schema that describes this tool's parameters.
-
+        Get the JSON Schema describing this tool's parameters.
+        
         Returns:
-            schema (Dict[str, Any]): JSON Schema describing the tool's parameters.
+            dict[str, Any]: The JSON Schema that describes the tool's parameters.
         """
         return self.schema
