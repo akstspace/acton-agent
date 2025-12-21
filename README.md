@@ -58,16 +58,21 @@ print(result)  # "The result of 25 multiplied by 4 is 100."
 ## Key Features
 
 ### 🔧 **Flexible Tool System**
-Create tools from Python functions, HTTP APIs, or custom classes. Built-in support for OpenAPI specs.
+Create tools from Python functions, HTTP APIs, or custom classes. Organize related tools with ToolSets.
 ```python
-from acton_agent.tools import create_api_tool
+from acton_agent import ToolSet
+from acton_agent.agent import FunctionTool
 
-# Auto-generate API tools
-tool = create_api_tool(
-    name="get_weather",
-    endpoint="https://api.weather.com/v1/{city}",
-    method="GET"
+# Group related tools together
+weather_tools = ToolSet(
+    name="weather",
+    description="Weather data tools",
+    tools=[
+        FunctionTool(name="current", description="Get current weather", func=get_weather, schema={...}),
+        FunctionTool(name="forecast", description="Get forecast", func=get_forecast, schema={...})
+    ]
 )
+agent.register_toolset(weather_tools)
 ```
 
 ### 🔄 **Automatic Retry & Error Handling**
@@ -102,9 +107,6 @@ from acton_agent import OpenRouterClient
 client = OpenRouterClient(api_key="your-key", model="anthropic/claude-3-opus")
 ```
 
-### 📋 **Structured Response Parsing**
-Agents can plan, execute tool calls, and provide final answers with structured output.
-
 ## Documentation
 
 - **[Getting Started](docs/getting-started.md)** - Installation and first steps
@@ -119,15 +121,6 @@ Explore complete examples in the [`examples/`](examples/) directory:
 - **[Function Tools](examples/function_tool_example.py)** - Wrap Python functions as agent tools
 - **[API Integration](examples/requests_tool_example.py)** - Connect to REST APIs
 - **[Custom Tools](examples/custom_tool_example.py)** - Build custom tool classes
-
-## Community & Contributing
-
-This is a personal experimental project, but feedback is welcome:
-
-- **Issues & Bugs**: [GitHub Issues](https://github.com/akstspace/acton-agent/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/akstspace/acton-agent/discussions)
-
-Contributions are not actively sought at this time, but bug reports and suggestions are appreciated.
 
 ## License
 

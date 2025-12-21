@@ -5,9 +5,12 @@ This module contains Pydantic models representing messages, tool calls,
 tool results, and agent responses.
 """
 
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+if TYPE_CHECKING:
+    pass
 
 
 class Message(BaseModel):
@@ -128,6 +131,31 @@ class AgentFinalResponse(BaseModel):
     final_answer: str = Field(
         default="",
         description="The complete answer to the user's request",
+    )
+
+
+class ToolSet(BaseModel):
+    """
+    Represents a collection of related tools with a shared description.
+
+    ToolSets allow grouping related tools together and providing a general
+    description that applies to the entire group. This is useful for organizing
+    tools by domain or functionality.
+
+    Attributes:
+        name: Unique name for the toolset
+        description: General description of what this group of tools can do
+        tools: List of Tool instances in this toolset
+    """
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    name: str = Field(..., description="Unique name for the toolset")
+    description: str = Field(
+        ..., description="General description of what this group of tools can do"
+    )
+    tools: List[Any] = Field(
+        default_factory=list, description="List of Tool instances in this toolset"
     )
 
 

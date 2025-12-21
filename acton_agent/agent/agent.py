@@ -7,7 +7,7 @@ tool execution, and conversation management.
 
 import uuid
 from datetime import datetime
-from typing import Generator, List, Optional
+from typing import TYPE_CHECKING, Generator, List, Optional
 from zoneinfo import ZoneInfo
 
 from loguru import logger
@@ -36,6 +36,9 @@ from .parser import ResponseParser
 from .prompts import build_system_prompt, get_default_format_instructions
 from .retry import RetryConfig
 from .tools import Tool, ToolRegistry
+
+if TYPE_CHECKING:
+    from .models import ToolSet
 
 
 class Agent:
@@ -111,20 +114,29 @@ class Agent:
 
     def register_tool(self, tool: Tool) -> None:
         """
-        Register a tool in the agent's tool registry so it can be invoked in future tool calls.
-
+        Register a tool so the agent can invoke it in future tool calls.
+        
         Parameters:
-            tool (Tool): The tool instance to add to the agent's registry.
+            tool (Tool): Tool instance to add to the agent's registry.
         """
         self.tool_registry.register(tool)
 
+    def register_toolset(self, toolset: "ToolSet") -> None:
+        """
+        Register a ToolSet with the agent's ToolRegistry.
+        
+        Registers every tool from the provided ToolSet so they are available for future tool calls and adds the set's description to agent prompts for context.
+        
+        Parameters:
+            toolset (ToolSet): Collection of related tools (and an optional shared description) to register.
+        """
+
+        self.tool_registry.register_toolset(toolset)
+
     def unregister_tool(self, tool_name: str) -> None:
         """
-        Remove a registered tool from the agent's tool registry.
-
-        Parameters:
-            tool_name (str): Name of the tool to remove.
-
+        Unregister a tool by name from the agent's tool registry.
+        
         Raises:
             ToolNotFoundError: If no tool with the given name is registered.
         """
@@ -633,7 +645,7 @@ class Agent:
     def add_message(self, role: str, content: str) -> None:
         """
         Append a message with the given role and content to the agent's conversation history.
-        
+
         Parameters:
             role (str): The message role (e.g., 'user', 'assistant', 'system').
             content (str): The message text to append.
@@ -644,10 +656,10 @@ class Agent:
 
     def get_conversation_history(self) -> List[Message]:
         """
-        Return a shallow copy of the agent's conversation history.
+        Get a shallow copy of the agent's conversation history in chronological order.
         
         Returns:
-            List[Message]: A shallow copy of the conversation history as a list of Message objects in chronological order.
+            List[Message]: A list of Message objects representing the conversation history from oldest to newest.
         """
         return self.conversation_history.copy()
 

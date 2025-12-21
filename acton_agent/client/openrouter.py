@@ -47,19 +47,18 @@ class OpenRouterClient(OpenAIClient):
         base_url: str = "https://openrouter.ai/api/v1",
     ):
         """
-        Initialize the OpenRouter client.
-
+        Initialize the OpenRouter client with an API key, model, and optional site headers used for OpenRouter ranking.
+        
         Parameters:
-            api_key (Optional[str]): OpenRouter API key; if omitted the OPENROUTER_API_KEY environment variable is used.
-            model (str): Model identifier to use (e.g., "openai/gpt-4o", "anthropic/claude-3-opus").
+            api_key (Optional[str]): OpenRouter API key; if omitted, the OPENROUTER_API_KEY environment variable is used.
+            model (str): Model identifier to use (for example, "openai/gpt-4o" or "anthropic/claude-3-opus").
             site_url (Optional[str]): Optional site URL sent as the "HTTP-Referer" header for OpenRouter ranking.
             site_name (Optional[str]): Optional site name sent as the "X-Title" header for OpenRouter ranking.
             base_url (str): OpenRouter API base URL.
-
+        
         Raises:
-            ValueError: If no API key is provided via parameter or the OPENROUTER_API_KEY environment variable.
+            ValueError: If no API key is provided via the api_key parameter or the OPENROUTER_API_KEY environment variable.
         """
-        # Get API key from parameter or environment variable
         final_api_key = api_key or os.environ.get("OPENROUTER_API_KEY")
 
         if not final_api_key:
@@ -68,18 +67,15 @@ class OpenRouterClient(OpenAIClient):
                 "or via OPENROUTER_API_KEY environment variable"
             )
 
-        # Prepare OpenRouter-specific headers
         default_headers = {}
         if site_url:
             default_headers["HTTP-Referer"] = site_url
         if site_name:
             default_headers["X-Title"] = site_name
 
-        # Store for reference
         self.site_url = site_url
         self.site_name = site_name
 
-        # Initialize parent OpenAIClient with OpenRouter configuration
         super().__init__(
             api_key=final_api_key,
             model=model,
