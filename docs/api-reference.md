@@ -45,9 +45,9 @@ class Agent:
 
 **Example:**
 ```python
-from acton_agent import Agent
+from acton_agent import Agent, SimpleAgentMemory
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import RetryConfig, SimpleAgentMemory
+from acton_agent.agent import RetryConfig
 
 client = OpenAIClient(api_key="sk-...", model="gpt-4o")
 agent = Agent(
@@ -412,11 +412,17 @@ class Tool(ABC):
     def __init__(self, name: str, description: str)
 
     @abstractmethod
-    def execute(self, parameters: Dict[str, Any]) -> str:
+    def execute(self, parameters: Dict[str, Any], toolset_params: Dict[str, Any] | None = None) -> str:
         pass
 
     @abstractmethod
     def get_schema(self) -> Dict[str, Any]:
+        pass
+
+    def process_output(self, output: str) -> str:
+        pass
+
+    def agent_md(self, template: str, tool_output: str) -> str:
         pass
 ```
 
@@ -424,24 +430,37 @@ class Tool(ABC):
 - `name` (str): Unique tool identifier
 - `description` (str): Human-readable description
 
+**Methods:**
+- `execute(parameters, toolset_params=None)`: Execute the tool with provided parameters
+  - `parameters` (Dict[str, Any]): User/LLM-provided parameters
+  - `toolset_params` (Optional[Dict[str, Any]]): Hidden parameters from ToolSet, automatically injected
+- `get_schema()`: Return JSON Schema for tool parameters
+- `process_output(output)`: Post-process tool output (optional override)
+- `agent_md(template, tool_output)`: Render output into markdown template (optional override)
+
 **Example:**
 ```python
-from acton_agent.agent import Tool
+from acton_agent import Tool
 from typing import Dict, Any
 
 class MyTool(Tool):
     def __init__(self):
         super().__init__(name="my_tool", description="Does something useful")
 
-    def execute(self, parameters: Dict[str, Any]) -> str:
-        # Implementation
-        return "Result"
+    def execute(self, parameters: Dict[str, Any], toolset_params: Dict[str, Any] | None = None) -> str:
+        # toolset_params are automatically injected if tool belongs to a ToolSet
+        value = parameters.get("value")
+        config = toolset_params.get("config") if toolset_params else "default"
+        return f"Processed {value} with config {config}"
 
     def get_schema(self) -> Dict[str, Any]:
         return {
             "type": "object",
-            "properties": {...},
-            "required": [...]
+            "properties": {
+                "value": {"type": "string", "description": "Value to process"}
+            },
+            "required": ["value"]
+            # Note: toolset_params are NOT included in schema
         }
 ```
 
@@ -471,7 +490,7 @@ class FunctionTool(Tool):
 
 **Example:**
 ```python
-from acton_agent.agent import FunctionTool
+from acton_agent import FunctionTool
 
 def greet(name: str, greeting: str = "Hello") -> str:
     return f"{greeting}, {name}!"
@@ -488,6 +507,38 @@ tool = FunctionTool(
         },
         "required": ["name"]
     }
+)
+```
+
+**With ToolSet Parameters:**
+```python
+from acton_agent import FunctionTool, ToolSet
+
+def send_email(to: str, subject: str, api_key: str) -> str:
+    # api_key is auto-injected from toolset_params
+    return f"Email sent to {to} (authenticated)"
+
+email_tool = FunctionTool(
+    name="send_email",
+    description="Send an email",
+    func=send_email,
+    schema={
+        "type": "object",
+        "properties": {
+            "to": {"type": "string"},
+            "subject": {"type": "string"}
+        },
+        "required": ["to", "subject"]
+        # Note: api_key NOT in schema - hidden from LLM
+    }
+)
+
+# Use in ToolSet with hidden api_key
+toolset = ToolSet(
+    name="email",
+    description="Email tools",
+    tools=[email_tool],
+    toolset_params={"api_key": "secret-key-123"}
 )
 ```
 
@@ -613,6 +664,7 @@ class ToolRegistry:
     def unregister(self, tool_name: str) -> None
     def unregister_toolset(self, toolset_name: str) -> None
     def get(self, tool_name: str) -> Optional[Tool]
+    def get_toolset_params(self, tool_name: str) -> Optional[Dict[str, Any]]
     def list_tools(self) -> List[Tool]
     def list_tool_names(self) -> List[str]
     def list_toolsets(self) -> List[str]
@@ -626,12 +678,12 @@ class ToolRegistry:
 - `register_toolset(toolset)`: Register a ToolSet and all its tools
 - `unregister(tool_name)`: Remove a tool by name
 - `unregister_toolset(toolset_name)`: Remove a toolset and all its tools
+- `get_toolset_params(tool_name)`: Get the toolset parameters for a specific tool (if it belongs to a toolset)
 - `list_toolsets()`: Get names of all registered toolsets
 
 **Example:**
 ```python
-from acton_agent import ToolSet
-from acton_agent.agent import ToolRegistry, FunctionTool
+from acton_agent import ToolSet, ToolRegistry, FunctionTool
 
 registry = ToolRegistry()
 
@@ -645,6 +697,9 @@ toolset = ToolSet(
     tools=[query_tool, insert_tool]
 )
 registry.register_toolset(toolset)
+
+# Get toolset params for a tool
+params = registry.get_toolset_params("query_tool")  # Returns toolset params if any
 
 # List toolsets
 toolsets = registry.list_toolsets()  # Returns: ["database_tools"]
@@ -724,25 +779,27 @@ print(result.success)  # True
 
 ### ToolSet
 
-Represents a collection of related tools with a shared description.
+Represents a collection of related tools with a shared description and optional hidden parameters.
 
 ```python
 class ToolSet(BaseModel):
     name: str
     description: str
     tools: List[Tool] = []
+    toolset_params: Dict[str, Any] = {}
 ```
 
 **Attributes:**
 - `name` (str): Unique name for the toolset
 - `description` (str): General description of what this group of tools can do
 - `tools` (List[Tool]): List of Tool instances in this toolset
+- `toolset_params` (Dict[str, Any]): Hidden parameters automatically passed to all tools during execution (not visible to LLM)
 
 **Example:**
 ```python
-from acton_agent import ToolSet
-from acton_agent.agent import FunctionTool
+from acton_agent import ToolSet, FunctionTool
 
+# Basic ToolSet
 toolset = ToolSet(
     name="weather_tools",
     description="Tools for fetching and analyzing weather data",
@@ -751,7 +808,37 @@ toolset = ToolSet(
         FunctionTool(name="get_forecast", description="Get weather forecast", func=get_forecast, schema={...})
     ]
 )
+
+# ToolSet with hidden parameters (e.g., API key)
+def fetch_weather(city: str, api_key: str) -> str:
+    # api_key is auto-injected from toolset_params
+    return f"Weather in {city}: 72°F (authenticated)"
+
+api_toolset = ToolSet(
+    name="weather_api",
+    description="Weather data from external API",
+    tools=[
+        FunctionTool(
+            name="current_weather",
+            description="Get current weather",
+            func=fetch_weather,
+            schema={
+                "type": "object",
+                "properties": {"city": {"type": "string"}},
+                "required": ["city"]
+                # Note: api_key NOT in schema - hidden from LLM
+            }
+        )
+    ],
+    toolset_params={"api_key": "sk-secret-key-123"}  # Hidden from LLM
+)
 ```
+
+**Key Points:**
+- `toolset_params` are merged with LLM-provided parameters during tool execution
+- LLM parameters override toolset_params if there's a conflict
+- Perfect for API keys, database connections, session tokens, etc.
+- Keeps sensitive data out of prompts and LLM interactions
 
 ### AgentPlan
 

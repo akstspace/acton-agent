@@ -348,6 +348,13 @@ In your PR description or commit message, note:
 - Use > for important notes/warnings
 - Use proper heading hierarchy (##, ###, ####)
 
+**Links (README.md only):**
+- **Use absolute URLs** for all file references, not relative URLs
+- Base URL: `https://github.com/akstspace/acton-agent/blob/main/`
+- Example: `https://github.com/akstspace/acton-agent/blob/main/docs/getting-started.md`
+- Reason: README.md is used on PyPI and other platforms where relative links don't work
+- For other documentation files (in `docs/`), relative links are acceptable
+
 ---
 
 ## Project-Specific Guidelines for Acton Agent

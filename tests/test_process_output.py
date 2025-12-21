@@ -7,8 +7,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from acton_agent.agent.tools import FunctionTool, Tool
-from acton_agent.tools import RequestsTool
+from acton_agent.tools import FunctionTool, RequestsTool, Tool
 
 
 class CustomProcessingTool(RequestsTool):
@@ -32,10 +31,26 @@ class TestProcessOutputMethod:
 
         # Create a minimal Tool subclass for testing
         class MinimalTool(Tool):
-            def execute(self, parameters):
+            def execute(self, parameters, toolset_params=None):
+                """
+                Return a fixed test output string.
+                
+                Parameters:
+                    parameters: Ignored.
+                    toolset_params: Ignored.
+                
+                Returns:
+                    str: The literal string "test output".
+                """
                 return "test output"
 
             def get_schema(self):
+                """
+                Provide the JSON Schema describing this tool's input parameters (default empty object).
+                
+                Returns:
+                    dict: A JSON Schema for an object with no defined properties (i.e., {"type": "object", "properties": {}}).
+                """
                 return {"type": "object", "properties": {}}
 
         tool = MinimalTool("test", "Test tool")
@@ -48,10 +63,26 @@ class TestProcessOutputMethod:
         """Default process_output should return input unchanged."""
 
         class DefaultTool(Tool):
-            def execute(self, parameters):
+            def execute(self, parameters, toolset_params=None):
+                """
+                Return a fixed placeholder result used by tests.
+                
+                Parameters:
+                    parameters: Input parameters passed to the tool execution (ignored).
+                    toolset_params: Optional toolset-level parameters (ignored).
+                
+                Returns:
+                    The string "result".
+                """
                 return "result"
 
             def get_schema(self):
+                """
+                Provide the JSON Schema describing this tool's input parameters (default empty object).
+                
+                Returns:
+                    dict: A JSON Schema for an object with no defined properties (i.e., {"type": "object", "properties": {}}).
+                """
                 return {"type": "object", "properties": {}}
 
         tool = DefaultTool("default", "Default tool")

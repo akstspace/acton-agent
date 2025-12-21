@@ -1,9 +1,10 @@
 """
-AI Agent subpackage - Production-ready LLM Agent Framework
+AI Agent subpackage - Experimental LLM Agent Framework
 """
 
+from acton_agent.tools import FunctionTool, Tool, ToolCall, ToolRegistry, ToolResult, ToolSet
+
 from .agent import Agent
-from .client import LLMClient
 from .exceptions import (
     AgentError,
     InvalidToolSchemaError,
@@ -13,7 +14,6 @@ from .exceptions import (
     ToolExecutionError,
     ToolNotFoundError,
 )
-from .memory import AgentMemory, SimpleAgentMemory
 from .models import (
     AgentFinalResponse,
     AgentFinalResponseEvent,
@@ -28,14 +28,8 @@ from .models import (
     AgentToolResultsEvent,
     Message,
     StreamingEvent,
-    ToolCall,
-    ToolResult,
-    ToolSet,
 )
-from .parser import ResponseParser
 from .retry import RetryConfig
-from .streaming_parser import parse_streaming_events
-from .tools import FunctionTool, Tool, ToolRegistry
 
 
 __all__ = [
@@ -43,7 +37,6 @@ __all__ = [
     "AgentError",
     "AgentFinalResponse",
     "AgentFinalResponseEvent",
-    "AgentMemory",
     "AgentPlan",
     "AgentPlanEvent",
     "AgentStep",
@@ -56,13 +49,10 @@ __all__ = [
     "FunctionTool",
     "InvalidToolSchemaError",
     "LLMCallError",
-    "LLMClient",
     "MaxIterationsError",
     "Message",
     "ResponseParseError",
-    "ResponseParser",
     "RetryConfig",
-    "SimpleAgentMemory",
     "StreamingEvent",
     "Tool",
     "ToolCall",
@@ -71,5 +61,4 @@ __all__ = [
     "ToolRegistry",
     "ToolResult",
     "ToolSet",
-    "parse_streaming_events",
 ]

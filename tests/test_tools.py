@@ -7,7 +7,7 @@ import json
 import pytest
 
 from acton_agent.agent.exceptions import InvalidToolSchemaError, ToolNotFoundError
-from acton_agent.agent.tools import FunctionTool, Tool, ToolRegistry
+from acton_agent.tools import FunctionTool, Tool, ToolRegistry
 
 
 class SimpleTool(Tool):
@@ -19,13 +19,14 @@ class SimpleTool(Tool):
         """
         super().__init__(name="simple", description="A simple test tool")
 
-    def execute(self, parameters: dict) -> str:
+    def execute(self, parameters: dict, toolset_params: dict | None = None) -> str:
         """
-        Return a formatted result using the "value" entry from parameters.
-
+        Format and return a result string using the "value" entry from parameters.
+        
         Parameters:
             parameters (dict): Mapping that may contain the key "value"; when absent, "default" is used.
-
+            toolset_params (dict | None): Optional toolset-level parameters; ignored by this tool.
+        
         Returns:
             str: The string "Result: {value}" where {value} is the resolved parameter.
         """

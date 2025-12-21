@@ -7,7 +7,7 @@ must implement to work with the agent framework.
 
 from typing import Protocol
 
-from .models import Message
+from ..agent.models import Message
 
 
 class LLMClient(Protocol):

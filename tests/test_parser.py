@@ -6,9 +6,9 @@ from acton_agent.agent.models import (
     AgentFinalResponse,
     AgentPlan,
     AgentStep,
-    ToolCall,
 )
-from acton_agent.agent.parser import ResponseParser
+from acton_agent.parsers import ResponseParser
+from acton_agent.tools.models import ToolCall
 
 
 class TestResponseParser:

@@ -7,11 +7,11 @@ into structured response objects.
 
 import json
 import re
-from typing import Optional, Union
 
 from loguru import logger
 
-from .models import AgentFinalResponse, AgentPlan, AgentStep
+from ..agent.models import AgentFinalResponse, AgentPlan, AgentStep
+from ..tools.models import ToolCall
 
 
 class ResponseParser:
@@ -25,7 +25,7 @@ class ResponseParser:
     @staticmethod
     def parse(
         response_text: str,
-    ) -> Union[AgentPlan, AgentStep, AgentFinalResponse]:
+    ) -> AgentPlan | AgentStep | AgentFinalResponse:
         """
         Parse LLM response text into a structured agent response model.
 
@@ -54,20 +54,25 @@ class ResponseParser:
                 response = AgentPlan(**data)
                 logger.debug("Parsed as AgentPlan")
                 return response
-            elif "final_answer" in data and data["final_answer"] is not None:
+            if "final_answer" in data and data["final_answer"] is not None:
                 # This is an AgentFinalResponse
                 response = AgentFinalResponse(**data)
                 logger.debug("Parsed as AgentFinalResponse")
                 return response
-            elif "tool_calls" in data and len(data.get("tool_calls", [])) > 0:
+            if "tool_calls" in data and len(data.get("tool_calls", [])) > 0:
                 # This is an AgentStep
+                # Convert tool_calls dicts to ToolCall objects
+                tool_calls = [
+                    ToolCall(**tc) if isinstance(tc, dict) else tc
+                    for tc in data.get("tool_calls", [])
+                ]
+                data["tool_calls"] = tool_calls
                 response = AgentStep(**data)
                 logger.debug("Parsed as AgentStep")
                 return response
-            else:
-                # If no recognizable structure, treat as final answer
-                logger.debug("No recognizable structure, treating as AgentFinalResponse")
-                return AgentFinalResponse(final_answer=response_text)
+            # If no recognizable structure, treat as final answer
+            logger.debug("No recognizable structure, treating as AgentFinalResponse")
+            return AgentFinalResponse(final_answer=response_text)
 
         except json.JSONDecodeError as e:
             logger.warning(f"Failed to parse JSON response, treating as final answer: {e}")
@@ -122,18 +127,21 @@ class ResponseParser:
 
     @staticmethod
     def validate_response(
-        response: Union[AgentPlan, AgentStep, AgentFinalResponse],
+        response: AgentPlan | AgentStep | AgentFinalResponse,
     ) -> bool:
         """
-        Validate that a parsed agent response has the required fields for its concrete type.
-
-        AgentPlan requires a non-empty `plan`. AgentStep requires `tool_calls` and each tool call must include `id` and `tool_name`. AgentFinalResponse requires a non-empty `final_answer`.
-
+        Validate that a parsed agent response contains the required fields for its concrete type.
+        
+        Checks:
+        - AgentPlan: requires a non-empty `plan`.
+        - AgentStep: requires `tool_calls` and each tool call must have `id` and `tool_name`.
+        - AgentFinalResponse: requires a non-empty `final_answer`.
+        
         Parameters:
             response (AgentPlan | AgentStep | AgentFinalResponse): The parsed response object to validate.
-
+        
         Returns:
-            bool: `True` if the response meets the validation rules for its type, `False` otherwise.
+            bool: `true` if the response meets the validation rules for its type, `false` otherwise.
         """
         # AgentPlan must have plan
         if isinstance(response, AgentPlan):
@@ -161,20 +169,15 @@ class ResponseParser:
 
     @staticmethod
     def extract_thought(
-        response: Union[AgentPlan, AgentStep, AgentFinalResponse],
-    ) -> Optional[str]:
+        response: AgentPlan | AgentStep | AgentFinalResponse,
+    ) -> str | None:
         """
-        Retrieve the thought text from a response object.
-
-        For AgentStep, returns the `tool_thought` attribute.
-        For AgentFinalResponse, returns the `thought` attribute if present.
-        For AgentPlan, returns None (plans don't have thought attribute).
-
-        Parameters:
-            response (Union[AgentPlan, AgentStep, AgentFinalResponse]): The response to extract thought from.
-
+        Extract the reasoning/thought text from a parsed agent response.
+        
+        For an AgentStep, returns its `tool_thought`; for other response types, returns the `thought` attribute if present. AgentPlan responses do not have thought content and will result in `None`.
+        
         Returns:
-            Optional[str]: The thought text if available, `None` otherwise.
+            The thought text when available, `None` otherwise.
         """
         if isinstance(response, AgentStep):
             return getattr(response, "tool_thought", None)

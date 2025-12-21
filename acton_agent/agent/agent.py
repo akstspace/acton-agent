@@ -8,14 +8,15 @@ tool execution, and conversation management.
 import uuid
 from collections.abc import Generator
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
 from zoneinfo import ZoneInfo
 
 from loguru import logger
 
-from .client import LLMClient
+from ..client import LLMClient
+from ..memory import AgentMemory, SimpleAgentMemory
+from ..parsers import ResponseParser
+from ..tools import Tool, ToolCall, ToolRegistry, ToolResult, ToolSet
 from .exceptions import LLMCallError, MaxIterationsError, ToolExecutionError
-from .memory import AgentMemory, SimpleAgentMemory
 from .models import (
     AgentFinalResponse,
     AgentFinalResponseEvent,
@@ -30,22 +31,14 @@ from .models import (
     AgentToolResultsEvent,
     Message,
     StreamingEvent,
-    ToolCall,
-    ToolResult,
 )
-from .parser import ResponseParser
 from .prompts import build_system_prompt, get_default_format_instructions
 from .retry import RetryConfig
-from .tools import Tool, ToolRegistry
-
-
-if TYPE_CHECKING:
-    from .models import ToolSet
 
 
 class Agent:
     """
-    Production-ready LLM agent with tool execution capabilities.
+    LLM agent with tool execution capabilities.
 
     Features:
     - Extensible tool system
@@ -53,6 +46,8 @@ class Agent:
     - Structured conversation history
     - Comprehensive error handling
     - Loguru logging throughout
+
+    Note: This is an experimental framework. The API may change without notice.
 
     Example:
         ```python
@@ -70,26 +65,26 @@ class Agent:
     def __init__(
         self,
         llm_client: LLMClient,
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         max_iterations: int = 10,
-        retry_config: Optional[RetryConfig] = None,
+        retry_config: RetryConfig | None = None,
         stream: bool = False,
-        final_answer_format_instructions: Optional[str] = None,
+        final_answer_format_instructions: str | None = None,
         timezone: str = "UTC",
-        memory: Optional[AgentMemory] = None,
+        memory: AgentMemory | None = None,
     ):
         """
-        Initialize an Agent for orchestrating LLM interactions, tool execution, retries, and conversation state.
-
+        Create a new Agent configured to coordinate LLM calls, tool execution, retries, and conversation memory.
+        
         Parameters:
-            llm_client (LLMClient): LLM client used for all model calls.
-            system_prompt (Optional[str]): Custom system instructions to include in the agent's system prompt.
-            max_iterations (int): Maximum reasoning iterations before the agent raises a MaxIterationsError.
-            retry_config (Optional[RetryConfig]): Retry configuration for LLM and tool calls; a default is created when omitted.
-            stream (bool): Enable streaming LLM responses (tokens yielded as they arrive) when True.
-            final_answer_format_instructions (Optional[str]): Instructions controlling final-answer formatting; defaults to the module's standard format when omitted.
-            timezone (str): Timezone name used when inserting the current date/time into system messages (e.g., "UTC", "America/New_York"); defaults to "UTC".
-            memory (Optional[AgentMemory]): Custom memory management instance; uses SimpleAgentMemory(max_history_tokens=8000) by default. Set to None to disable memory management entirely.
+            llm_client: LLM client used for all model calls.
+            system_prompt: Optional custom system instructions injected into the agent's system prompt.
+            max_iterations: Maximum number of reasoning iterations before raising a MaxIterationsError.
+            retry_config: Retry policy for LLM and tool calls; a default RetryConfig is created when omitted.
+            stream: If True, enable streaming LLM responses (tokens delivered as they arrive).
+            final_answer_format_instructions: Optional instructions that control final-answer formatting; defaults to the module's standard format when omitted.
+            timezone: Timezone name used when inserting the current date/time into system messages (e.g., "UTC", "America/New_York"); defaults to "UTC".
+            memory: Optional memory manager; when None memory management is disabled. If omitted, a default SimpleAgentMemory instance is used.
         """
         self.llm_client = llm_client
         self.custom_instructions = system_prompt  # Store custom instructions separately
@@ -100,7 +95,7 @@ class Agent:
         self.retry_config = retry_config or RetryConfig()
         self.stream = stream
         # Use SimpleAgentMemory by default if no custom memory provided
-        self.memory: Optional[AgentMemory] = memory if memory is not None else SimpleAgentMemory()
+        self.memory: AgentMemory | None = memory if memory is not None else SimpleAgentMemory()
 
         self.tool_registry = ToolRegistry()
         self.conversation_history: list[Message] = []
@@ -201,12 +196,13 @@ class Agent:
         def _execute():
             """
             Invoke the current tool with the provided parameters and return its execution result.
-
+            
             Returns:
-                The tool's execution result string.
+                str: The tool's execution result string.
             """
             logger.debug(f"Executing tool: {tool.name} with parameters: {parameters}")
-            result = tool.execute(parameters)
+            toolset_params = self.tool_registry.get_toolset_params(tool.name)
+            result = tool.execute(parameters, toolset_params)
             logger.debug(f"Tool {tool.name} execution completed")
             return result
 

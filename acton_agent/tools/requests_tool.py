@@ -7,13 +7,13 @@ to APIs based on OpenAPI-like specifications.
 
 import json
 import re
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 import requests
 from loguru import logger
 
 from ..agent.exceptions import ToolExecutionError
-from ..agent.tools import Tool
+from .base import Tool
 
 
 class RequestsTool(Tool):
@@ -48,14 +48,14 @@ class RequestsTool(Tool):
         description: str,
         method: Literal["GET", "POST", "PUT", "DELETE", "PATCH"] = "GET",
         url_template: str = "",
-        headers: Optional[dict[str, str]] = None,
-        query_params_schema: Optional[dict[str, Any]] = None,
-        body_schema: Optional[dict[str, Any]] = None,
-        path_params: Optional[list[str]] = None,
-        path_params_schema: Optional[dict[str, Any]] = None,
-        header_params_schema: Optional[dict[str, Any]] = None,
+        headers: dict[str, str] | None = None,
+        query_params_schema: dict[str, Any] | None = None,
+        body_schema: dict[str, Any] | None = None,
+        path_params: list[str] | None = None,
+        path_params_schema: dict[str, Any] | None = None,
+        header_params_schema: dict[str, Any] | None = None,
         timeout: int = 30,
-        auth: Optional[tuple] = None,
+        auth: tuple | None = None,
     ):
         """
         Configure a RequestsTool for making HTTP API calls to a templated endpoint.
@@ -93,12 +93,14 @@ class RequestsTool(Tool):
         self.timeout = timeout
         self.auth = auth
 
-    def execute(self, parameters: dict[str, Any]) -> str:
+    def execute(self, parameters: dict[str, Any], toolset_params: dict[str, Any] | None = None) -> str:
         """
         Execute the configured HTTP request using the provided parameters and return the response body.
 
         Parameters:
             parameters (Dict[str, Any]): Mapping of parameter names to values. Values matching configured route/path parameters are substituted into the URL template; values matching the query parameters schema are sent as query string parameters; values matching header parameters schema are sent as headers; values matching the body schema's properties are sent as a JSON body for POST/PUT/PATCH requests.
+            toolset_params (Optional[Dict[str, Any]]): Hidden parameters from the ToolSet that are automatically
+                injected during execution and merged with the user-provided parameters.
 
         Returns:
             str: Pretty-printed JSON string if the response is JSON, otherwise the raw response text.
@@ -107,12 +109,18 @@ class RequestsTool(Tool):
             ToolExecutionError: If the HTTP request fails or an unexpected error occurs while executing the request.
         """
         try:
+            # Merge toolset_params with parameters, with parameters taking precedence
+            merged_params = {}
+            if toolset_params:
+                merged_params.update(toolset_params)
+            merged_params.update(parameters)
+
             # Build the URL with route/path parameters
             url = self.url_template
             path_params = {}
             for param in self.path_params:
-                if param in parameters:
-                    path_params[param] = parameters[param]
+                if param in merged_params:
+                    path_params[param] = merged_params[param]
 
             if path_params:
                 url = url.format(**path_params)
@@ -122,7 +130,7 @@ class RequestsTool(Tool):
             header_params = {}
             body_data = {}
 
-            for key, value in parameters.items():
+            for key, value in merged_params.items():
                 if key in self.path_params:
                     continue  # Already used for URL
                 if key in self.query_params_schema:
@@ -235,9 +243,9 @@ def create_api_tool(
     description: str,
     endpoint: str,
     method: str = "GET",
-    headers: Optional[dict[str, str]] = None,
-    parameters: Optional[dict[str, Any]] = None,
-    body_schema: Optional[dict[str, Any]] = None,
+    headers: dict[str, str] | None = None,
+    parameters: dict[str, Any] | None = None,
+    body_schema: dict[str, Any] | None = None,
 ) -> RequestsTool:
     """
     Create a configured RequestsTool for a single API endpoint.

@@ -6,9 +6,9 @@ import pytest
 
 from acton_agent.agent.agent import Agent
 from acton_agent.agent.exceptions import MaxIterationsError
-from acton_agent.agent.models import Message, ToolCall
+from acton_agent.agent.models import Message
 from acton_agent.agent.retry import RetryConfig
-from acton_agent.agent.tools import FunctionTool, Tool
+from acton_agent.tools import FunctionTool, Tool, ToolCall
 
 
 class SimpleCalculatorTool(Tool):
@@ -22,19 +22,20 @@ class SimpleCalculatorTool(Tool):
         """
         super().__init__(name="calculator", description="Perform basic arithmetic operations")
 
-    def execute(self, parameters: dict) -> str:
+    def execute(self, parameters: dict, toolset_params: dict | None = None) -> str:
         """
-        Perform a basic arithmetic operation specified by the input parameters.
-
+        Perform the specified arithmetic operation on two operands and return the result as a string.
+        
         Parameters:
             parameters (dict): Mapping with keys:
-                - "a" (int|float): First operand (defaults to 0).
-                - "b" (int|float): Second operand (defaults to 0).
+                - "a" (int | float): First operand (defaults to 0).
+                - "b" (int | float): Second operand (defaults to 0).
                 - "operation" (str): One of "add", "subtract", "multiply", or "divide" (defaults to "add").
-
+            toolset_params (dict | None): Optional toolset parameters; not used by this test tool.
+        
         Returns:
-            str: The numeric result converted to a string for successful operations, or an error message
-            such as "Error: Division by zero" or "Error: Unknown operation {operation}".
+            str: The numeric result as a string on success, or an error message such as
+            "Error: Division by zero" or "Error: Unknown operation {operation}".
         """
         a = parameters.get("a", 0)
         b = parameters.get("b", 0)

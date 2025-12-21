@@ -4,7 +4,7 @@ Retry configuration for the AI Agent Framework.
 This module provides configuration for retry logic using the tenacity library.
 """
 
-from typing import Callable
+from collections.abc import Callable
 
 from pydantic import BaseModel, Field
 from tenacity import (
