@@ -9,8 +9,7 @@ for more complex or specialized functionality.
 import os
 import random
 
-from acton_agent import Agent
-from acton_agent.tools import Tool
+from acton_agent import Agent, Tool
 from acton_agent.client import OpenAIClient
 
 

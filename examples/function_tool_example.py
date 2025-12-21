@@ -9,8 +9,7 @@ can be called by the agent.
 import datetime
 import os
 
-from acton_agent import Agent
-from acton_agent.tools import FunctionTool
+from acton_agent import Agent, FunctionTool
 from acton_agent.client import OpenAIClient
 
 
