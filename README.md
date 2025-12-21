@@ -60,7 +60,8 @@ print(result)  # "The result of 25 multiplied by 4 is 100."
 ### 🔧 **Flexible Tool System**
 Create tools from Python functions, HTTP APIs, or custom classes. Organize related tools with ToolSets.
 ```python
-from acton_agent.agent import ToolSet, FunctionTool
+from acton_agent import ToolSet
+from acton_agent.agent import FunctionTool
 
 # Group related tools together
 weather_tools = ToolSet(

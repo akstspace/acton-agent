@@ -212,9 +212,9 @@ print(response)
 Group related tools together with ToolSets for better organization:
 
 ```python
-from acton_agent import Agent
+from acton_agent import Agent, ToolSet
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import FunctionTool, ToolSet
+from acton_agent.agent import FunctionTool
 
 # Define weather-related functions
 def get_current_weather(city: str) -> str:

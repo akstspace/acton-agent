@@ -317,7 +317,8 @@ class DatabaseTool(Tool):
 ToolSets allow you to group related tools together with a shared description. This is useful for organizing tools by domain or functionality, and helps the LLM understand the context and purpose of groups of tools.
 
 ```python
-from acton_agent.agent import ToolSet, FunctionTool
+from acton_agent import ToolSet
+from acton_agent.agent import FunctionTool
 
 # Create tools
 def get_weather(city: str) -> str:

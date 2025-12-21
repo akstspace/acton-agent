@@ -141,7 +141,9 @@ def register_toolset(self, toolset: ToolSet) -> None
 
 **Example:**
 ```python
-from acton_agent.agent import ToolSet, FunctionTool
+from acton_agent import Agent, ToolSet
+from acton_agent.client import OpenAIClient
+from acton_agent.agent import FunctionTool
 
 toolset = ToolSet(
     name="math_tools",
@@ -628,7 +630,8 @@ class ToolRegistry:
 
 **Example:**
 ```python
-from acton_agent.agent import ToolRegistry, ToolSet, FunctionTool
+from acton_agent import ToolSet
+from acton_agent.agent import ToolRegistry, FunctionTool
 
 registry = ToolRegistry()
 
@@ -737,7 +740,8 @@ class ToolSet(BaseModel):
 
 **Example:**
 ```python
-from acton_agent.agent import ToolSet, FunctionTool
+from acton_agent import ToolSet
+from acton_agent.agent import FunctionTool
 
 toolset = ToolSet(
     name="weather_tools",
