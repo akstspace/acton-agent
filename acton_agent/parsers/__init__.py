@@ -6,7 +6,7 @@ for structured output parsing and streaming.
 """
 
 from .base import ResponseParser
-from .streaming import parse_streaming_events
+from .streaming import StreamingTokenParser, parse_streaming_events
 
 
-__all__ = ["ResponseParser", "parse_streaming_events"]
+__all__ = ["ResponseParser", "StreamingTokenParser", "parse_streaming_events"]

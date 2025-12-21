@@ -14,13 +14,12 @@ from acton_agent.agent.models import (
     AgentToken,
     AgentToolExecutionEvent,
     AgentToolResultsEvent,
-    ToolCall,
-    ToolResult,
 )
-from acton_agent.agent.streaming_parser import (
+from acton_agent.parsers import (
     StreamingTokenParser,
     parse_streaming_events,
 )
+from acton_agent.tools.models import ToolCall, ToolResult
 
 
 class TestStreamingTokenParser:

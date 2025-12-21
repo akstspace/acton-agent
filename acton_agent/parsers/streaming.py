@@ -21,8 +21,8 @@ from ..agent.models import (
     AgentToolExecutionEvent,
     AgentToolResultsEvent,
     StreamingEvent,
-    ToolCall,
 )
+from ..tools.models import ToolCall
 
 
 EventType = Literal["plan", "step", "final_response", "unknown"]
