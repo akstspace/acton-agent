@@ -324,10 +324,10 @@ from typing import List
 
 class SlidingWindowMemory(AgentMemory):
     """Keep only the last N messages."""
-    
+
     def __init__(self, window_size: int = 6):
         self.window_size = window_size
-    
+
     def manage_history(self, history: List[Message]) -> List[Message]:
         if len(history) <= self.window_size:
             return history
@@ -368,7 +368,7 @@ for event in agent.run_stream("Write a short poem about programming"):
         # Print each token as it arrives
         print(event.content, end="", flush=True)
         sys.stdout.flush()
-    
+
     elif isinstance(event, AgentFinalResponseEvent):
         print("\n\n[Complete]")
 
@@ -390,9 +390,9 @@ import json
 
 class FileSystemTool(Tool):
     """Tool for safe file system operations."""
-    
+
     ALLOWED_DIR = "/tmp/agent_workspace"
-    
+
     def __init__(self):
         super().__init__(
             name="file_ops",
@@ -401,19 +401,19 @@ class FileSystemTool(Tool):
         # Create workspace if needed
         import os
         os.makedirs(self.ALLOWED_DIR, exist_ok=True)
-    
+
     def execute(self, parameters: Dict[str, Any]) -> str:
         import os
-        
+
         operation = parameters.get("operation")
         filename = parameters.get("filename", "")
-        
+
         # Security: Prevent path traversal
         if ".." in filename or filename.startswith("/"):
             return "Error: Invalid filename"
-        
+
         filepath = os.path.join(self.ALLOWED_DIR, filename)
-        
+
         if operation == "read":
             try:
                 with open(filepath, 'r') as f:
@@ -423,7 +423,7 @@ class FileSystemTool(Tool):
                 return "Error: File not found"
             except Exception as e:
                 return f"Error: {str(e)}"
-        
+
         elif operation == "write":
             content = parameters.get("content", "")
             try:
@@ -432,16 +432,16 @@ class FileSystemTool(Tool):
                 return f"Successfully wrote to {filename}"
             except Exception as e:
                 return f"Error: {str(e)}"
-        
+
         elif operation == "list":
             try:
                 files = os.listdir(self.ALLOWED_DIR)
                 return f"Files: {', '.join(files)}"
             except Exception as e:
                 return f"Error: {str(e)}"
-        
+
         return "Error: Unknown operation"
-    
+
     def get_schema(self) -> Dict[str, Any]:
         return {
             "type": "object",
@@ -537,21 +537,21 @@ def safe_run(query: str, default_response: str = None) -> str:
     """Run agent with comprehensive error handling."""
     try:
         return agent.run(query)
-    
+
     except MaxIterationsError as e:
         print(f"Warning: Max iterations ({e.max_iterations}) reached")
         return default_response or "Could not complete request in time."
-    
+
     except LLMCallError as e:
         print(f"Error: LLM call failed after {e.retry_count} retries")
         print(f"Reason: {e.original_error}")
         return default_response or "Service temporarily unavailable."
-    
+
     except ToolExecutionError as e:
         print(f"Error: Tool '{e.tool_name}' failed")
         print(f"Reason: {e.original_error}")
         return default_response or "Tool execution failed."
-    
+
     except Exception as e:
         print(f"Unexpected error: {e}")
         return default_response or "An error occurred."
@@ -577,25 +577,25 @@ import logging
 
 class ProductionAgent:
     """Production-ready agent wrapper."""
-    
+
     def __init__(self):
         # Configuration from environment
         self.api_key = os.environ.get("OPENAI_API_KEY")
         self.model = os.environ.get("LLM_MODEL", "gpt-4o")
-        
+
         # Set up logging
         logging.basicConfig(
             level=logging.INFO,
             format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
         )
         self.logger = logging.getLogger(__name__)
-        
+
         # Create agent with production settings
         self.agent = self._create_agent()
-    
+
     def _create_agent(self) -> Agent:
         """Create agent with production configuration."""
-        
+
         # Production retry config
         retry_config = RetryConfig(
             max_attempts=5,
@@ -603,7 +603,7 @@ class ProductionAgent:
             max_wait=120.0,
             multiplier=2.5
         )
-        
+
         # Client with error handling
         try:
             client = OpenAIClient(
@@ -613,7 +613,7 @@ class ProductionAgent:
         except ValueError as e:
             self.logger.error(f"Failed to create client: {e}")
             raise
-        
+
         # Agent with conservative settings
         agent = Agent(
             llm_client=client,
@@ -622,12 +622,12 @@ class ProductionAgent:
             memory=SimpleAgentMemory(max_history_tokens=10000),
             system_prompt=self._get_system_prompt()
         )
-        
+
         # Register tools
         self._register_tools(agent)
-        
+
         return agent
-    
+
     def _get_system_prompt(self) -> str:
         """Load system prompt from file or environment."""
         prompt_file = os.environ.get("SYSTEM_PROMPT_FILE")
@@ -635,51 +635,51 @@ class ProductionAgent:
             with open(prompt_file) as f:
                 return f.read()
         return "You are a helpful assistant."
-    
+
     def _register_tools(self, agent: Agent):
         """Register all tools."""
         # Register your tools here
         pass
-    
+
     def run(self, query: str, user_id: str = None) -> dict:
         """
         Run agent with full production features.
-        
+
         Returns:
             dict with response, metadata, and status
         """
         import time
         start_time = time.time()
-        
+
         try:
             # Log request
             self.logger.info(f"Request from user={user_id}: {query[:100]}")
-            
+
             # Run agent
             response = self.agent.run(query)
-            
+
             # Log success
             duration = time.time() - start_time
             self.logger.info(f"Completed in {duration:.2f}s")
-            
+
             return {
                 "status": "success",
                 "response": response,
                 "duration_seconds": duration,
                 "tokens_used": None,  # Could track this
             }
-        
+
         except Exception as e:
             # Log error
             self.logger.error(f"Error: {e}", exc_info=True)
-            
+
             return {
                 "status": "error",
                 "response": "An error occurred processing your request.",
                 "error": str(e),
                 "duration_seconds": time.time() - start_time
             }
-    
+
     def health_check(self) -> dict:
         """Check agent health."""
         try:
@@ -700,11 +700,11 @@ class ProductionAgent:
 # Usage
 if __name__ == "__main__":
     agent = ProductionAgent()
-    
+
     # Health check
     health = agent.health_check()
     print(f"Health: {health}")
-    
+
     # Process request
     result = agent.run("What is the capital of France?", user_id="user123")
     print(f"Result: {result}")

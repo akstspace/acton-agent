@@ -6,27 +6,27 @@ This example demonstrates how to wrap Python functions as tools that
 can be called by the agent.
 """
 
-import os
 import datetime
+import os
+
 from acton_agent import Agent
-from acton_agent.client import OpenAIClient
 from acton_agent.agent import FunctionTool
+from acton_agent.client import OpenAIClient
 
 
 def calculate(a: float, b: float, operation: str) -> float:
     """Perform basic arithmetic operations."""
     if operation == "add":
         return a + b
-    elif operation == "subtract":
+    if operation == "subtract":
         return a - b
-    elif operation == "multiply":
+    if operation == "multiply":
         return a * b
-    elif operation == "divide":
+    if operation == "divide":
         if b == 0:
             raise ValueError("Cannot divide by zero")
         return a / b
-    else:
-        raise ValueError(f"Unknown operation: {operation}")
+    raise ValueError(f"Unknown operation: {operation}")
 
 
 def get_current_time(timezone: str = "UTC") -> str:
@@ -113,9 +113,7 @@ def main():
     # Word count tool
     word_count_schema = {
         "type": "object",
-        "properties": {
-            "text": {"type": "string", "description": "The text to count words in"}
-        },
+        "properties": {"text": {"type": "string", "description": "The text to count words in"}},
         "required": ["text"],
     }
 
@@ -129,9 +127,7 @@ def main():
     # String reverse tool
     reverse_schema = {
         "type": "object",
-        "properties": {
-            "text": {"type": "string", "description": "The text to reverse"}
-        },
+        "properties": {"text": {"type": "string", "description": "The text to reverse"}},
         "required": ["text"],
     }
 
@@ -152,9 +148,7 @@ def main():
     print("🛠️  Welcome to the Function Tool Demo!")
     print("=" * 70)
     print("\nThis demo shows how to give your agent custom Python functions as tools.")
-    print(
-        "Our agent has access to: calculator, clock, word counter, and text reverser.\n"
-    )
+    print("Our agent has access to: calculator, clock, word counter, and text reverser.\n")
     input("Press Enter to start the demo...")
     print()
 

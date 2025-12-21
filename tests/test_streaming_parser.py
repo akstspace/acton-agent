@@ -339,11 +339,7 @@ class TestParseStreamingEvents:
             yield AgentStreamEnd(step_id="step-1")
             yield AgentToolResultsEvent(
                 step_id="step-1",
-                results=[
-                    ToolResult(
-                        tool_call_id="1", tool_name="test", result="Success", error=None
-                    )
-                ],
+                results=[ToolResult(tool_call_id="1", tool_name="test", result="Success", error=None)],
             )
 
         events = list(parse_streaming_events(mock_stream()))
@@ -366,9 +362,7 @@ class TestParseStreamingEvents:
                 tool_call_id="call-1",
                 tool_name="calculator",
                 status="completed",
-                result=ToolResult(
-                    tool_call_id="call-1", tool_name="calculator", result="42"
-                ),
+                result=ToolResult(tool_call_id="call-1", tool_name="calculator", result="42"),
             )
 
         events = list(parse_streaming_events(mock_stream()))
@@ -398,14 +392,10 @@ class TestParseStreamingEvents:
 
         def mock_stream():
             # Direct event (not tokens)
-            yield AgentPlanEvent(
-                step_id="step-1", plan=AgentPlan(plan="Direct plan"), complete=True
-            )
+            yield AgentPlanEvent(step_id="step-1", plan=AgentPlan(plan="Direct plan"), complete=True)
             yield AgentStepEvent(
                 step_id="step-2",
-                step=AgentStep(
-                    tool_calls=[ToolCall(id="1", tool_name="test", parameters={})]
-                ),
+                step=AgentStep(tool_calls=[ToolCall(id="1", tool_name="test", parameters={})]),
                 complete=True,
             )
             yield AgentFinalResponseEvent(

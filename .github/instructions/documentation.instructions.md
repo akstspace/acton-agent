@@ -129,6 +129,8 @@ Determine which documentation sections require changes:
 
 **When adding new documentation sections:**
 
+**FOR NEW FEATURES:** If you are adding a new feature that does NOT replace or modify existing features, you may create new documentation files in the `docs/` directory instead of editing existing ones. This keeps documentation modular and easier to maintain. However, you should still update the main README.md and relevant index files to reference the new documentation.
+
 ✅ **DO:**
 - Follow the same format as existing sections
 - Include complete code examples
@@ -138,6 +140,9 @@ Determine which documentation sections require changes:
 - Add troubleshooting tips if relevant
 - Include both basic and advanced usage
 - **Integrate seamlessly** - new content should blend with existing docs
+- **Create new doc files for substantial new features** - consider adding new files in `docs/` for major features
+- **Update navigation/index** - if adding new doc files, update README.md and docs/README.md to reference them
+
 
 ❌ **DON'T:**
 - Add documentation without examples
@@ -146,6 +151,7 @@ Determine which documentation sections require changes:
 - Duplicate content that exists elsewhere
 - Use different terminology for the same concepts
 - **Mark sections as "new"** - just add them naturally to the appropriate location
+- **Create new files for minor additions** - small features should be added to existing relevant docs
 
 ---
 

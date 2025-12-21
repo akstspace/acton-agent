@@ -20,10 +20,9 @@ class TestLLMClientProtocol:
 
     def test_mock_client_satisfies_protocol(self):
         """Test that a simple implementation satisfies the protocol."""
-        from typing import List
 
         class SimpleClient:
-            def call(self, messages: List[Message], **kwargs) -> str:
+            def call(self, messages: list[Message], **kwargs) -> str:
                 """
                 Provide a fixed response for the given messages.
 
@@ -49,7 +48,6 @@ class TestClientImplementation:
 
     def test_client_with_custom_implementation(self):
         """Test using a custom client implementation."""
-        from typing import List
 
         class CustomClient:
             def __init__(self):
@@ -58,7 +56,7 @@ class TestClientImplementation:
                 """
                 self.call_count = 0
 
-            def call(self, messages: List[Message], **kwargs) -> str:
+            def call(self, messages: list[Message], **kwargs) -> str:
                 """
                 Increment the client's internal call counter and produce a response including the updated count.
 

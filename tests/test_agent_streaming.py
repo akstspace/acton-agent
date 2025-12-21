@@ -7,6 +7,7 @@ from acton_agent.agent.models import (
     AgentFinalResponseEvent,
     AgentPlanEvent,
     AgentStepEvent,
+    AgentStepUpdate,
     AgentStreamEnd,
     AgentStreamStart,
     AgentToken,
@@ -20,9 +21,7 @@ class SimpleCalculatorTool(Tool):
 
     def __init__(self):
         """Initialize the calculator tool."""
-        super().__init__(
-            name="calculator", description="Perform basic arithmetic operations"
-        )
+        super().__init__(name="calculator", description="Perform basic arithmetic operations")
 
     def execute(self, parameters: dict) -> str:
         """Execute the calculator."""
@@ -65,9 +64,7 @@ class SimpleCalculatorTool(Tool):
 class TestAgentStreamingEvents:
     """Tests for agent streaming with structured events."""
 
-    def test_run_stream_yields_final_response_event(
-        self, mock_llm_client_with_responses
-    ):
+    def test_run_stream_yields_final_response_event(self, mock_llm_client_with_responses):
         """Test that run_stream yields AgentFinalResponseEvent."""
         response = """```json
 {
@@ -109,9 +106,7 @@ class TestAgentStreamingEvents:
         assert len(plan_events) == 1
         assert "Step 1" in plan_events[0].plan.plan
 
-    def test_run_stream_yields_step_event_and_tool_results(
-        self, mock_llm_client_with_responses
-    ):
+    def test_run_stream_yields_step_event_and_tool_results(self, mock_llm_client_with_responses):
         """Test that run_stream yields AgentStepEvent and AgentToolResultsEvent."""
         step_response = """```json
 {
@@ -194,17 +189,6 @@ class TestAgentStreamingEvents:
         assert len(dict_events) == 0
 
         # All events should be instances of the streaming event models
-        from acton_agent.agent.models import (
-            AgentFinalResponseEvent,
-            AgentPlanEvent,
-            AgentStepEvent,
-            AgentStepUpdate,
-            AgentStreamEnd,
-            AgentStreamStart,
-            AgentToken,
-            AgentToolResultsEvent,
-        )
-
         valid_event_types = (
             AgentStreamStart,
             AgentToken,
@@ -217,6 +201,4 @@ class TestAgentStreamingEvents:
         )
 
         for event in events:
-            assert isinstance(event, valid_event_types), (
-                f"Invalid event type: {type(event)}"
-            )
+            assert isinstance(event, valid_event_types), f"Invalid event type: {type(event)}"

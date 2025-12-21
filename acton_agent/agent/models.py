@@ -5,9 +5,10 @@ This module contains Pydantic models representing messages, tool calls,
 tool results, and agent responses.
 """
 
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
+
 
 if TYPE_CHECKING:
     pass
@@ -38,9 +39,7 @@ class ToolCall(BaseModel):
 
     id: str = Field(..., description="Unique identifier for this tool call")
     tool_name: str = Field(..., description="Name of the tool to call")
-    parameters: Dict[str, Any] = Field(
-        default_factory=dict, description="Tool parameters"
-    )
+    parameters: dict[str, Any] = Field(default_factory=dict, description="Tool parameters")
 
 
 class ToolResult(BaseModel):
@@ -57,9 +56,7 @@ class ToolResult(BaseModel):
     tool_call_id: str = Field(..., description="ID of the tool call this result is for")
     tool_name: str = Field(..., description="Name of the tool that was called")
     result: str = Field(..., description="Result from the tool execution")
-    error: Optional[str] = Field(
-        None, description="Error message if tool execution failed"
-    )
+    error: Optional[str] = Field(None, description="Error message if tool execution failed")
 
     @property
     def success(self) -> bool:
@@ -83,9 +80,7 @@ class AgentPlan(BaseModel):
         plan: The planned steps to accomplish the task
     """
 
-    plan: str = Field(
-        default="", description="The planned steps to accomplish the task"
-    )
+    plan: str = Field(default="", description="The planned steps to accomplish the task")
 
 
 class AgentStep(BaseModel):
@@ -100,12 +95,8 @@ class AgentStep(BaseModel):
         tool_calls: List of tools to call
     """
 
-    tool_thought: Optional[str] = Field(
-        None, description="Agent's reasoning for this step"
-    )
-    tool_calls: List[ToolCall] = Field(
-        default_factory=list, description="Tools to call in this step"
-    )
+    tool_thought: Optional[str] = Field(None, description="Agent's reasoning for this step")
+    tool_calls: list[ToolCall] = Field(default_factory=list, description="Tools to call in this step")
 
     @property
     def has_tool_calls(self) -> bool:
@@ -151,12 +142,8 @@ class ToolSet(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     name: str = Field(..., description="Unique name for the toolset")
-    description: str = Field(
-        ..., description="General description of what this group of tools can do"
-    )
-    tools: List[Any] = Field(
-        default_factory=list, description="List of Tool instances in this toolset"
-    )
+    description: str = Field(..., description="General description of what this group of tools can do")
+    tools: list[Any] = Field(default_factory=list, description="List of Tool instances in this toolset")
 
 
 # Streaming Event Models
@@ -166,18 +153,14 @@ class AgentStreamStart(BaseModel):
     """Event indicating the start of LLM streaming."""
 
     type: Literal["stream_start"] = "stream_start"
-    step_id: str = Field(
-        ..., description="Unique identifier for this agent step/iteration"
-    )
+    step_id: str = Field(..., description="Unique identifier for this agent step/iteration")
 
 
 class AgentToken(BaseModel):
     """Event containing a single token from the LLM stream."""
 
     type: Literal["token"] = "token"
-    step_id: str = Field(
-        ..., description="Unique identifier for this agent step/iteration"
-    )
+    step_id: str = Field(..., description="Unique identifier for this agent step/iteration")
     content: str = Field(..., description="Token content")
 
 
@@ -185,47 +168,35 @@ class AgentStreamEnd(BaseModel):
     """Event indicating the end of LLM streaming."""
 
     type: Literal["stream_end"] = "stream_end"
-    step_id: str = Field(
-        ..., description="Unique identifier for this agent step/iteration"
-    )
+    step_id: str = Field(..., description="Unique identifier for this agent step/iteration")
 
 
 class AgentStepUpdate(BaseModel):
     """Event containing partial parsed data during streaming."""
 
     type: Literal["step_update"] = "step_update"
-    step_id: str = Field(
-        ..., description="Unique identifier for this agent step/iteration"
-    )
-    data: Dict[str, Any] = Field(..., description="Partially parsed JSON data")
+    step_id: str = Field(..., description="Unique identifier for this agent step/iteration")
+    data: dict[str, Any] = Field(..., description="Partially parsed JSON data")
     complete: bool = Field(..., description="Whether this step is complete")
-    tokens: Optional[List[str]] = Field(
-        None, description="Accumulated tokens for this step"
-    )
+    tokens: Optional[list[str]] = Field(None, description="Accumulated tokens for this step")
 
 
 class AgentToolResultsEvent(BaseModel):
     """Event containing tool execution results."""
 
     type: Literal["tool_results"] = "tool_results"
-    step_id: str = Field(
-        ..., description="Unique identifier for this agent step/iteration"
-    )
-    results: List[ToolResult] = Field(..., description="Tool execution results")
+    step_id: str = Field(..., description="Unique identifier for this agent step/iteration")
+    results: list[ToolResult] = Field(..., description="Tool execution results")
 
 
 class AgentToolExecutionEvent(BaseModel):
     """Event for individual tool execution progress."""
 
     type: Literal["tool_execution"] = "tool_execution"
-    step_id: str = Field(
-        ..., description="Unique identifier for this agent step/iteration"
-    )
+    step_id: str = Field(..., description="Unique identifier for this agent step/iteration")
     tool_call_id: str = Field(..., description="ID of the tool call being executed")
     tool_name: str = Field(..., description="Name of the tool being executed")
-    status: Literal["started", "completed", "failed"] = Field(
-        ..., description="Execution status"
-    )
+    status: Literal["started", "completed", "failed"] = Field(..., description="Execution status")
     result: Optional[ToolResult] = Field(
         None,
         description="Tool result (only present when status is completed or failed)",
@@ -236,9 +207,7 @@ class AgentPlanEvent(BaseModel):
     """Event containing a complete agent plan."""
 
     type: Literal["agent_plan"] = "agent_plan"
-    step_id: str = Field(
-        ..., description="Unique identifier for this agent step/iteration"
-    )
+    step_id: str = Field(..., description="Unique identifier for this agent step/iteration")
     plan: AgentPlan = Field(..., description="The agent's plan")
     complete: bool = True
 
@@ -247,9 +216,7 @@ class AgentStepEvent(BaseModel):
     """Event containing a complete agent step."""
 
     type: Literal["agent_step"] = "agent_step"
-    step_id: str = Field(
-        ..., description="Unique identifier for this agent step/iteration"
-    )
+    step_id: str = Field(..., description="Unique identifier for this agent step/iteration")
     step: AgentStep = Field(..., description="The agent's step")
     complete: bool = True
 
@@ -258,9 +225,7 @@ class AgentFinalResponseEvent(BaseModel):
     """Event containing the final agent response."""
 
     type: Literal["final_response"] = "final_response"
-    step_id: str = Field(
-        ..., description="Unique identifier for this agent step/iteration"
-    )
+    step_id: str = Field(..., description="Unique identifier for this agent step/iteration")
     response: AgentFinalResponse = Field(..., description="The agent's final response")
     complete: bool = True
 

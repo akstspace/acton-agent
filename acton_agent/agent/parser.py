@@ -53,27 +53,24 @@ class ResponseParser:
                 # This is an AgentPlan
                 response = AgentPlan(**data)
                 logger.debug("Parsed as AgentPlan")
+                return response
             elif "final_answer" in data and data["final_answer"] is not None:
                 # This is an AgentFinalResponse
                 response = AgentFinalResponse(**data)
                 logger.debug("Parsed as AgentFinalResponse")
+                return response
             elif "tool_calls" in data and len(data.get("tool_calls", [])) > 0:
                 # This is an AgentStep
                 response = AgentStep(**data)
                 logger.debug("Parsed as AgentStep")
+                return response
             else:
                 # If no recognizable structure, treat as final answer
-                logger.debug(
-                    "No recognizable structure, treating as AgentFinalResponse"
-                )
-                response = AgentFinalResponse(final_answer=response_text)
-
-            return response
+                logger.debug("No recognizable structure, treating as AgentFinalResponse")
+                return AgentFinalResponse(final_answer=response_text)
 
         except json.JSONDecodeError as e:
-            logger.warning(
-                f"Failed to parse JSON response, treating as final answer: {e}"
-            )
+            logger.warning(f"Failed to parse JSON response, treating as final answer: {e}")
             logger.debug(f"Raw response text: {response_text[:200]}...")
             # Fallback: treat entire response as final answer
             return AgentFinalResponse(final_answer=response_text)
@@ -82,7 +79,7 @@ class ResponseParser:
             logger.error(f"Error parsing response: {e}")
             logger.debug(f"Raw response text: {response_text[:200]}...")
             # Last resort fallback
-            return AgentFinalResponse(final_answer=f"Error parsing response: {str(e)}")
+            return AgentFinalResponse(final_answer=f"Error parsing response: {e!s}")
 
     @staticmethod
     def _extract_json_from_markdown(text: str) -> str:
@@ -156,10 +153,9 @@ class ResponseParser:
                     return False
 
         # AgentFinalResponse must have final_answer
-        elif isinstance(response, AgentFinalResponse):
-            if not response.final_answer:
-                logger.warning("Invalid AgentFinalResponse: must have final_answer")
-                return False
+        elif isinstance(response, AgentFinalResponse) and not response.final_answer:
+            logger.warning("Invalid AgentFinalResponse: must have final_answer")
+            return False
 
         return True
 

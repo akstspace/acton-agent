@@ -9,8 +9,6 @@ agent operations for better error handling and debugging.
 class AgentError(Exception):
     """Base exception for all agent-related errors."""
 
-    pass
-
 
 class ToolNotFoundError(AgentError):
     """Raised when a requested tool is not registered."""
@@ -42,7 +40,7 @@ class ToolExecutionError(AgentError):
         """
         self.tool_name = tool_name
         self.original_error = original_error
-        super().__init__(f"Tool '{tool_name}' execution failed: {str(original_error)}")
+        super().__init__(f"Tool '{tool_name}' execution failed: {original_error!s}")
 
 
 class LLMCallError(AgentError):
@@ -58,9 +56,7 @@ class LLMCallError(AgentError):
         """
         self.original_error = original_error
         self.retry_count = retry_count
-        super().__init__(
-            f"LLM call failed after {retry_count} retries: {str(original_error)}"
-        )
+        super().__init__(f"LLM call failed after {retry_count} retries: {original_error!s}")
 
 
 class ResponseParseError(AgentError):
@@ -79,7 +75,7 @@ class ResponseParseError(AgentError):
         """
         self.response_text = response_text
         self.original_error = original_error
-        super().__init__(f"Failed to parse agent response: {str(original_error)}")
+        super().__init__(f"Failed to parse agent response: {original_error!s}")
 
 
 class MaxIterationsError(AgentError):
@@ -93,9 +89,7 @@ class MaxIterationsError(AgentError):
             max_iterations (int): Maximum number of iterations that was reached; stored on the exception as `max_iterations`.
         """
         self.max_iterations = max_iterations
-        super().__init__(
-            f"Agent reached maximum iterations ({max_iterations}) without producing a final answer"
-        )
+        super().__init__(f"Agent reached maximum iterations ({max_iterations}) without producing a final answer")
 
 
 class InvalidToolSchemaError(AgentError):

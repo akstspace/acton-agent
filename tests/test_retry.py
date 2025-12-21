@@ -22,9 +22,7 @@ class TestRetryConfig:
 
     def test_custom_config(self):
         """Test custom retry configuration."""
-        config = RetryConfig(
-            max_attempts=5, wait_multiplier=2.0, wait_min=0.5, wait_max=20.0
-        )
+        config = RetryConfig(max_attempts=5, wait_multiplier=2.0, wait_min=0.5, wait_max=20.0)
         assert config.max_attempts == 5
         assert config.wait_multiplier == 2.0
         assert config.wait_min == 0.5
@@ -107,7 +105,7 @@ class TestRetryConfig:
 
         wrapped = config.wrap_function(always_fails, exception_types=(ValueError,))
 
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="Always fails"):
             wrapped()
 
         assert call_count[0] == 3  # Should try max_attempts times
@@ -149,9 +147,7 @@ class TestRetryConfig:
             raise TypeError("Wrong exception type")
 
         # Wrap to only retry ValueError
-        wrapped = config.wrap_function(
-            func_with_wrong_exception, exception_types=(ValueError,)
-        )
+        wrapped = config.wrap_function(func_with_wrong_exception, exception_types=(ValueError,))
 
         # Should not retry TypeError
         with pytest.raises(TypeError):
@@ -165,9 +161,7 @@ class TestRetryWaitTimes:
 
     def test_exponential_backoff(self):
         """Test that exponential backoff is applied."""
-        config = RetryConfig(
-            max_attempts=3, wait_multiplier=1.0, wait_min=0.1, wait_max=1.0
-        )
+        config = RetryConfig(max_attempts=3, wait_multiplier=1.0, wait_min=0.1, wait_max=1.0)
 
         call_times = []
 

@@ -6,6 +6,7 @@ including response format instructions and schema definitions.
 """
 
 import json
+from typing import Optional
 
 from .models import AgentFinalResponse, AgentPlan, AgentStep
 
@@ -134,7 +135,7 @@ def get_default_format_instructions() -> str:
 
 
 def build_system_prompt(
-    custom_instructions: str = None, final_answer_format_instructions: str = None
+    custom_instructions: Optional[str] = None, final_answer_format_instructions: Optional[str] = None
 ) -> str:
     """
     Builds the complete system prompt for the Agent, injecting response-format instructions, examples, critical rules, and the JSON schemas for response types.
@@ -160,9 +161,7 @@ def build_system_prompt(
 
     prompt_parts.append("\n" + SEPARATOR + "\n")
 
-    formatted_template = RESPONSE_FORMAT_INSTRUCTIONS_TEMPLATE.replace(
-        "{{{{", "{{"
-    ).replace("}}}}", "}}")
+    formatted_template = RESPONSE_FORMAT_INSTRUCTIONS_TEMPLATE.replace("{{{{", "{{").replace("}}}}", "}}")
     formatted_template = formatted_template.format(
         plan_schema=plan_schema, step_schema=step_schema, final_schema=final_schema
     )

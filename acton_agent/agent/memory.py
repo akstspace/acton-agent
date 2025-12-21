@@ -6,7 +6,6 @@ for managing conversation history and token limits.
 """
 
 from abc import ABC, abstractmethod
-from typing import List
 
 from loguru import logger
 
@@ -22,7 +21,7 @@ class AgentMemory(ABC):
     """
 
     @abstractmethod
-    def manage_history(self, history: List[Message]) -> List[Message]:
+    def manage_history(self, history: list[Message]) -> list[Message]:
         """
         Process and potentially modify conversation history to manage memory.
 
@@ -32,7 +31,6 @@ class AgentMemory(ABC):
         Returns:
             List[Message]: Managed conversation history (may be truncated, summarized, etc.).
         """
-        pass
 
 
 class SimpleAgentMemory(AgentMemory):
@@ -68,7 +66,7 @@ class SimpleAgentMemory(AgentMemory):
         """
         return len(text) // 4
 
-    def manage_history(self, history: List[Message]) -> List[Message]:
+    def manage_history(self, history: list[Message]) -> list[Message]:
         """
         Truncate conversation history to stay within max_history_tokens limit.
 
@@ -89,9 +87,7 @@ class SimpleAgentMemory(AgentMemory):
         if total_tokens <= self.max_history_tokens:
             return managed_history
 
-        logger.info(
-            f"Conversation history exceeds {self.max_history_tokens} tokens ({total_tokens}). Truncating..."
-        )
+        logger.info(f"Conversation history exceeds {self.max_history_tokens} tokens ({total_tokens}). Truncating...")
 
         # Remove oldest messages until we're under the limit
         # Keep at least the last 2 messages (most recent exchange)
@@ -111,22 +107,14 @@ class SimpleAgentMemory(AgentMemory):
                 msg_tokens = self._count_tokens(msg.content)
                 if msg_tokens > tokens_per_message:
                     # Keep the most recent content (end of the message)
-                    chars_to_keep = (
-                        tokens_per_message * 4
-                    )  # Convert tokens back to chars
+                    chars_to_keep = tokens_per_message * 4  # Convert tokens back to chars
                     if chars_to_keep > 0:
                         truncated_content = "..." + msg.content[-chars_to_keep:]
-                        managed_history[i] = Message(
-                            role=msg.role, content=truncated_content
-                        )
+                        managed_history[i] = Message(role=msg.role, content=truncated_content)
 
             # Recalculate total tokens
-            total_tokens = sum(
-                self._count_tokens(msg.content) for msg in managed_history
-            )
+            total_tokens = sum(self._count_tokens(msg.content) for msg in managed_history)
 
-        logger.info(
-            f"Truncated to {len(managed_history)} messages ({total_tokens} tokens)"
-        )
+        logger.info(f"Truncated to {len(managed_history)} messages ({total_tokens} tokens)")
 
         return managed_history

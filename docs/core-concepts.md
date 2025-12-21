@@ -24,13 +24,13 @@ graph TD
     B --> D[Tool Registry]
     C --> E[Provider<br/>OpenAI, etc.]
     D --> F[Individual Tools]
-    
+
     style B fill:#e1f5ff,stroke:#01579b
     style C fill:#fff3e0,stroke:#e65100
     style D fill:#f3e5f5,stroke:#4a148c
-    
+
     Note1[Agent: Orchestrates everything<br/>- Planning<br/>- Tool calling<br/>- Memory management]
-    
+
     class Note1 note
     classDef note fill:#fffde7,stroke:#f57f17,stroke-width:2px
 ```
@@ -84,7 +84,7 @@ graph LR
     F --> G[Add Results to History]
     G --> C
     E -->|No| H[Final Answer]
-    
+
     style A fill:#e3f2fd,stroke:#1565c0
     style H fill:#c8e6c9,stroke:#2e7d32
     style F fill:#fff9c4,stroke:#f57f17
@@ -136,7 +136,7 @@ sequenceDiagram
     participant Agent
     participant LLM
     participant Tool
-    
+
     User->>Agent: "What's the weather in Seattle?"
     Agent->>Agent: Add user message to history
     Agent->>LLM: System prompt + tools + history
@@ -215,7 +215,7 @@ from acton_agent.agent import Message
 class MyCustomClient:
     def __init__(self, endpoint: str):
         self.endpoint = endpoint
-    
+
     def call(self, messages: List[Message], **kwargs) -> str:
         # Your implementation here
         # Convert messages to your API format
@@ -295,13 +295,13 @@ class DatabaseTool(Tool):
             description="Query the database with SQL"
         )
         self.connection_string = connection_string
-    
+
     def execute(self, parameters: Dict[str, Any]) -> str:
         query = parameters.get("query", "")
         # Execute database query
         # Return results as string
         return "Query results..."
-    
+
     def get_schema(self) -> Dict[str, Any]:
         return {
             "type": "object",
@@ -573,22 +573,22 @@ from typing import List
 class SummarizingMemory(AgentMemory):
     def __init__(self, max_messages: int = 10):
         self.max_messages = max_messages
-    
+
     def manage_history(self, history: List[Message]) -> List[Message]:
         if len(history) <= self.max_messages:
             return history
-        
+
         # Keep first (important context) and last messages
         # Summarize the middle
         first_few = history[:2]
         last_few = history[-2:]
-        
+
         # Create summary message (simplified)
         summary = Message(
             role="system",
             content="[Previous conversation summarized...]"
         )
-        
+
         return first_few + [summary] + last_few
 
 # Use custom memory

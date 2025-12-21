@@ -3,7 +3,8 @@ OpenAI LLM Client implementation with streaming support.
 """
 
 import os
-from typing import Generator, List, Optional
+from collections.abc import Generator
+from typing import Optional
 
 from openai import OpenAI
 
@@ -73,7 +74,7 @@ class OpenAIClient:
         )
         self.model = model
 
-    def call(self, messages: List[Message], **kwargs) -> str:
+    def call(self, messages: list[Message], **kwargs) -> str:
         """
         Request a chat completion from the configured model and return the assistant's reply.
 
@@ -94,9 +95,7 @@ class OpenAIClient:
             return completion.choices[0].message.content
         return ""
 
-    def call_stream(
-        self, messages: List[Message], **kwargs
-    ) -> Generator[str, None, None]:
+    def call_stream(self, messages: list[Message], **kwargs) -> Generator[str, None, None]:
         """
         Stream content chunks from a chat completion for the given conversation.
 
@@ -109,14 +108,8 @@ class OpenAIClient:
         """
         message_dicts = [{"role": msg.role, "content": msg.content} for msg in messages]
 
-        stream = self.client.chat.completions.create(
-            model=self.model, messages=message_dicts, stream=True, **kwargs
-        )
+        stream = self.client.chat.completions.create(model=self.model, messages=message_dicts, stream=True, **kwargs)
 
         for chunk in stream:
-            if (
-                chunk.choices
-                and len(chunk.choices) > 0
-                and chunk.choices[0].delta.content is not None
-            ):
+            if chunk.choices and len(chunk.choices) > 0 and chunk.choices[0].delta.content is not None:
                 yield chunk.choices[0].delta.content

@@ -7,7 +7,7 @@ to APIs based on OpenAPI-like specifications.
 
 import json
 import re
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal, Optional
 
 import requests
 from loguru import logger
@@ -48,12 +48,12 @@ class RequestsTool(Tool):
         description: str,
         method: Literal["GET", "POST", "PUT", "DELETE", "PATCH"] = "GET",
         url_template: str = "",
-        headers: Optional[Dict[str, str]] = None,
-        query_params_schema: Optional[Dict[str, Any]] = None,
-        body_schema: Optional[Dict[str, Any]] = None,
-        path_params: Optional[List[str]] = None,
-        path_params_schema: Optional[Dict[str, Any]] = None,
-        header_params_schema: Optional[Dict[str, Any]] = None,
+        headers: Optional[dict[str, str]] = None,
+        query_params_schema: Optional[dict[str, Any]] = None,
+        body_schema: Optional[dict[str, Any]] = None,
+        path_params: Optional[list[str]] = None,
+        path_params_schema: Optional[dict[str, Any]] = None,
+        header_params_schema: Optional[dict[str, Any]] = None,
         timeout: int = 30,
         auth: Optional[tuple] = None,
     ):
@@ -93,7 +93,7 @@ class RequestsTool(Tool):
         self.timeout = timeout
         self.auth = auth
 
-    def execute(self, parameters: Dict[str, Any]) -> str:
+    def execute(self, parameters: dict[str, Any]) -> str:
         """
         Execute the configured HTTP request using the provided parameters and return the response body.
 
@@ -125,7 +125,7 @@ class RequestsTool(Tool):
             for key, value in parameters.items():
                 if key in self.path_params:
                     continue  # Already used for URL
-                elif key in self.query_params_schema:
+                if key in self.query_params_schema:
                     query_params[key] = value
                 elif key in self.header_params_schema:
                     header_params[key] = value
@@ -146,9 +146,7 @@ class RequestsTool(Tool):
                 method=self.method,
                 url=url,
                 params=query_params if query_params else None,
-                json=body_data
-                if body_data and self.method in ["POST", "PUT", "PATCH"]
-                else None,
+                json=body_data if body_data and self.method in ["POST", "PUT", "PATCH"] else None,
                 headers=request_headers,
                 auth=self.auth,
                 timeout=self.timeout,
@@ -170,12 +168,12 @@ class RequestsTool(Tool):
 
         except requests.exceptions.RequestException as e:
             logger.error(f"Request failed: {e}")
-            raise ToolExecutionError(self.name, str(e))
+            raise ToolExecutionError(self.name, str(e)) from e
         except Exception as e:
             logger.error(f"Unexpected error in RequestsTool: {e}")
-            raise ToolExecutionError(self.name, str(e))
+            raise ToolExecutionError(self.name, str(e)) from e
 
-    def get_schema(self) -> Dict[str, Any]:
+    def get_schema(self) -> dict[str, Any]:
         """
         Builds a combined JSON Schema describing the tool's route/path, query, header, and body parameters.
 
@@ -237,9 +235,9 @@ def create_api_tool(
     description: str,
     endpoint: str,
     method: str = "GET",
-    headers: Optional[Dict[str, str]] = None,
-    parameters: Optional[Dict[str, Any]] = None,
-    body_schema: Optional[Dict[str, Any]] = None,
+    headers: Optional[dict[str, str]] = None,
+    parameters: Optional[dict[str, Any]] = None,
+    body_schema: Optional[dict[str, Any]] = None,
 ) -> RequestsTool:
     """
     Create a configured RequestsTool for a single API endpoint.

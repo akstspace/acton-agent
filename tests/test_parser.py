@@ -159,9 +159,7 @@ class TestExtractThought:
 
     def test_extract_thought_from_step(self):
         """Test extracting thought from step."""
-        step = AgentStep(
-            tool_thought="step thought", tool_calls=[ToolCall(id="1", tool_name="test")]
-        )
+        step = AgentStep(tool_thought="step thought", tool_calls=[ToolCall(id="1", tool_name="test")])
         thought = ResponseParser.extract_thought(step)
         assert thought == "step thought"
 

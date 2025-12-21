@@ -2,10 +2,11 @@
 Streaming parser for agent events.
 """
 
-from typing import Generator, Optional, Dict, Any, Literal
+from collections.abc import Generator
+from typing import Any, Literal, Optional
 
-from loguru import logger
 import jiter
+from loguru import logger
 
 from .models import (
     AgentFinalResponse,
@@ -42,7 +43,7 @@ COLON = ord(":")
 class StreamingTokenParser:
     """Parser for accumulating and progressively parsing streaming tokens with early event detection."""
 
-    __slots__ = ("step_buffers", "detected_types")
+    __slots__ = ("detected_types", "step_buffers")
 
     def __init__(self):
         """
@@ -52,8 +53,8 @@ class StreamingTokenParser:
         - step_buffers (Dict[str, bytearray]): per-step byte buffers used to accumulate incoming tokens efficiently.
         - detected_types (Dict[str, EventType]): map of step_id to a heuristically detected event type ("plan", "step", "final_response", or "unknown").
         """
-        self.step_buffers: Dict[str, bytearray] = {}
-        self.detected_types: Dict[str, EventType] = {}
+        self.step_buffers: dict[str, bytearray] = {}
+        self.detected_types: dict[str, EventType] = {}
 
     def add_token(self, step_id: str, token: str) -> None:
         """Add a token to the buffer for a specific step."""
@@ -124,7 +125,7 @@ class StreamingTokenParser:
         # No closing fence yet - return everything after opening
         return data[start:].strip()
 
-    def _detect_event_type_from_partial(self, data: Dict[str, Any]) -> EventType:
+    def _detect_event_type_from_partial(self, data: dict[str, Any]) -> EventType:
         """
         Determine the agent event type based on keys present in a partially parsed JSON payload.
 
@@ -172,19 +173,13 @@ class StreamingTokenParser:
                 detected_type = self._detect_event_type_from_partial(data)
                 if detected_type != "unknown":
                     self.detected_types[step_id] = detected_type
-                    logger.debug(
-                        f"🎯 Early detection: {detected_type} (step_id={step_id})"
-                    )
+                    logger.debug(f"🎯 Early detection: {detected_type} (step_id={step_id})")
 
             if detected_type == "plan" and "plan" in data:
                 plan_str = str(data["plan"]) if data["plan"] else ""
-                return AgentPlanEvent(
-                    step_id=step_id, plan=AgentPlan(plan=plan_str), complete=False
-                )
+                return AgentPlanEvent(step_id=step_id, plan=AgentPlan(plan=plan_str), complete=False)
 
-            elif detected_type == "step" and (
-                "tool_thought" in data or "tool_calls" in data
-            ):
+            if detected_type == "step" and ("tool_thought" in data or "tool_calls" in data):
                 tool_calls = []
                 tool_calls_data = data.get("tool_calls")
 
@@ -201,13 +196,11 @@ class StreamingTokenParser:
                             )
                 return AgentStepEvent(
                     step_id=step_id,
-                    step=AgentStep(
-                        tool_thought=data.get("tool_thought"), tool_calls=tool_calls
-                    ),
+                    step=AgentStep(tool_thought=data.get("tool_thought"), tool_calls=tool_calls),
                     complete=False,
                 )
 
-            elif detected_type == "final_response" and "final_answer" in data:
+            if detected_type == "final_response" and "final_answer" in data:
                 final_answer = data.get("final_answer", "")
                 return AgentFinalResponseEvent(
                     step_id=step_id,
