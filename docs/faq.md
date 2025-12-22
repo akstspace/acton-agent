@@ -71,11 +71,12 @@ Not currently. All operations are synchronous. Async support may be added in fut
 
 ### ModuleNotFoundError: No module named 'openai'
 
-**Problem:** OpenAI dependency not installed
+**Problem:** OpenAI dependency not installed (should not happen with acton-agent>=0.0.13)
 
 **Solution:**
 ```bash
-pip install acton-agent[openai]
+pip install --upgrade acton-agent
+# OpenAI is now a required dependency (version 2.0+)
 ```
 
 ### ImportError: cannot import name 'Agent'
@@ -92,7 +93,7 @@ pip install --upgrade acton-agent
 
 **Problem:** Python version too old
 
-**Solution:** Acton Agent requires Python 3.9+
+**Solution:** Acton Agent requires Python 3.10+
 ```bash
 python --version  # Check version
 # Upgrade Python if needed
