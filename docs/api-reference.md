@@ -30,6 +30,7 @@ class Agent:
         final_answer_format_instructions: Optional[str] = None,
         timezone: str = "UTC",
         memory: Optional[AgentMemory] = None,
+        verbose: bool = False,
     )
 ```
 
@@ -42,6 +43,7 @@ class Agent:
 - `final_answer_format_instructions` (Optional[str]): Custom format instructions. Default: Default format
 - `timezone` (str): Timezone for timestamps. Default: "UTC"
 - `memory` (Optional[AgentMemory]): Memory manager. Default: SimpleAgentMemory(8000)
+- `verbose` (bool): Enable logging output. Default: False. When True, log level can be controlled via `ACTON_LOG_LEVEL` environment variable (TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL). Default log level is INFO.
 
 **Example:**
 ```python
@@ -56,9 +58,29 @@ agent = Agent(
     max_iterations=15,
     retry_config=RetryConfig(max_attempts=5),
     memory=SimpleAgentMemory(max_history_tokens=10000),
-    timezone="America/New_York"
+    timezone="America/New_York",
+    verbose=True  # Enable logging
 )
 ```
+
+**Logging Configuration:**
+
+The `verbose` parameter controls whether the agent produces logging output:
+
+```python
+# Disable logging (default - quiet operation)
+agent = Agent(llm_client=client, verbose=False)
+
+# Enable logging with default INFO level
+agent = Agent(llm_client=client, verbose=True)
+
+# Enable logging with custom level via environment variable
+import os
+os.environ['ACTON_LOG_LEVEL'] = 'DEBUG'
+agent = Agent(llm_client=client, verbose=True)
+```
+
+Valid `ACTON_LOG_LEVEL` values: `TRACE`, `DEBUG`, `INFO`, `SUCCESS`, `WARNING`, `ERROR`, `CRITICAL`
 
 #### Methods
 

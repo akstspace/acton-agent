@@ -41,7 +41,7 @@ graph TD
 2. **Composable**: Mix and match components
 3. **Extensible**: Easy to add custom implementations
 4. **Type-safe**: Leverages Pydantic for data validation
-5. **Observable**: Built-in logging with Loguru
+5. **Configurable**: Control logging, retries, and memory behavior
 
 ## The Agent
 
@@ -799,7 +799,7 @@ Acton Agent is built on these principles:
 1. **Simplicity First**: Easy to get started, powerful when needed
 2. **Composability**: Mix and match components
 3. **Type Safety**: Leverage Python typing and Pydantic
-4. **Observability**: Built-in logging for debugging
+4. **Observability**: Configurable logging for debugging and monitoring
 5. **Extensibility**: Easy to customize any component
 6. **Reliability**: Retry logic, error handling, memory management
 

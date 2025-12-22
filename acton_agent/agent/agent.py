@@ -13,6 +13,7 @@ from zoneinfo import ZoneInfo
 from loguru import logger
 
 from ..client import LLMClient
+from ..logging_config import configure_logging
 from ..memory import AgentMemory, SimpleAgentMemory
 from ..parsers import ResponseParser
 from ..tools import Tool, ToolCall, ToolRegistry, ToolResult, ToolSet
@@ -45,7 +46,7 @@ class Agent:
     - Automatic retries with tenacity
     - Structured conversation history
     - Comprehensive error handling
-    - Loguru logging throughout
+    - Configurable logging via verbose parameter
 
     Note: This is an experimental framework. The API may change without notice.
 
@@ -54,7 +55,8 @@ class Agent:
         agent = Agent(
             llm_client=my_llm_client,
             system_prompt="You are a helpful assistant",
-            max_iterations=10
+            max_iterations=10,
+            verbose=True  # Enable logging
         )
 
         agent.register_tool(my_tool)
@@ -72,6 +74,7 @@ class Agent:
         final_answer_format_instructions: str | None = None,
         timezone: str = "UTC",
         memory: AgentMemory | None = None,
+        verbose: bool = False,
     ):
         """
         Create a new Agent configured to coordinate LLM calls, tool execution, retries, and conversation memory.
@@ -85,7 +88,11 @@ class Agent:
             final_answer_format_instructions: Optional instructions that control final-answer formatting; defaults to the module's standard format when omitted.
             timezone: Timezone name used when inserting the current date/time into system messages (e.g., "UTC", "America/New_York"); defaults to "UTC".
             memory: Optional memory manager; when None memory management is disabled. If omitted, a default SimpleAgentMemory instance is used.
+            verbose: If True, enable logging output. When False (default), logging is disabled. The log level can be controlled via the ACTON_LOG_LEVEL environment variable when verbose is True.
         """
+        # Configure logging based on verbose parameter
+        configure_logging(verbose=verbose)
+
         self.llm_client = llm_client
         self.custom_instructions = system_prompt  # Store custom instructions separately
         self.final_answer_format_instructions = final_answer_format_instructions or get_default_format_instructions()
@@ -96,6 +103,7 @@ class Agent:
         self.stream = stream
         # Use SimpleAgentMemory by default if no custom memory provided
         self.memory: AgentMemory | None = memory if memory is not None else SimpleAgentMemory()
+        self.verbose = verbose
 
         self.tool_registry = ToolRegistry()
         self.conversation_history: list[Message] = []
