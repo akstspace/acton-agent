@@ -30,14 +30,6 @@ jobs:
       - name: Run tests with pytest
         run: pytest --cov=acton_agent --cov-report=xml --cov-report=term
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
-          flags: unittests
-          name: codecov-umbrella
-          fail_ci_if_error: false
-
   build:
     name: Build package
     runs-on: ubuntu-latest

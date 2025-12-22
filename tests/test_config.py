@@ -70,7 +70,6 @@ class CustomToolWithConfig(Tool):
 
 def test_toolset_with_config():
     """Test that ToolSet config can be set via update_config()."""
-    from pydantic import Field
 
     class TestConfig(ConfigSchema):
         api_key: str = Field(..., description="API key")
@@ -108,7 +107,6 @@ def test_config_not_in_schema():
 
 def test_registry_tracks_config():
     """Test that registry can retrieve config for a tool."""
-    from pydantic import Field
 
     class TestConfig(ConfigSchema):
         api_key: str = Field(..., description="API key")
@@ -218,7 +216,6 @@ def test_user_params_override_config():
 
 def test_config_not_in_prompt():
     """Test that config is not exposed in the formatted prompt."""
-    from pydantic import Field
 
     class TestConfig(ConfigSchema):
         api_key: str = Field(..., description="API key")
@@ -257,7 +254,6 @@ def test_config_not_in_prompt():
 
 def test_unregister_toolset_clears_config_mapping():
     """Test that unregistering a toolset clears the tool-to-toolset mapping."""
-    from pydantic import Field
 
     class TestConfig(ConfigSchema):
         key: str = Field(..., description="Key")
@@ -289,7 +285,6 @@ def test_unregister_toolset_clears_config_mapping():
 
 def test_clear_registry_clears_config_mapping():
     """Test that clearing the registry also clears the config mapping."""
-    from pydantic import Field
 
     class TestConfig(ConfigSchema):
         key: str = Field(..., description="Key")
@@ -360,10 +355,12 @@ def test_config_with_agent_execution(mock_llm_client):
     )
 
     # Update config using the new API
-    toolset.update_config({
-        "api_key": "hidden_key_123",
-        "endpoint": "https://api.example.com",
-    })
+    toolset.update_config(
+        {
+            "api_key": "hidden_key_123",
+            "endpoint": "https://api.example.com",
+        }
+    )
 
     # Create agent and register toolset
     agent = Agent(llm_client=mock_llm_client)
@@ -426,7 +423,6 @@ def test_empty_config():
 
 def test_multiple_toolsets_different_config():
     """Test that different toolsets can have different config for similar tools."""
-    from pydantic import Field
 
     class ApiConfig(ConfigSchema):
         api_key: str = Field(..., description="API key")
