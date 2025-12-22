@@ -149,7 +149,6 @@ client = OpenRouterClient(api_key="your-key", model="anthropic/claude-3-opus")
 Explore complete examples in the [`examples/`](https://github.com/akstspace/acton-agent/tree/main/examples/) directory:
 
 - **[Function Tools](https://github.com/akstspace/acton-agent/tree/main/examples/function_tool_example.py)** - Wrap Python functions as agent tools
-- **[HTTP Requests](https://github.com/akstspace/acton-agent/tree/main/examples/http_request_example.py)** - Make HTTP API calls using FunctionTool
 - **[Custom Tools](https://github.com/akstspace/acton-agent/tree/main/examples/custom_tool_example.py)** - Build custom tool classes
 - **[ToolSet Configuration](https://github.com/akstspace/acton-agent/tree/main/examples/config_example.py)** - Use hidden configuration for API keys and credentials
 

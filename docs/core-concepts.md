@@ -292,8 +292,6 @@ tool = FunctionTool(
 )
 ```
 
-For more examples, see the [HTTP Request Example](https://github.com/akstspace/acton-agent/tree/main/examples/http_request_example.py).
-
 #### 3. Custom Tool Classes
 
 Inherit from the `Tool` base class:
