@@ -37,21 +37,7 @@ Install Acton Agent using pip:
 pip install acton-agent
 ```
 
-This installs the core framework with minimal dependencies.
-
-### Installation with LLM Provider Support
-
-For **OpenAI** support (GPT-4, GPT-3.5-turbo, etc.):
-
-```bash
-pip install acton-agent[openai]
-```
-
-For **Groq** support:
-
-```bash
-pip install acton-agent[groq]
-```
+This installs the core framework including OpenAI support (required dependency).
 
 ### Installation for Development
 

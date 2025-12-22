@@ -17,7 +17,7 @@ Acton Agent enables you to build AI agents that can interact with external APIs,
 ## Quick Start
 
 ```bash
-pip install acton-agent[openai]
+pip install acton-agent
 ```
 
 ```python
