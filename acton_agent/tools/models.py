@@ -76,7 +76,7 @@ class ToolSet(BaseModel):
         """Initialize ToolSet and set config to empty dict."""
         super().__init__(**data)
         # Initialize config as an instance attribute (not a field)
-        object.__setattr__(self, 'config', {})
+        object.__setattr__(self, "config", {})
 
     def update_config(self, config: dict[str, Any]) -> None:
         """
@@ -117,7 +117,7 @@ class ToolSet(BaseModel):
             )
 
         # Store config as instance attribute
-        object.__setattr__(self, 'config', config)
+        object.__setattr__(self, "config", config)
 
         # Update config for all tools in this toolset
         # Merge toolset config with tool config (tool config takes precedence)
