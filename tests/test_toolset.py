@@ -50,22 +50,12 @@ def sample_tools():
         name="tool1",
         description="First test tool",
         func=sample_function_1,
-        schema={
-            "type": "object",
-            "properties": {"param1": {"type": "string"}},
-            "required": ["param1"],
-        },
     )
 
     tool2 = FunctionTool(
         name="tool2",
         description="Second test tool",
         func=sample_function_2,
-        schema={
-            "type": "object",
-            "properties": {"param2": {"type": "integer"}},
-            "required": ["param2"],
-        },
     )
 
     return [tool1, tool2]
@@ -181,11 +171,6 @@ def test_format_for_prompt_with_toolset_and_standalone_tools(sample_toolset):
         name="standalone",
         description="A standalone tool",
         func=lambda x: x,
-        schema={
-            "type": "object",
-            "properties": {"x": {"type": "string"}},
-            "required": ["x"],
-        },
     )
     registry.register(standalone_tool)
 
@@ -214,7 +199,6 @@ def test_overwrite_toolset(sample_toolset, sample_tools):
         name="new_tool",
         description="New tool",
         func=lambda: "new",
-        schema={"type": "object", "properties": {}},
     )
 
     new_toolset = ToolSet(

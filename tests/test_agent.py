@@ -129,11 +129,6 @@ class TestToolManagement:
             name="greeter",
             description="Greet someone",
             func=lambda name: f"Hello, {name}!",
-            schema={
-                "type": "object",
-                "properties": {"name": {"type": "string", "description": "Name to greet"}},
-                "required": ["name"],
-            },
         )
 
         agent.register_tool(tool1)

@@ -30,7 +30,6 @@ class FunctionTool(Tool):
         input_schema: type[ToolInputSchema] | None = None,
         config: dict[str, Any] | None = None,
         config_schema: type[ConfigSchema] | None = None,
-        schema: dict[str, Any] | None = None,  # Deprecated, for backward compatibility
     ):
         """
         Initialize a FunctionTool that wraps a Python callable.
@@ -42,27 +41,7 @@ class FunctionTool(Tool):
             input_schema (Type[ToolInputSchema] | None): Optional Pydantic model class defining input parameters.
             config (dict[str, Any] | None): Configuration values for the tool.
             config_schema (Type[ConfigSchema] | None): Optional Pydantic model class defining configuration requirements.
-            schema (dict[str, Any] | None): Deprecated. Use input_schema instead. If provided, stored for backward compatibility.
-
-        Raises:
-            InvalidToolSchemaError: If schema is provided but is invalid (not a dict, missing type, or wrong type).
         """
-        # Validate legacy schema if provided
-        if schema is not None:
-            from ..agent.exceptions import InvalidToolSchemaError
-
-            if not isinstance(schema, dict):
-                raise InvalidToolSchemaError(name, "Schema must be a dictionary")
-
-            if "type" not in schema:
-                raise InvalidToolSchemaError(name, "Schema must have a 'type' field")
-
-            if schema.get("type") != "object":
-                raise InvalidToolSchemaError(name, "Schema type must be 'object'")
-
-        # Handle backward compatibility for schema parameter
-        self._legacy_schema = schema
-
         # Initialize base with config
         super().__init__(
             name=name,
@@ -119,7 +98,7 @@ class FunctionTool(Tool):
         Get the JSON Schema describing this tool's parameters.
 
         Returns the JSON schema generated from the Pydantic input_schema model,
-        or the legacy dict-based schema if provided, or an empty object schema.
+        or an empty object schema if no input_schema is defined.
 
         Returns:
             dict[str, Any]: The JSON Schema that describes the tool's parameters.
@@ -127,10 +106,5 @@ class FunctionTool(Tool):
         if self.input_schema is not None:
             # Generate JSON schema from Pydantic model
             return self.input_schema.model_json_schema()
-
-        # Use legacy schema if provided (backward compatibility)
-        if hasattr(self, "_legacy_schema") and self._legacy_schema is not None:
-            return self._legacy_schema
-
         # Return empty object schema if no schema is defined
         return {"type": "object", "properties": {}, "required": []}
