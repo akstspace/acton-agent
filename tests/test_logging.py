@@ -3,7 +3,6 @@ Tests for logging configuration.
 """
 
 import os
-from io import StringIO
 
 from loguru import logger
 
