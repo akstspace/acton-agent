@@ -4,7 +4,7 @@ Tool models for the AI Agent Framework.
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ConfigSchema(BaseModel):
@@ -60,7 +60,7 @@ class ToolSet(BaseModel):
         description: General description of what this group of tools can do
         tools: List of Tool instances in this toolset
         config: Configuration values passed to all tools during execution (not visible to LLM)
-        config_schema: Optional Pydantic model class defining the configuration schema
+        config_schema: Pydantic model class defining the configuration schema
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -77,27 +77,29 @@ class ToolSet(BaseModel):
         description="Optional Pydantic model class defining the required and optional configuration parameters for this toolset",
     )
 
-    @model_validator(mode="after")
-    def validate_config(self) -> "ToolSet":
-        """Validate that config matches config_schema if schema is provided."""
-        if self.config_schema is not None:
-            # Validate the config against the schema
-            try:
-                self.config_schema(**self.config)
-            except Exception as e:
-                raise ValueError(f"ToolSet config validation failed: {e}") from e
-        return self
-
-    @model_validator(mode="after")
-    def validate_tools_have_required_config(self) -> "ToolSet":
+    def update_config(self, config: dict[str, Any]) -> None:
         """
-        Validate that all tools in the toolset have access to required config variables.
+        Update the configuration and validate it against the config schema.
+        Also updates the configuration for all tools in this toolset by merging
+        the toolset config with each tool's existing config (tool config takes precedence).
 
-        This ensures that if a toolset defines a config schema with required fields,
-        those fields are present in the toolset's config. Optional fields can be omitted.
+        Parameters:
+            config: Configuration values to update
+
+        Raises:
+            ValueError: If config schema is not configured or if config validation fails
         """
         if self.config_schema is None:
-            return self
+            raise ValueError(
+                f"ToolSet '{self.name}' does not have a config schema configured. "
+                "Please provide a config_schema when creating the ToolSet to enable configuration."
+            )
+
+        # Validate the config against the schema
+        try:
+            self.config_schema(**config)
+        except Exception as e:
+            raise ValueError(f"ToolSet config validation failed: {e}") from e
 
         # Get required fields from the config schema
         required_fields = set()
@@ -106,14 +108,23 @@ class ToolSet(BaseModel):
                 required_fields.add(field_name)
 
         # Check that all required fields are in the config
-        missing_fields = required_fields - set(self.config.keys())
+        missing_fields = required_fields - set(config.keys())
         if missing_fields:
             raise ValueError(
                 f"ToolSet '{self.name}' is missing required config fields: {missing_fields}. "
                 f"These fields are required by the config schema."
             )
 
-        return self
+        self.config = config
+
+        # Update config for all tools in this toolset
+        # Merge toolset config with tool config (tool config takes precedence)
+        for tool in self.tools:
+            merged_config = {}
+            merged_config.update(config)
+            merged_config.update(tool.config)
+
+            tool.update_config(merged_config)
 
 
 class ToolCall(BaseModel):

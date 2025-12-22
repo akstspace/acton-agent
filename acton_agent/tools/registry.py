@@ -121,22 +121,6 @@ class ToolRegistry:
         self._toolsets[toolset.name] = toolset
 
         for tool in toolset.tools:
-            # Merge toolset config into tool config (tool config takes precedence)
-            if toolset.config:
-                merged_config = {}
-                merged_config.update(toolset.config)
-                merged_config.update(tool.config)
-                tool.config = merged_config
-
-                # Re-validate config if tool has config_schema
-                if tool.config_schema is not None:
-                    try:
-                        tool.config_schema(**tool.config)
-                    except Exception as e:
-                        raise ValueError(
-                            f"Tool '{tool.name}' config validation failed after merging toolset config: {e}"
-                        ) from e
-
             self.register(tool)
             self._tool_to_toolset[tool.name] = toolset.name
 

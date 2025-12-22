@@ -25,32 +25,46 @@ class Tool(ABC):
         self,
         name: str,
         description: str,
-        config: dict[str, Any] | None = None,
         config_schema: type["ConfigSchema"] | None = None,
         input_schema: type["ToolInputSchema"] | None = None,
     ):
         """
-        Initialize the Tool with a unique name, description, and optional configuration.
+        Initialize the Tool with a unique name, description, and optional configuration schema.
 
         Parameters:
             name (str): Unique identifier for the tool used for registration and lookup.
             description (str): Short human-readable description for prompts, listings, and documentation.
-            config (dict[str, Any] | None): Configuration values for the tool (e.g., API keys, credentials).
             config_schema (Type[ConfigSchema] | None): Optional Pydantic model class defining configuration requirements.
             input_schema (Type[ToolInputSchema] | None): Optional Pydantic model class defining input parameter requirements.
         """
         self.name = name
         self.description = description
-        self.config = config or {}
+        self.config: dict[str, Any] = {}
         self.config_schema = config_schema
         self.input_schema = input_schema
 
-        # Validate config if schema is provided
-        if self.config_schema is not None:
-            try:
-                self.config_schema(**self.config)
-            except Exception as e:
-                raise ValueError(f"Tool '{self.name}' config validation failed: {e}") from e
+    def update_config(self, config: dict[str, Any]) -> None:
+        """
+        Update the configuration and validate it against the config schema.
+
+        Parameters:
+            config: Configuration values to update
+
+        Raises:
+            ValueError: If config schema is not configured or if config validation fails
+        """
+        if self.config_schema is None:
+            raise ValueError(
+                f"Tool '{self.name}' does not have a config schema configured. "
+                "Please provide a config_schema when creating the Tool to enable configuration."
+            )
+
+        try:
+            self.config_schema(**config)
+        except Exception as e:
+            raise ValueError(f"Tool '{self.name}' config validation failed: {e}") from e
+
+        self.config = config
 
     @abstractmethod
     def execute(self, parameters: dict[str, Any]) -> str:
