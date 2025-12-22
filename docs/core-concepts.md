@@ -395,7 +395,7 @@ agent.tool_registry.unregister_toolset("weather_tools")
 
 ### ToolSet Configuration
 
-ToolSets support a `config` attribute - hidden configuration that is automatically injected into all tools in the toolset during execution. This configuration is not visible to the LLM but is merged with user-provided parameters when tools are called.
+ToolSets support configuration via a `config_schema` and the `update_config()` method. This configuration is automatically injected into all tools in the toolset during execution. The configuration is not visible to the LLM but is merged with user-provided parameters when tools are called.
 
 This is particularly useful for:
 - **API credentials**: Pass API keys without exposing them to the LLM
@@ -403,7 +403,13 @@ This is particularly useful for:
 - **Context**: Provide runtime context like user IDs, session data, etc.
 
 ```python
+from pydantic import Field
 from acton_agent import ToolSet, FunctionTool
+from acton_agent.tools import ConfigSchema
+
+# Define configuration schema
+class WeatherAPIConfig(ConfigSchema):
+    api_key: str = Field(..., description="API key for weather service")
 
 # Define tools that use an API key
 def get_weather(city: str, api_key: str) -> str:
@@ -416,7 +422,7 @@ def get_forecast(city: str, days: int, api_key: str) -> str:
     """Fetch forecast using the API key."""
     return f"{days}-day forecast for {city} (using API key)"
 
-# Create toolset with hidden configuration
+# Create toolset with config schema
 weather_toolset = ToolSet(
     name="weather_api",
     description="Weather data from external API",
@@ -449,8 +455,11 @@ weather_toolset = ToolSet(
             }
         )
     ],
-    config={"api_key": "secret-api-key-12345"}  # Hidden from LLM
+    config_schema=WeatherAPIConfig,
 )
+
+# Set configuration using update_config()
+weather_toolset.update_config({"api_key": "secret-api-key-12345"})
 
 agent.register_toolset(weather_toolset)
 
@@ -461,8 +470,8 @@ agent.register_toolset(weather_toolset)
 
 **How Configuration Merging Works:**
 1. The LLM calls a tool with visible parameters (e.g., `{"city": "Paris"}`)
-2. The ToolRegistry checks if the tool belongs to a ToolSet with `config`
-3. Configuration is merged with parameters: `config` values are added first, then LLM parameters override if there's a conflict
+2. The ToolRegistry checks if the tool belongs to a ToolSet with config
+3. Configuration is merged with parameters: config values are added first, then LLM parameters override if there's a conflict
 4. The merged parameters are passed to the tool's `execute()` method
 
 **Example with Override:**

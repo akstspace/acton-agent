@@ -69,15 +69,24 @@ class CustomToolWithConfig(Tool):
 
 
 def test_toolset_with_config():
-    """Test that ToolSet can be created with config."""
+    """Test that ToolSet config can be set via update_config()."""
+    from pydantic import Field
+
+    class TestConfig(ConfigSchema):
+        api_key: str = Field(..., description="API key")
+        endpoint: str = Field(..., description="API endpoint")
+
     tool = CustomToolWithConfig()
 
     toolset = ToolSet(
         name="test_toolset",
         description="A test toolset",
         tools=[tool],
-        config={"api_key": "secret123", "endpoint": "https://api.example.com"},
+        config_schema=TestConfig,
     )
+
+    # Set config using update_config
+    toolset.update_config({"api_key": "secret123", "endpoint": "https://api.example.com"})
 
     assert toolset.name == "test_toolset"
     assert toolset.config == {"api_key": "secret123", "endpoint": "https://api.example.com"}
@@ -99,6 +108,12 @@ def test_config_not_in_schema():
 
 def test_registry_tracks_config():
     """Test that registry can retrieve config for a tool."""
+    from pydantic import Field
+
+    class TestConfig(ConfigSchema):
+        api_key: str = Field(..., description="API key")
+        region: str = Field(..., description="Region")
+
     registry = ToolRegistry()
 
     tool = CustomToolWithConfig()
@@ -106,8 +121,11 @@ def test_registry_tracks_config():
         name="test_toolset",
         description="Test",
         tools=[tool],
-        config={"api_key": "secret", "region": "us-west"},
+        config_schema=TestConfig,
     )
+
+    # Set config using update_config
+    toolset.update_config({"api_key": "secret", "region": "us-west"})
 
     registry.register_toolset(toolset)
 
@@ -153,7 +171,7 @@ def test_function_tool_merges_config():
         func=my_function,
         config_schema=MyConfig,
     )
-    
+
     # Update config using the new API
     tool.update_config({"api_key": "secret123"})
 
@@ -188,7 +206,7 @@ def test_user_params_override_config():
         func=my_function,
         config_schema=MyConfig,
     )
-    
+
     # Update config using the new API
     tool.update_config({"param": "config_value"})
 
@@ -200,6 +218,12 @@ def test_user_params_override_config():
 
 def test_config_not_in_prompt():
     """Test that config is not exposed in the formatted prompt."""
+    from pydantic import Field
+
+    class TestConfig(ConfigSchema):
+        api_key: str = Field(..., description="API key")
+        endpoint: str = Field(..., description="Endpoint")
+
     registry = ToolRegistry()
 
     tool = CustomToolWithConfig()
@@ -207,8 +231,11 @@ def test_config_not_in_prompt():
         name="api_toolset",
         description="Tools for API access",
         tools=[tool],
-        config={"api_key": "secret_key", "endpoint": "https://secret.api.com"},
+        config_schema=TestConfig,
     )
+
+    # Set config using update_config
+    toolset.update_config({"api_key": "secret_key", "endpoint": "https://secret.api.com"})
 
     registry.register_toolset(toolset)
 
@@ -230,6 +257,11 @@ def test_config_not_in_prompt():
 
 def test_unregister_toolset_clears_config_mapping():
     """Test that unregistering a toolset clears the tool-to-toolset mapping."""
+    from pydantic import Field
+
+    class TestConfig(ConfigSchema):
+        key: str = Field(..., description="Key")
+
     registry = ToolRegistry()
 
     tool = CustomToolWithConfig()
@@ -237,8 +269,11 @@ def test_unregister_toolset_clears_config_mapping():
         name="test_toolset",
         description="Test",
         tools=[tool],
-        config={"key": "value"},
+        config_schema=TestConfig,
     )
+
+    # Set config using update_config
+    toolset.update_config({"key": "value"})
 
     registry.register_toolset(toolset)
     assert registry.get_toolset_config("custom_tool") == {"key": "value"}
@@ -254,6 +289,11 @@ def test_unregister_toolset_clears_config_mapping():
 
 def test_clear_registry_clears_config_mapping():
     """Test that clearing the registry also clears the config mapping."""
+    from pydantic import Field
+
+    class TestConfig(ConfigSchema):
+        key: str = Field(..., description="Key")
+
     registry = ToolRegistry()
 
     tool = CustomToolWithConfig()
@@ -261,8 +301,11 @@ def test_clear_registry_clears_config_mapping():
         name="test_toolset",
         description="Test",
         tools=[tool],
-        config={"key": "value"},
+        config_schema=TestConfig,
     )
+
+    # Set config using update_config
+    toolset.update_config({"key": "value"})
 
     registry.register_toolset(toolset)
     assert registry.get_toolset_config("custom_tool") == {"key": "value"}
@@ -315,7 +358,7 @@ def test_config_with_agent_execution(mock_llm_client):
         tools=[tool],
         config_schema=MyConfig,
     )
-    
+
     # Update config using the new API
     toolset.update_config({
         "api_key": "hidden_key_123",
@@ -383,6 +426,10 @@ def test_empty_config():
 
 def test_multiple_toolsets_different_config():
     """Test that different toolsets can have different config for similar tools."""
+    from pydantic import Field
+
+    class ApiConfig(ConfigSchema):
+        api_key: str = Field(..., description="API key")
 
     def api_function(user_input: str, api_key: str | None = None) -> str:
         """
@@ -413,15 +460,17 @@ def test_multiple_toolsets_different_config():
         name="prod_api",
         description="Production API",
         tools=[tool1],
-        config={"api_key": "prod_key_123"},
+        config_schema=ApiConfig,
     )
+    toolset1.update_config({"api_key": "prod_key_123"})
 
     toolset2 = ToolSet(
         name="dev_api",
         description="Development API",
         tools=[tool2],
-        config={"api_key": "dev_key_456"},
+        config_schema=ApiConfig,
     )
+    toolset2.update_config({"api_key": "dev_key_456"})
 
     registry = ToolRegistry()
     registry.register_toolset(toolset1)
@@ -449,7 +498,7 @@ def test_config_schema_validation():
         tools=[],
         config_schema=MyConfigSchema,
     )
-    
+
     # Update with valid config
     toolset.update_config({"api_key": "secret123", "timeout": 60})
     assert toolset.config == {"api_key": "secret123", "timeout": 60}
@@ -461,6 +510,6 @@ def test_config_schema_validation():
         tools=[],
         config_schema=MyConfigSchema,
     )
-    
+
     with pytest.raises(ValueError, match="config validation failed"):
         toolset2.update_config({"timeout": 60})  # missing required api_key
