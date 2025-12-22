@@ -91,6 +91,7 @@ class TestAgentInitialization:
         assert agent.llm_client == mock_llm_client
         assert agent.max_iterations == 10
         assert not agent.stream
+        assert not agent.verbose  # Default verbose is False
 
     def test_agent_with_custom_config(self, mock_llm_client):
         """Test creating agent with custom configuration."""
@@ -107,6 +108,16 @@ class TestAgentInitialization:
         assert agent.retry_config.max_attempts == 5
         assert agent.stream is True
         assert agent.custom_instructions == "Custom prompt"
+
+    def test_agent_with_verbose_false(self, mock_llm_client):
+        """Test creating agent with verbose=False (default)."""
+        agent = Agent(llm_client=mock_llm_client, verbose=False)
+        assert agent.verbose is False
+
+    def test_agent_with_verbose_true(self, mock_llm_client):
+        """Test creating agent with verbose=True."""
+        agent = Agent(llm_client=mock_llm_client, verbose=True)
+        assert agent.verbose is True
 
 
 class TestToolManagement:
