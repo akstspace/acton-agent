@@ -393,9 +393,9 @@ toolsets = agent.tool_registry.list_toolsets()
 agent.tool_registry.unregister_toolset("weather_tools")
 ```
 
-### ToolSet Parameters
+### ToolSet Configuration
 
-ToolSets support `config` - hidden parameters that are automatically injected into all tools in the toolset during execution. These parameters are not visible to the LLM but are merged with user-provided parameters when tools are called.
+ToolSets support a `config` attribute - hidden configuration that is automatically injected into all tools in the toolset during execution. This configuration is not visible to the LLM but is merged with user-provided parameters when tools are called.
 
 This is particularly useful for:
 - **API credentials**: Pass API keys without exposing them to the LLM
@@ -416,7 +416,7 @@ def get_forecast(city: str, days: int, api_key: str) -> str:
     """Fetch forecast using the API key."""
     return f"{days}-day forecast for {city} (using API key)"
 
-# Create toolset with hidden parameters
+# Create toolset with hidden configuration
 weather_toolset = ToolSet(
     name="weather_api",
     description="Weather data from external API",
@@ -459,10 +459,10 @@ agent.register_toolset(weather_toolset)
 # Tool receives: {"city": "Seattle", "api_key": "secret-api-key-12345"}
 ```
 
-**How Parameter Merging Works:**
+**How Configuration Merging Works:**
 1. The LLM calls a tool with visible parameters (e.g., `{"city": "Paris"}`)
 2. The ToolRegistry checks if the tool belongs to a ToolSet with `config`
-3. Parameters are merged: `config` are added first, then LLM parameters override if there's a conflict
+3. Configuration is merged with parameters: `config` values are added first, then LLM parameters override if there's a conflict
 4. The merged parameters are passed to the tool's `execute()` method
 
 **Example with Override:**
@@ -657,7 +657,8 @@ agent = Agent(llm_client=client, memory=None)
 Implement the `AgentMemory` protocol:
 
 ```python
-from acton_agent.agent import AgentMemory, Message
+from acton_agent import AgentMemory
+from acton_agent.agent import Message
 from typing import List
 
 class SummarizingMemory(AgentMemory):

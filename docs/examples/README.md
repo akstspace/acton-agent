@@ -18,7 +18,6 @@ This directory contains practical examples demonstrating various features and us
 
 ### Advanced Examples
 - [Custom Tool Class](#custom-tool-class) - Build custom tools
-- [OpenAPI Integration](#openapi-integration) - Auto-generate tools from specs
 - [Error Handling](#error-handling) - Robust error management
 - [Advanced Patterns](#advanced-patterns) - Comprehensive agent setup
 
@@ -95,35 +94,42 @@ print(result)
 
 ### API Integration
 
-Connect to REST APIs easily:
+Connect to REST APIs using FunctionTool:
 
 ```python
-from acton_agent import Agent
+from acton_agent import Agent, FunctionTool
 from acton_agent.client import OpenAIClient
-from acton_agent.tools import create_api_tool
+from urllib.request import Request, urlopen
+import json
 
-# Create API tools
-weather_tool = create_api_tool(
-    name="get_weather",
-    description="Get current weather for a city",
-    endpoint="https://api.weatherapi.com/v1/current.json?key=YOUR_KEY&q={city}",
-    method="GET"
-)
+def get_user_info(user_id: int) -> str:
+    """Fetch user information from JSONPlaceholder API."""
+    url = f"https://jsonplaceholder.typicode.com/users/{user_id}"
+    req = Request(url)
+    with urlopen(req) as response:
+        data = json.loads(response.read().decode())
+        return json.dumps(data)
 
-user_tool = create_api_tool(
+# Create tool
+user_tool = FunctionTool(
     name="get_user",
-    description="Fetch user information by ID",
-    endpoint="https://jsonplaceholder.typicode.com/users/{user_id}",
-    method="GET"
+    description="Fetch user information by ID from JSONPlaceholder",
+    func=get_user_info,
+    schema={
+        "type": "object",
+        "properties": {
+            "user_id": {"type": "integer", "description": "User ID"}
+        },
+        "required": ["user_id"]
+    }
 )
 
 # Set up agent
 client = OpenAIClient(model="gpt-4o")
 agent = Agent(llm_client=client)
-agent.register_tool(weather_tool)
 agent.register_tool(user_tool)
 
-# Use the tools
+# Use the tool
 response = agent.run("Get information about user 5")
 print(response)
 ```
@@ -275,7 +281,7 @@ print(f"Available toolsets: {toolsets}")  # ["weather_tools"]
 - Register/unregister multiple tools at once
 - Improve LLM understanding of tool relationships
 
-### ToolSet Parameters (Hidden Configuration)
+### ToolSet Configuration (Hidden Parameters)
 
 Pass hidden parameters to tools using `config`. This is perfect for API keys, credentials, or configuration that shouldn't be exposed to the LLM:
 
@@ -460,9 +466,10 @@ for event in agent.run_stream("Write a short poem about programming"):
 Build sophisticated custom tools:
 
 ```python
-from acton_agent.agent import Tool
+from acton_agent import Agent, Tool
+from acton_agent.client import OpenAIClient
 from typing import Dict, Any
-import json
+import os
 
 class FileSystemTool(Tool):
     """Tool for safe file system operations."""
@@ -548,35 +555,6 @@ agent = Agent(llm_client=client)
 agent.register_tool(FileSystemTool())
 
 response = agent.run("Write 'Hello World' to a file called test.txt")
-print(response)
-```
-
-### OpenAPI Integration
-
-Auto-generate tools from OpenAPI specs:
-
-```python
-from acton_agent import Agent
-from acton_agent.client import OpenAIClient
-from acton_agent.tools import create_tools_from_openapi
-
-# Generate tools from OpenAPI spec
-tools = create_tools_from_openapi(
-    spec="https://petstore3.swagger.io/api/v3/openapi.json",
-    tags=["pet"],  # Only include 'pet' operations
-    max_tools=10   # Limit number of tools
-)
-
-# Create agent and register all tools
-client = OpenAIClient(model="gpt-4o")
-agent = Agent(llm_client=client)
-
-for tool in tools:
-    agent.register_tool(tool)
-    print(f"Registered: {tool.name}")
-
-# Use auto-generated tools
-response = agent.run("Find available pets")
 print(response)
 ```
 

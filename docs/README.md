@@ -73,7 +73,7 @@ Welcome to the Acton Agent documentation! This guide will help you build AI agen
 
 **Working with APIs:**
 1. [Core Concepts - HTTP Requests](core-concepts.md#tools)
-2. [Examples - HTTP Requests](examples/README.md#http-requests)
+2. [Examples - API Integration](examples/README.md#api-integration)
 3. [API Reference - FunctionTool](api-reference.md#functiontool)
 
 **Custom tools:**

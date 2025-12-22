@@ -144,7 +144,7 @@ def register_tool(self, tool: Tool) -> None
 
 **Example:**
 ```python
-from acton_agent.agent import FunctionTool
+from acton_agent import FunctionTool
 
 tool = FunctionTool(name="calc", description="Calculator", func=calculate, schema={...})
 agent.register_tool(tool)
@@ -163,9 +163,8 @@ def register_toolset(self, toolset: ToolSet) -> None
 
 **Example:**
 ```python
-from acton_agent import Agent, ToolSet
+from acton_agent import Agent, ToolSet, FunctionTool
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import FunctionTool
 
 toolset = ToolSet(
     name="math_tools",
@@ -277,6 +276,22 @@ def set_system_prompt(self, prompt: str) -> None
 **Example:**
 ```python
 agent.set_system_prompt("You are now a Python expert")
+```
+
+##### set_final_answer_format
+
+Update the formatting instructions for final answers.
+
+```python
+def set_final_answer_format(self, format_instructions: str) -> None
+```
+
+**Parameters:**
+- `format_instructions` (str): New formatting instructions for final answers
+
+**Example:**
+```python
+agent.set_final_answer_format("Provide answers in bullet points with sources cited.")
 ```
 
 ##### set_timezone
@@ -577,7 +592,7 @@ class ToolRegistry:
     def unregister(self, tool_name: str) -> None
     def unregister_toolset(self, toolset_name: str) -> None
     def get(self, tool_name: str) -> Optional[Tool]
-    def get_config(self, tool_name: str) -> Optional[Dict[str, Any]]
+    def get_toolset_config(self, tool_name: str) -> Optional[Dict[str, Any]]
     def list_tools(self) -> List[Tool]
     def list_tool_names(self) -> List[str]
     def list_toolsets(self) -> List[str]
@@ -591,7 +606,7 @@ class ToolRegistry:
 - `register_toolset(toolset)`: Register a ToolSet and all its tools
 - `unregister(tool_name)`: Remove a tool by name
 - `unregister_toolset(toolset_name)`: Remove a toolset and all its tools
-- `get_config(tool_name)`: Get the toolset parameters for a specific tool (if it belongs to a toolset)
+- `get_toolset_config(tool_name)`: Get the toolset config for a specific tool (if it belongs to a toolset)
 - `list_toolsets()`: Get names of all registered toolsets
 
 **Example:**
@@ -611,8 +626,8 @@ toolset = ToolSet(
 )
 registry.register_toolset(toolset)
 
-# Get toolset params for a tool
-params = registry.get_config("query_tool")  # Returns toolset params if any
+# Get toolset config for a tool
+config = registry.get_toolset_config("query_tool")  # Returns toolset config if any
 
 # List toolsets
 toolsets = registry.list_toolsets()  # Returns: ["database_tools"]
@@ -840,7 +855,7 @@ class SimpleAgentMemory(AgentMemory):
 
 **Example:**
 ```python
-from acton_agent.agent import SimpleAgentMemory
+from acton_agent import SimpleAgentMemory
 
 memory = SimpleAgentMemory(max_history_tokens=10000)
 agent = Agent(llm_client=client, memory=memory)
