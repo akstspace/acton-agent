@@ -310,7 +310,7 @@ export PYTHONHTTPSVERIFY=0
 1. **Increase timeout in urllib:**
    ```python
    from urllib.request import urlopen
-   
+
    def get_data(url: str) -> str:
        with urlopen(url, timeout=120) as response:  # 2 minutes
            return response.read().decode()

@@ -6,8 +6,10 @@ import json
 from typing import Any
 
 import pytest
+from pydantic import Field
 
 from acton_agent.tools import FunctionTool, Tool
+from acton_agent.tools.models import ToolInputSchema
 
 
 class CustomProcessingTool(Tool):
@@ -34,7 +36,6 @@ class CustomProcessingTool(Tool):
             return json.dumps(simplified)
         except (json.JSONDecodeError, KeyError):
             return output
-
 
 
 class TestProcessOutputMethod:
@@ -103,7 +104,6 @@ class TestProcessOutputMethod:
         processed = tool.process_output(original)
 
         assert processed == original
-
 
     def test_custom_process_output_is_called(self):
         """Verify that custom process_output is invoked during execute."""
@@ -181,16 +181,12 @@ class TestProcessOutputMethod:
         assert upper_tool.process_output("Test") == "TEST"
         assert lower_tool.process_output("Test") == "test"
 
-
     def test_function_tool_inherits_default_process_output(self):
         """FunctionTool should also have default process_output behavior."""
 
         def test_func(param1: str) -> str:
             """Test function."""
             return f"Result: {param1}"
-
-        from acton_agent.tools.models import ToolInputSchema
-        from pydantic import Field
 
         class TestInputSchema(ToolInputSchema):
             """Input schema for test function."""
@@ -269,4 +265,3 @@ class TestProcessOutputMethod:
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
-

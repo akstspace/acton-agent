@@ -381,14 +381,12 @@ def test_multiple_toolsets_different_config():
         name="api_tool_1",
         description="API tool 1",
         func=api_function,
-        
     )
 
     tool2 = FunctionTool(
         name="api_tool_2",
         description="API tool 2",
         func=api_function,
-        
     )
 
     toolset1 = ToolSet(

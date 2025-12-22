@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from acton_agent.agent.exceptions import InvalidToolSchemaError, ToolNotFoundError
+from acton_agent.agent.exceptions import ToolNotFoundError
 from acton_agent.tools import FunctionTool, Tool, ToolRegistry
 
 
