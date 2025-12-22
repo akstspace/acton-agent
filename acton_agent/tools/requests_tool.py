@@ -3,18 +3,27 @@ Requests Tool for making HTTP API calls.
 
 This module provides a Tool implementation for making HTTP requests
 to APIs based on OpenAPI-like specifications.
+
+Note: This tool requires the 'requests' library which is not installed by default.
+Install it with: pip install requests
 """
 
 import json
 import re
 from typing import Any, Literal
 
-import requests
 from loguru import logger
 
 from ..agent.exceptions import ToolExecutionError
 from .base import Tool
 from .models import ConfigSchema, ToolInputSchema
+
+try:
+    import requests
+
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
 
 
 class RequestsTool(Tool):
@@ -64,6 +73,8 @@ class RequestsTool(Tool):
         """
         Configure a RequestsTool for making HTTP API calls to a templated endpoint.
 
+        Note: This tool requires the 'requests' library. Install it with: pip install requests
+
         Parameters:
             name: Unique tool identifier.
             description: Human-readable description of the API.
@@ -80,7 +91,16 @@ class RequestsTool(Tool):
             input_schema: Optional Pydantic model class defining all input parameters.
             config: Configuration values for the tool.
             config_schema: Optional Pydantic model class defining configuration requirements.
+
+        Raises:
+            ImportError: If requests library is not installed.
         """
+        if not REQUESTS_AVAILABLE:
+            raise ImportError(
+                "RequestsTool requires the 'requests' library. "
+                "Install it with: pip install requests"
+            )
+
         super().__init__(
             name=name,
             description=description,
