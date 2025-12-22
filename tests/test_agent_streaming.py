@@ -25,17 +25,17 @@ class SimpleCalculatorTool(Tool):
         """
         super().__init__(name="calculator", description="Perform basic arithmetic operations")
 
-    def execute(self, parameters: dict, toolset_params: dict | None = None) -> str:
+    def execute(self, parameters: dict, config: dict | None = None) -> str:
         """
         Perform a basic arithmetic operation using values from `parameters`.
-        
+
         Parameters:
             parameters (dict): Input values for the operation. Expected keys:
                 - "a" (number): first operand (default 0).
                 - "b" (number): second operand (default 0).
                 - "operation" (str): one of "add", "subtract", "multiply", "divide" (default "add").
-            toolset_params (dict | None): Optional additional context; not used by this tool.
-        
+            config (dict | None): Optional additional context; not used by this tool.
+
         Returns:
             str: The numeric result converted to a string, or an error message:
                  "Error: Division by zero" or "Error: Unknown operation {operation}".

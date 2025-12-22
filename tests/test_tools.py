@@ -19,14 +19,14 @@ class SimpleTool(Tool):
         """
         super().__init__(name="simple", description="A simple test tool")
 
-    def execute(self, parameters: dict, toolset_params: dict | None = None) -> str:
+    def execute(self, parameters: dict, config: dict | None = None) -> str:
         """
         Format and return a result string using the "value" entry from parameters.
-        
+
         Parameters:
             parameters (dict): Mapping that may contain the key "value"; when absent, "default" is used.
-            toolset_params (dict | None): Optional toolset-level parameters; ignored by this tool.
-        
+            config (dict | None): Optional toolset-level parameters; ignored by this tool.
+
         Returns:
             str: The string "Result: {value}" where {value} is the resolved parameter.
         """

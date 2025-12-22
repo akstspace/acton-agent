@@ -3,7 +3,11 @@ Abstract base class for tools in the AI Agent Framework.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+
+if TYPE_CHECKING:
+    from .models import ConfigSchema, ToolInputSchema
 
 
 class Tool(ABC):
@@ -12,28 +16,52 @@ class Tool(ABC):
 
     All tools must inherit from this class and implement the execute
     and get_schema methods.
+
+    Tools now support configuration through config and config_schema,
+    and input validation through input_schema.
     """
 
-    def __init__(self, name: str, description: str):
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        config: dict[str, Any] | None = None,
+        config_schema: type["ConfigSchema"] | None = None,
+        input_schema: type["ToolInputSchema"] | None = None,
+    ):
         """
-        Initialize the Tool with a unique name and a human-readable description.
+        Initialize the Tool with a unique name, description, and optional configuration.
 
         Parameters:
             name (str): Unique identifier for the tool used for registration and lookup.
             description (str): Short human-readable description for prompts, listings, and documentation.
+            config (dict[str, Any] | None): Configuration values for the tool (e.g., API keys, credentials).
+            config_schema (Type[ConfigSchema] | None): Optional Pydantic model class defining configuration requirements.
+            input_schema (Type[ToolInputSchema] | None): Optional Pydantic model class defining input parameter requirements.
         """
         self.name = name
         self.description = description
+        self.config = config or {}
+        self.config_schema = config_schema
+        self.input_schema = input_schema
+
+        # Validate config if schema is provided
+        if self.config_schema is not None:
+            try:
+                self.config_schema(**self.config)
+            except Exception as e:
+                raise ValueError(f"Tool '{self.name}' config validation failed: {e}") from e
 
     @abstractmethod
-    def execute(self, parameters: dict[str, Any], toolset_params: dict[str, Any] | None = None) -> str:
+    def execute(self, parameters: dict[str, Any]) -> str:
         """
         Execute the tool using the provided parameters.
-        
+
+        The tool can access its configuration via self.config.
+
         Parameters:
             parameters (dict[str, Any]): Mapping of parameter names to values used for execution.
-            toolset_params (dict[str, Any] | None): Optional hidden parameters injected by the ToolSet; not exposed to the LLM but available to the implementation.
-        
+
         Returns:
             str: The textual output produced by the tool.
         """
@@ -42,7 +70,11 @@ class Tool(ABC):
     def get_schema(self) -> dict[str, Any]:
         """
         Provide a JSON Schema describing the tool's parameters.
-        
+
+        If input_schema (Pydantic model) is provided, this method should return
+        the JSON schema generated from that model. Otherwise, return a dict-based
+        JSON Schema.
+
         Returns:
             dict[str, Any]: A dictionary representing a JSON Schema that describes expected parameter names, types, constraints, and validation rules.
         """

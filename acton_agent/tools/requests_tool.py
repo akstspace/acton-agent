@@ -14,6 +14,7 @@ from loguru import logger
 
 from ..agent.exceptions import ToolExecutionError
 from .base import Tool
+from .models import ConfigSchema, ToolInputSchema
 
 
 class RequestsTool(Tool):
@@ -56,6 +57,9 @@ class RequestsTool(Tool):
         header_params_schema: dict[str, Any] | None = None,
         timeout: int = 30,
         auth: tuple | None = None,
+        input_schema: type[ToolInputSchema] | None = None,
+        config: dict[str, Any] | None = None,
+        config_schema: type[ConfigSchema] | None = None,
     ):
         """
         Configure a RequestsTool for making HTTP API calls to a templated endpoint.
@@ -66,18 +70,29 @@ class RequestsTool(Tool):
             method: HTTP method to use (GET, POST, PUT, DELETE, PATCH).
             url_template: URL template that may include `{param}` placeholders for route/path parameters.
             headers: Default headers to include with every request.
-            query_params_schema: JSON Schema describing supported query parameters.
-            body_schema: JSON Schema describing the request body structure for methods that send a body.
+            query_params_schema: (Deprecated) JSON Schema describing supported query parameters. Use input_schema instead.
+            body_schema: (Deprecated) JSON Schema describing the request body structure. Use input_schema instead.
             path_params: List of path parameter names. If None, automatically extracted from url_template.
-            path_params_schema: JSON Schema describing path parameters (name -> schema mapping).
-            header_params_schema: JSON Schema describing header parameters (name -> schema mapping).
+            path_params_schema: (Deprecated) JSON Schema describing path parameters. Use input_schema instead.
+            header_params_schema: (Deprecated) JSON Schema describing header parameters. Use input_schema instead.
             timeout: Request timeout in seconds.
             auth: Optional (username, password) tuple for basic authentication.
+            input_schema: Optional Pydantic model class defining all input parameters.
+            config: Configuration values for the tool.
+            config_schema: Optional Pydantic model class defining configuration requirements.
         """
-        super().__init__(name, description)
+        super().__init__(
+            name=name,
+            description=description,
+            config=config,
+            config_schema=config_schema,
+            input_schema=input_schema,
+        )
         self.method = method.upper()
         self.url_template = url_template
         self.headers = headers or {}
+
+        # Support both old dict-based schemas and new Pydantic input_schema
         self.query_params_schema = query_params_schema or {}
         self.body_schema = body_schema or {}
         self.path_params_schema = path_params_schema or {}
@@ -93,14 +108,14 @@ class RequestsTool(Tool):
         self.timeout = timeout
         self.auth = auth
 
-    def execute(self, parameters: dict[str, Any], toolset_params: dict[str, Any] | None = None) -> str:
+    def execute(self, parameters: dict[str, Any], config: dict[str, Any] | None = None) -> str:
         """
         Execute the configured HTTP request using the provided parameters and return the response body.
 
         Parameters:
-            parameters (Dict[str, Any]): Mapping of parameter names to values. Values matching configured route/path parameters are substituted into the URL template; values matching the query parameters schema are sent as query string parameters; values matching header parameters schema are sent as headers; values matching the body schema's properties are sent as a JSON body for POST/PUT/PATCH requests.
-            toolset_params (Optional[Dict[str, Any]]): Hidden parameters from the ToolSet that are automatically
-                injected during execution and merged with the user-provided parameters.
+            parameters (dict[str, Any]): Mapping of parameter names to values. Values matching configured route/path parameters are substituted into the URL template; values matching the query parameters schema are sent as query string parameters; values matching header parameters schema are sent as headers; values matching the body schema's properties are sent as a JSON body for POST/PUT/PATCH requests.
+            config (dict[str, Any] | None): Configuration values from the ToolSet that are automatically
+                injected during execution and merged with the tool's config.
 
         Returns:
             str: Pretty-printed JSON string if the response is JSON, otherwise the raw response text.
@@ -109,10 +124,22 @@ class RequestsTool(Tool):
             ToolExecutionError: If the HTTP request fails or an unexpected error occurs while executing the request.
         """
         try:
-            # Merge toolset_params with parameters, with parameters taking precedence
+            # Merge and validate config
+            merged_config = self.validate_and_merge_config(config)
+
+            # Validate input parameters if input_schema is provided
+            if self.input_schema is not None:
+                try:
+                    validated_params = self.input_schema(**parameters)
+                    # Convert Pydantic model back to dict
+                    parameters = validated_params.model_dump()
+                except Exception as e:
+                    logger.error(f"Input validation failed for tool {self.name}: {e}")
+                    raise ValueError(f"Input validation failed: {e}") from e
+
+            # Merge config with parameters, with parameters taking precedence
             merged_params = {}
-            if toolset_params:
-                merged_params.update(toolset_params)
+            merged_params.update(merged_config)
             merged_params.update(parameters)
 
             # Build the URL with route/path parameters
@@ -185,11 +212,17 @@ class RequestsTool(Tool):
         """
         Builds a combined JSON Schema describing the tool's route/path, query, header, and body parameters.
 
-        Route parameters are added as string properties and marked required. If a query or header parameter schema includes `"required": True`, that name is added to the top-level required list and the flag is removed from the individual schema. Body schema properties and any body-level required list are merged into the resulting properties and required list.
+        If input_schema (Pydantic model) is provided, returns the JSON schema generated from that model.
+        Otherwise, builds schema from dict-based schemas (deprecated approach).
 
         Returns:
             dict: JSON Schema object with "type": "object", "properties" mapping parameter names to their schemas, and a "required" list of parameter names (empty list if none).
         """
+        # If input_schema is provided, use it
+        if self.input_schema is not None:
+            return self.input_schema.model_json_schema()
+
+        # Otherwise, use legacy dict-based schema building
         properties = {}
         required = []
 

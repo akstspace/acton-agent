@@ -11,10 +11,10 @@ from acton_agent.tools import ToolRegistry
 def sample_function_1(param1: str) -> str:
     """
     Constructs a message that embeds the given text.
-    
+
     Parameters:
         param1 (str): Text to embed in the returned message.
-    
+
     Returns:
         str: Message containing the provided `param1`.
     """

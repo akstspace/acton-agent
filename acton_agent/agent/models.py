@@ -53,7 +53,7 @@ class AgentStep(BaseModel):
     def has_tool_calls(self) -> bool:
         """
         Check whether the agent step contains one or more tool calls.
-        
+
         Returns:
             `true` if the step contains one or more tool calls, `false` otherwise.
         """

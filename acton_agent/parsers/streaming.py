@@ -128,10 +128,10 @@ class StreamingTokenParser:
     def _detect_event_type_from_partial(self, data: dict[str, Any]) -> EventType:
         """
         Detects the agent event type from a partially parsed JSON payload.
-        
+
         Parameters:
             data (dict): Partially parsed JSON object whose top-level keys are inspected for indicative fields.
-        
+
         Returns:
             EventType: "plan" if `data` contains the key "plan", "step" if it contains "tool_calls" or "tool_thought", "final_response" if it contains "final_answer", and "unknown" otherwise.
         """
@@ -147,9 +147,9 @@ class StreamingTokenParser:
     def try_parse_partial(self, step_id: str) -> StreamingEvent | None:
         """
         Try to parse the buffered tokens for a step into a structured streaming event.
-        
+
         Attempts to extract JSON (including from markdown code fences) from the step's buffer and, when sufficient fields are present, constructs and returns an AgentPlanEvent, AgentStepEvent, or AgentFinalResponseEvent with complete=False. Returns `None` when the buffer is empty, contains incomplete or unsupported data, or cannot yet be converted into a structured event.
-        
+
         Returns:
             StreamingEvent | None: A `StreamingEvent` instance when a recognizable event is produced, `None` otherwise.
         """

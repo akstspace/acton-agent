@@ -45,14 +45,14 @@ class OpenAIClient:
     ):
         """
         Initialize the OpenAIClient with API credentials and connection settings.
-        
+
         Parameters:
             api_key (str | None): OpenAI API key; if None, the OPENAI_API_KEY environment variable is used.
             model (str): Model identifier to use for requests (e.g., "gpt-4o", "gpt-3.5-turbo").
             base_url (str): Base URL for the OpenAI-compatible API.
             organization (str | None): Optional organization ID to include with requests.
             default_headers (dict | None): Optional default HTTP headers to include on all requests.
-        
+
         Raises:
             ValueError: If no API key is provided via the `api_key` parameter or the OPENAI_API_KEY environment variable.
         """

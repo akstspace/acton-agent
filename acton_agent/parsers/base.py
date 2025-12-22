@@ -62,10 +62,7 @@ class ResponseParser:
             if "tool_calls" in data and len(data.get("tool_calls", [])) > 0:
                 # This is an AgentStep
                 # Convert tool_calls dicts to ToolCall objects
-                tool_calls = [
-                    ToolCall(**tc) if isinstance(tc, dict) else tc
-                    for tc in data.get("tool_calls", [])
-                ]
+                tool_calls = [ToolCall(**tc) if isinstance(tc, dict) else tc for tc in data.get("tool_calls", [])]
                 data["tool_calls"] = tool_calls
                 response = AgentStep(**data)
                 logger.debug("Parsed as AgentStep")
@@ -131,15 +128,15 @@ class ResponseParser:
     ) -> bool:
         """
         Validate that a parsed agent response contains the required fields for its concrete type.
-        
+
         Checks:
         - AgentPlan: requires a non-empty `plan`.
         - AgentStep: requires `tool_calls` and each tool call must have `id` and `tool_name`.
         - AgentFinalResponse: requires a non-empty `final_answer`.
-        
+
         Parameters:
             response (AgentPlan | AgentStep | AgentFinalResponse): The parsed response object to validate.
-        
+
         Returns:
             bool: `true` if the response meets the validation rules for its type, `false` otherwise.
         """
@@ -173,9 +170,9 @@ class ResponseParser:
     ) -> str | None:
         """
         Extract the reasoning/thought text from a parsed agent response.
-        
+
         For an AgentStep, returns its `tool_thought`; for other response types, returns the `thought` attribute if present. AgentPlan responses do not have thought content and will result in `None`.
-        
+
         Returns:
             The thought text when available, `None` otherwise.
         """

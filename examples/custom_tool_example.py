@@ -30,11 +30,11 @@ class WeatherTool(Tool):
     def execute(self, parameters: dict, toolset_params: dict = None) -> str:
         """
         Produce a human-readable weather summary for the specified city.
-        
+
         Parameters:
             parameters (dict): Input parameters; may include the key "city" with the city name (defaults to "Unknown").
             toolset_params (dict): Optional toolset parameters; not used by this implementation.
-        
+
         Returns:
             str: A sentence describing simulated current weather for the specified city, including condition and temperature in °F (e.g., "The weather in Seattle is rainy with a temperature of 62°F").
         """
@@ -154,11 +154,11 @@ class TextAnalyzerTool(Tool):
     def execute(self, parameters: dict, toolset_params: dict = None) -> str:
         """
         Analyze text and produce a formatted summary of character, word, sentence, and line counts, the longest word, and average word length.
-        
+
         Parameters:
             parameters (dict): Dictionary expected to contain the key "text" with the string to analyze.
             toolset_params (dict): Optional toolset parameters (unused).
-        
+
         Returns:
             str: A formatted report beginning with "Text Analysis:" that lists characters, words, sentences, lines, longest word (with length), and average word length; if "text" is empty or missing, returns "Error: No text provided".
         """

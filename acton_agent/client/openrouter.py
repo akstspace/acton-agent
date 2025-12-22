@@ -47,14 +47,14 @@ class OpenRouterClient(OpenAIClient):
     ):
         """
         Create an OpenRouter client configured with an API key, model, and optional site headers used for OpenRouter ranking.
-        
+
         Parameters:
             api_key: OpenRouter API key; if omitted the OPENROUTER_API_KEY environment variable will be used.
             model: Model identifier to use (e.g., "openai/gpt-4o" or "anthropic/claude-3-opus").
             site_url: Optional URL sent as the "HTTP-Referer" header to influence OpenRouter ranking.
             site_name: Optional site name sent as the "X-Title" header to influence OpenRouter ranking.
             base_url: OpenRouter API base URL.
-        
+
         Raises:
             ValueError: If no API key is provided via the api_key parameter or the OPENROUTER_API_KEY environment variable.
         """
