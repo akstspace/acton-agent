@@ -294,8 +294,6 @@ tool = FunctionTool(
 
 For more examples, see the [HTTP Request Example](https://github.com/akstspace/acton-agent/tree/main/examples/http_request_example.py).
 
-**Note:** `RequestsTool` is also available but requires installing the optional `requests` library (`pip install requests`).
-
 #### 3. Custom Tool Classes
 
 Inherit from the `Tool` base class:
