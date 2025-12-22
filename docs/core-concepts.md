@@ -261,23 +261,40 @@ tool = FunctionTool(
 )
 ```
 
-#### 2. RequestsTool
+#### 2. HTTP Requests with FunctionTool
 
-Makes HTTP API calls:
+Make HTTP API calls using FunctionTool with Python's standard library:
 
 ```python
-from acton_agent.tools import RequestsTool
+from acton_agent import FunctionTool
+from urllib.request import Request, urlopen
+import json
 
-tool = RequestsTool(
+def get_user(user_id: int) -> str:
+    """Fetch user information by ID."""
+    url = f"https://api.example.com/users/{user_id}"
+    req = Request(url)
+    with urlopen(req) as response:
+        data = json.loads(response.read().decode())
+        return json.dumps(data)
+
+tool = FunctionTool(
     name="get_user",
     description="Fetch user information by ID",
-    method="GET",
-    url_template="https://api.example.com/users/{user_id}",
-    path_params_schema={
-        "user_id": {"type": "integer", "description": "User ID"}
+    func=get_user,
+    schema={
+        "type": "object",
+        "properties": {
+            "user_id": {"type": "integer", "description": "User ID"}
+        },
+        "required": ["user_id"]
     }
 )
 ```
+
+For more examples, see the [HTTP Request Example](https://github.com/akstspace/acton-agent/tree/main/examples/http_request_example.py).
+
+**Note:** `RequestsTool` is also available but requires installing the optional `requests` library (`pip install requests`).
 
 #### 3. Custom Tool Classes
 
@@ -382,7 +399,7 @@ agent.tool_registry.unregister_toolset("weather_tools")
 
 ### ToolSet Parameters
 
-ToolSets support `toolset_params` - hidden parameters that are automatically injected into all tools in the toolset during execution. These parameters are not visible to the LLM but are merged with user-provided parameters when tools are called.
+ToolSets support `config` - hidden parameters that are automatically injected into all tools in the toolset during execution. These parameters are not visible to the LLM but are merged with user-provided parameters when tools are called.
 
 This is particularly useful for:
 - **API credentials**: Pass API keys without exposing them to the LLM
@@ -395,7 +412,7 @@ from acton_agent import ToolSet, FunctionTool
 # Define tools that use an API key
 def get_weather(city: str, api_key: str) -> str:
     """Fetch weather using the API key."""
-    # api_key will be automatically injected from toolset_params
+    # api_key will be automatically injected from config
     # The LLM only needs to provide the 'city' parameter
     return f"Weather in {city}: Sunny (fetched with key: {api_key[:8]}...)"
 
@@ -436,7 +453,7 @@ weather_toolset = ToolSet(
             }
         )
     ],
-    toolset_params={"api_key": "secret-api-key-12345"}  # Hidden from LLM
+    config={"api_key": "secret-api-key-12345"}  # Hidden from LLM
 )
 
 agent.register_toolset(weather_toolset)
@@ -448,13 +465,13 @@ agent.register_toolset(weather_toolset)
 
 **How Parameter Merging Works:**
 1. The LLM calls a tool with visible parameters (e.g., `{"city": "Paris"}`)
-2. The ToolRegistry checks if the tool belongs to a ToolSet with `toolset_params`
-3. Parameters are merged: `toolset_params` are added first, then LLM parameters override if there's a conflict
+2. The ToolRegistry checks if the tool belongs to a ToolSet with `config`
+3. Parameters are merged: `config` are added first, then LLM parameters override if there's a conflict
 4. The merged parameters are passed to the tool's `execute()` method
 
 **Example with Override:**
 ```python
-# If toolset_params has: {"api_key": "default-key", "timeout": 30}
+# If config has: {"api_key": "default-key", "timeout": 30}
 # And LLM provides: {"city": "Paris", "timeout": 60}
 # Tool receives: {"api_key": "default-key", "timeout": 60, "city": "Paris"}
 # Note: LLM's timeout (60) overrides the toolset's timeout (30)

@@ -412,7 +412,7 @@ class Tool(ABC):
     def __init__(self, name: str, description: str)
 
     @abstractmethod
-    def execute(self, parameters: Dict[str, Any], toolset_params: Dict[str, Any] | None = None) -> str:
+    def execute(self, parameters: Dict[str, Any], config: Dict[str, Any] | None = None) -> str:
         pass
 
     @abstractmethod
@@ -431,9 +431,9 @@ class Tool(ABC):
 - `description` (str): Human-readable description
 
 **Methods:**
-- `execute(parameters, toolset_params=None)`: Execute the tool with provided parameters
+- `execute(parameters, config=None)`: Execute the tool with provided parameters
   - `parameters` (Dict[str, Any]): User/LLM-provided parameters
-  - `toolset_params` (Optional[Dict[str, Any]]): Hidden parameters from ToolSet, automatically injected
+  - `config` (Optional[Dict[str, Any]]): Hidden parameters from ToolSet, automatically injected
 - `get_schema()`: Return JSON Schema for tool parameters
 - `process_output(output)`: Post-process tool output (optional override)
 - `agent_md(template, tool_output)`: Render output into markdown template (optional override)
@@ -447,10 +447,10 @@ class MyTool(Tool):
     def __init__(self):
         super().__init__(name="my_tool", description="Does something useful")
 
-    def execute(self, parameters: Dict[str, Any], toolset_params: Dict[str, Any] | None = None) -> str:
-        # toolset_params are automatically injected if tool belongs to a ToolSet
+    def execute(self, parameters: Dict[str, Any], config: Dict[str, Any] | None = None) -> str:
+        # config are automatically injected if tool belongs to a ToolSet
         value = parameters.get("value")
-        config = toolset_params.get("config") if toolset_params else "default"
+        config = config.get("config") if config else "default"
         return f"Processed {value} with config {config}"
 
     def get_schema(self) -> Dict[str, Any]:
@@ -460,7 +460,7 @@ class MyTool(Tool):
                 "value": {"type": "string", "description": "Value to process"}
             },
             "required": ["value"]
-            # Note: toolset_params are NOT included in schema
+            # Note: config are NOT included in schema
         }
 ```
 
@@ -515,7 +515,7 @@ tool = FunctionTool(
 from acton_agent import FunctionTool, ToolSet
 
 def send_email(to: str, subject: str, api_key: str) -> str:
-    # api_key is auto-injected from toolset_params
+    # api_key is auto-injected from config
     return f"Email sent to {to} (authenticated)"
 
 email_tool = FunctionTool(
@@ -538,13 +538,15 @@ toolset = ToolSet(
     name="email",
     description="Email tools",
     tools=[email_tool],
-    toolset_params={"api_key": "secret-key-123"}
+    config={"api_key": "secret-key-123"}
 )
 ```
 
 ### RequestsTool
 
-Tool for making HTTP API requests.
+**Note: RequestsTool requires the optional `requests` library. Install it with: `pip install requests`**
+
+Tool for making HTTP API requests. For most use cases, consider using `FunctionTool` with standard library's `urllib` instead (see [HTTP Requests Example](https://github.com/akstspace/acton-agent/tree/main/examples/http_request_example.py)).
 
 ```python
 class RequestsTool(Tool):
@@ -562,6 +564,9 @@ class RequestsTool(Tool):
         header_params_schema: Optional[Dict[str, Any]] = None,
         timeout: int = 30,
         auth: Optional[tuple] = None,
+        input_schema: Optional[Type[ToolInputSchema]] = None,
+        config: Optional[Dict[str, Any]] = None,
+        config_schema: Optional[Type[ConfigSchema]] = None,
     )
 ```
 
@@ -571,13 +576,16 @@ class RequestsTool(Tool):
 - `method` (str): HTTP method. Default: "GET"
 - `url_template` (str): URL template with {param} placeholders
 - `headers` (Optional[Dict[str, str]]): Default headers
-- `query_params_schema` (Optional[Dict[str, Any]]): Query parameter schema
-- `body_schema` (Optional[Dict[str, Any]]): Request body schema
+- `query_params_schema` (Optional[Dict[str, Any]]): Query parameter schema (deprecated, use input_schema)
+- `body_schema` (Optional[Dict[str, Any]]): Request body schema (deprecated, use input_schema)
 - `path_params` (Optional[List[str]]): Path parameters (auto-extracted if None)
-- `path_params_schema` (Optional[Dict[str, Any]]): Path parameter schema
-- `header_params_schema` (Optional[Dict[str, Any]]): Header parameter schema
+- `path_params_schema` (Optional[Dict[str, Any]]): Path parameter schema (deprecated, use input_schema)
+- `header_params_schema` (Optional[Dict[str, Any]]): Header parameter schema (deprecated, use input_schema)
 - `timeout` (int): Request timeout in seconds. Default: 30
 - `auth` (Optional[tuple]): (username, password) for basic auth
+- `input_schema` (Optional[Type[ToolInputSchema]]): Pydantic model for input validation
+- `config` (Optional[Dict[str, Any]]): Tool configuration
+- `config_schema` (Optional[Type[ConfigSchema]]): Pydantic model for config validation
 
 **Example:**
 ```python
@@ -664,7 +672,7 @@ class ToolRegistry:
     def unregister(self, tool_name: str) -> None
     def unregister_toolset(self, toolset_name: str) -> None
     def get(self, tool_name: str) -> Optional[Tool]
-    def get_toolset_params(self, tool_name: str) -> Optional[Dict[str, Any]]
+    def get_config(self, tool_name: str) -> Optional[Dict[str, Any]]
     def list_tools(self) -> List[Tool]
     def list_tool_names(self) -> List[str]
     def list_toolsets(self) -> List[str]
@@ -678,7 +686,7 @@ class ToolRegistry:
 - `register_toolset(toolset)`: Register a ToolSet and all its tools
 - `unregister(tool_name)`: Remove a tool by name
 - `unregister_toolset(toolset_name)`: Remove a toolset and all its tools
-- `get_toolset_params(tool_name)`: Get the toolset parameters for a specific tool (if it belongs to a toolset)
+- `get_config(tool_name)`: Get the toolset parameters for a specific tool (if it belongs to a toolset)
 - `list_toolsets()`: Get names of all registered toolsets
 
 **Example:**
@@ -699,7 +707,7 @@ toolset = ToolSet(
 registry.register_toolset(toolset)
 
 # Get toolset params for a tool
-params = registry.get_toolset_params("query_tool")  # Returns toolset params if any
+params = registry.get_config("query_tool")  # Returns toolset params if any
 
 # List toolsets
 toolsets = registry.list_toolsets()  # Returns: ["database_tools"]
@@ -786,14 +794,14 @@ class ToolSet(BaseModel):
     name: str
     description: str
     tools: List[Tool] = []
-    toolset_params: Dict[str, Any] = {}
+    config: Dict[str, Any] = {}
 ```
 
 **Attributes:**
 - `name` (str): Unique name for the toolset
 - `description` (str): General description of what this group of tools can do
 - `tools` (List[Tool]): List of Tool instances in this toolset
-- `toolset_params` (Dict[str, Any]): Hidden parameters automatically passed to all tools during execution (not visible to LLM)
+- `config` (Dict[str, Any]): Hidden parameters automatically passed to all tools during execution (not visible to LLM)
 
 **Example:**
 ```python
@@ -811,7 +819,7 @@ toolset = ToolSet(
 
 # ToolSet with hidden parameters (e.g., API key)
 def fetch_weather(city: str, api_key: str) -> str:
-    # api_key is auto-injected from toolset_params
+    # api_key is auto-injected from config
     return f"Weather in {city}: 72°F (authenticated)"
 
 api_toolset = ToolSet(
@@ -830,13 +838,13 @@ api_toolset = ToolSet(
             }
         )
     ],
-    toolset_params={"api_key": "sk-secret-key-123"}  # Hidden from LLM
+    config={"api_key": "sk-secret-key-123"}  # Hidden from LLM
 )
 ```
 
 **Key Points:**
-- `toolset_params` are merged with LLM-provided parameters during tool execution
-- LLM parameters override toolset_params if there's a conflict
+- `config` are merged with LLM-provided parameters during tool execution
+- LLM parameters override config if there's a conflict
 - Perfect for API keys, database connections, session tokens, etc.
 - Keeps sensitive data out of prompts and LLM interactions
 

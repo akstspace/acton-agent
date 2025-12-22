@@ -277,7 +277,7 @@ print(f"Available toolsets: {toolsets}")  # ["weather_tools"]
 
 ### ToolSet Parameters (Hidden Configuration)
 
-Pass hidden parameters to tools using `toolset_params`. This is perfect for API keys, credentials, or configuration that shouldn't be exposed to the LLM:
+Pass hidden parameters to tools using `config`. This is perfect for API keys, credentials, or configuration that shouldn't be exposed to the LLM:
 
 ```python
 from acton_agent import Agent, ToolSet, FunctionTool
@@ -286,7 +286,7 @@ from acton_agent.client import OpenAIClient
 # Tools that need an API key
 def fetch_weather(city: str, api_key: str, units: str = "metric") -> str:
     """Fetch real weather data from API."""
-    # api_key will be auto-injected from toolset_params
+    # api_key will be auto-injected from config
     return f"Weather in {city}: 22°C (fetched with key: {api_key[:8]}...)"
 
 def fetch_forecast(city: str, days: int, api_key: str) -> str:
@@ -332,7 +332,7 @@ weather_api_toolset = ToolSet(
             }
         )
     ],
-    toolset_params={
+    config={
         "api_key": "sk-weather-api-key-12345678"  # Hidden from LLM
     }
 )
@@ -349,8 +349,8 @@ print(response)
 ```
 
 **Key Points:**
-- `toolset_params` are merged with LLM-provided parameters
-- LLM parameters override toolset_params if there's a conflict
+- `config` are merged with LLM-provided parameters
+- LLM parameters override config if there's a conflict
 - Perfect for API keys, database connections, user context, etc.
 - Keeps sensitive data out of prompts and LLM interactions
 

@@ -25,7 +25,7 @@ Welcome to the Acton Agent documentation! This guide will help you build AI agen
 **[API Reference](api-reference.md)** - Complete API documentation
 - Agent class
 - LLM clients (OpenAI, OpenRouter)
-- Tools (FunctionTool, RequestsTool, custom tools)
+- Tools (FunctionTool, custom tools)
 - Models and data structures
 - Memory management
 - Exceptions
@@ -72,9 +72,9 @@ Welcome to the Acton Agent documentation! This guide will help you build AI agen
 3. [Examples - Function Tools](examples/README.md#function-tools)
 
 **Working with APIs:**
-1. [Core Concepts - RequestsTool](core-concepts.md#tools)
-2. [API Reference - RequestsTool](api-reference.md#requeststool)
-3. [Examples - API Integration](examples/README.md#api-integration)
+1. [Core Concepts - HTTP Requests](core-concepts.md#tools)
+2. [Examples - HTTP Requests](examples/README.md#http-requests)
+3. [API Reference - FunctionTool](api-reference.md#functiontool)
 
 **Custom tools:**
 1. [Core Concepts - Custom Tool Classes](core-concepts.md#tools)
