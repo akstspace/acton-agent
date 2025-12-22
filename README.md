@@ -154,23 +154,22 @@ agent = Agent(llm_client=client, verbose=True)
 
 ## Documentation
 
-- **[Getting Started](https://github.com/akstspace/acton-agent/tree/main/docs/getting-started.md)** - Installation and first steps
-- **[Core Concepts](https://github.com/akstspace/acton-agent/tree/main/docs/core-concepts.md)** - Understanding agents, tools, and memory
-- **[API Reference](https://github.com/akstspace/acton-agent/tree/main/docs/api-reference.md)** - Complete API documentation
-- **[Examples](https://github.com/akstspace/acton-agent/tree/main/docs/examples/)** - Practical examples from basic to advanced
+- **[Getting Started](https://github.com/akstspace/acton-agent/blob/main/docs/getting-started.md)** - Installation and first steps
+- **[Core Concepts](https://github.com/akstspace/acton-agent/blob/main/docs/core-concepts.md)** - Understanding agents, tools, and memory
+- **[API Reference](https://github.com/akstspace/acton-agent/blob/main/docs/api-reference.md)** - Complete API documentation
+- **[Examples](https://github.com/akstspace/acton-agent/blob/main/docs/examples/)** - Practical examples from basic to advanced
 
 ## Examples
 
-Explore complete examples in the [`examples/`](https://github.com/akstspace/acton-agent/tree/main/examples/) directory:
+Explore complete examples in the [`examples/`](https://github.com/akstspace/acton-agent/blob/main/examples/) directory:
 
-- **[Function Tools](https://github.com/akstspace/acton-agent/tree/main/examples/function_tool_example.py)** - Wrap Python functions as agent tools
-- **[Custom Tools](https://github.com/akstspace/acton-agent/tree/main/examples/custom_tool_example.py)** - Build custom tool classes
-- **[ToolSet Configuration](https://github.com/akstspace/acton-agent/tree/main/examples/config_example.py)** - Use hidden configuration for API keys and credentials
-- **[Logging Configuration](https://github.com/akstspace/acton-agent/tree/main/examples/logging_example.py)** - Control logging output and customize log levels
+- **[Function Tools](https://github.com/akstspace/acton-agent/blob/main/examples/function_tool_example.py)** - Wrap Python functions as agent tools
+- **[Custom Tools](https://github.com/akstspace/acton-agent/blob/main/examples/custom_tool_example.py)** - Build custom tool classes
+- **[ToolSet Configuration](https://github.com/akstspace/acton-agent/blob/main/examples/config_example.py)** - Use hidden configuration for API keys and credentials
 
 ## License
 
-MIT License - see [LICENSE](https://github.com/akstspace/acton-agent/tree/main/LICENSE) file for details.
+MIT License - see [LICENSE](https://github.com/akstspace/acton-agent/blob/main/LICENSE) file for details.
 
 ---
 
