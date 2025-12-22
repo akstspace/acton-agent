@@ -283,11 +283,17 @@ print(f"Available toolsets: {toolsets}")  # ["weather_tools"]
 
 ### ToolSet Configuration (Hidden Parameters)
 
-Pass hidden parameters to tools using `config`. This is perfect for API keys, credentials, or configuration that shouldn't be exposed to the LLM:
+Pass hidden configuration to tools using `config_schema` and `update_config()`. This is perfect for API keys, credentials, or configuration that shouldn't be exposed to the LLM:
 
 ```python
+from pydantic import Field
 from acton_agent import Agent, ToolSet, FunctionTool
 from acton_agent.client import OpenAIClient
+from acton_agent.tools import ConfigSchema
+
+# Define configuration schema
+class WeatherAPIConfig(ConfigSchema):
+    api_key: str = Field(..., description="API key for weather service")
 
 # Tools that need an API key
 def fetch_weather(city: str, api_key: str, units: str = "metric") -> str:
@@ -299,7 +305,7 @@ def fetch_forecast(city: str, days: int, api_key: str) -> str:
     """Fetch forecast from API."""
     return f"{days}-day forecast for {city} (authenticated)"
 
-# Create ToolSet with hidden API key
+# Create ToolSet with config schema
 weather_api_toolset = ToolSet(
     name="weather_api",
     description="Weather data from WeatherAPI.com",
@@ -338,10 +344,13 @@ weather_api_toolset = ToolSet(
             }
         )
     ],
-    config={
-        "api_key": "sk-weather-api-key-12345678"  # Hidden from LLM
-    }
+    config_schema=WeatherAPIConfig,
 )
+
+# Set configuration using update_config()
+weather_api_toolset.update_config({
+    "api_key": "sk-weather-api-key-12345678"  # Hidden from LLM
+})
 
 # Register and use
 client = OpenAIClient(model="gpt-4o")

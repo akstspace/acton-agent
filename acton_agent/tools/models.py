@@ -52,30 +52,31 @@ class ToolSet(BaseModel):
     Represents a collection of related tools with a shared description and configuration.
 
     ToolSets allow grouping related tools together and providing a general
-    description that applies to the entire group. Configuration can be defined
-    at the toolset level and will be passed to all tools in the set.
+    description that applies to the entire group. Configuration should be set
+    using the update_config() method with a config_schema.
 
     Attributes:
         name: Unique name for the toolset
         description: General description of what this group of tools can do
         tools: List of Tool instances in this toolset
-        config: Configuration values passed to all tools during execution (not visible to LLM)
         config_schema: Pydantic model class defining the configuration schema
     """
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, extra="forbid")
 
     name: str = Field(..., description="Unique name for the toolset")
     description: str = Field(..., description="General description of what this group of tools can do")
     tools: list[Any] = Field(default_factory=list, description="List of Tool instances in this toolset")
-    config: dict[str, Any] = Field(
-        default_factory=dict,
-        description="Configuration values automatically passed to all tools in this toolset during execution (not visible to LLM)",
-    )
     config_schema: type[ConfigSchema] | None = Field(
         default=None,
         description="Optional Pydantic model class defining the required and optional configuration parameters for this toolset",
     )
+
+    def __init__(self, **data):
+        """Initialize ToolSet and set config to empty dict."""
+        super().__init__(**data)
+        # Initialize config as an instance attribute (not a field)
+        object.__setattr__(self, 'config', {})
 
     def update_config(self, config: dict[str, Any]) -> None:
         """
@@ -115,7 +116,8 @@ class ToolSet(BaseModel):
                 f"These fields are required by the config schema."
             )
 
-        self.config = config
+        # Store config as instance attribute
+        object.__setattr__(self, 'config', config)
 
         # Update config for all tools in this toolset
         # Merge toolset config with tool config (tool config takes precedence)
@@ -124,7 +126,12 @@ class ToolSet(BaseModel):
             merged_config.update(config)
             merged_config.update(tool.config)
 
-            tool.update_config(merged_config)
+            # If tool has a config_schema, use update_config for validation
+            # Otherwise, set config directly
+            if tool.config_schema is not None:
+                tool.update_config(merged_config)
+            else:
+                tool.config = merged_config
 
 
 class ToolCall(BaseModel):

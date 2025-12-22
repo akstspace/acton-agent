@@ -571,12 +571,19 @@ email_tool = FunctionTool(
 )
 
 # Use in ToolSet with hidden api_key
+from pydantic import Field
+from acton_agent.tools import ConfigSchema
+
+class EmailConfig(ConfigSchema):
+    api_key: str = Field(..., description="API key for email service")
+
 toolset = ToolSet(
     name="email",
     description="Email tools",
     tools=[email_tool],
-    config={"api_key": "secret-key-123"}
+    config_schema=EmailConfig,
 )
+toolset.update_config({"api_key": "secret-key-123"})
 ```
 
 ### ToolRegistry
@@ -707,25 +714,30 @@ print(result.success)  # True
 
 ### ToolSet
 
-Represents a collection of related tools with a shared description and optional hidden parameters.
+Represents a collection of related tools with a shared description and optional configuration.
 
 ```python
 class ToolSet(BaseModel):
     name: str
     description: str
     tools: List[Tool] = []
-    config: Dict[str, Any] = {}
+    config_schema: Type[ConfigSchema] | None = None
 ```
 
 **Attributes:**
 - `name` (str): Unique name for the toolset
 - `description` (str): General description of what this group of tools can do
 - `tools` (List[Tool]): List of Tool instances in this toolset
-- `config` (Dict[str, Any]): Hidden parameters automatically passed to all tools during execution (not visible to LLM)
+- `config_schema` (Type[ConfigSchema] | None): Pydantic model class defining the configuration schema
+
+**Methods:**
+- `update_config(config: Dict[str, Any])`: Set configuration that is automatically passed to all tools during execution (not visible to LLM)
 
 **Example:**
 ```python
+from pydantic import Field
 from acton_agent import ToolSet, FunctionTool
+from acton_agent.tools import ConfigSchema
 
 # Basic ToolSet
 toolset = ToolSet(
@@ -737,7 +749,10 @@ toolset = ToolSet(
     ]
 )
 
-# ToolSet with hidden parameters (e.g., API key)
+# ToolSet with configuration (e.g., API key)
+class WeatherAPIConfig(ConfigSchema):
+    api_key: str = Field(..., description="API key for weather service")
+
 def fetch_weather(city: str, api_key: str) -> str:
     # api_key is auto-injected from config
     return f"Weather in {city}: 72°F (authenticated)"
@@ -758,12 +773,15 @@ api_toolset = ToolSet(
             }
         )
     ],
-    config={"api_key": "sk-secret-key-123"}  # Hidden from LLM
+    config_schema=WeatherAPIConfig,
 )
+# Set configuration using update_config()
+api_toolset.update_config({"api_key": "sk-secret-key-123"})
 ```
 
 **Key Points:**
-- `config` are merged with LLM-provided parameters during tool execution
+- Configuration is set via `update_config()` method with a `config_schema`
+- Config values are merged with LLM-provided parameters during tool execution
 - LLM parameters override config if there's a conflict
 - Perfect for API keys, database connections, session tokens, etc.
 - Keeps sensitive data out of prompts and LLM interactions

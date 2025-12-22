@@ -58,7 +58,13 @@ print(result)  # "The result of 25 multiplied by 4 is 100."
 ### 🔧 **Flexible Tool System**
 Create tools from Python functions, HTTP APIs, or custom classes. Organize related tools with ToolSets and shared configuration.
 ```python
+from pydantic import Field
 from acton_agent import ToolSet, FunctionTool
+from acton_agent.tools import ConfigSchema
+
+# Define configuration schema
+class WeatherConfig(ConfigSchema):
+    api_key: str = Field(..., description="API key for weather service")
 
 # Define tools that use an API key
 def get_weather(city: str, api_key: str) -> str:
@@ -97,8 +103,10 @@ weather_tools = ToolSet(
             }
         )
     ],
-    config={"api_key": "secret-api-key"}  # Hidden from LLM, auto-injected
+    config_schema=WeatherConfig,
 )
+# Set configuration using update_config()
+weather_tools.update_config({"api_key": "secret-api-key"})
 agent.register_toolset(weather_tools)
 ```
 

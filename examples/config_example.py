@@ -8,8 +8,27 @@ exposing them to the LLM.
 """
 
 import os
+from pydantic import Field
 from acton_agent import Agent, ToolSet, FunctionTool
 from acton_agent.client import OpenAIClient
+from acton_agent.tools import ConfigSchema
+
+
+# Define configuration schemas for each toolset
+class WeatherAPIConfig(ConfigSchema):
+    """Configuration for weather API tools."""
+    api_key: str = Field(..., description="API key for weather service")
+
+
+class DatabaseConfig(ConfigSchema):
+    """Configuration for database tools."""
+    db_connection: str = Field(..., description="Database connection string")
+
+
+class UserPreferencesConfig(ConfigSchema):
+    """Configuration for user preference tools."""
+    user_id: str = Field(..., description="User ID for session")
+    session_token: str = Field(..., description="Session token for authentication")
 
 
 # Example 1: API Key Injection
@@ -98,10 +117,12 @@ def main():
                 }
             )
         ],
-        config={
-            "api_key": "sk-weather-api-key-12345678"  # Hidden from LLM
-        }
+        config_schema=WeatherAPIConfig,
     )
+    # Set config using update_config() method
+    weather_toolset.update_config({
+        "api_key": "sk-weather-api-key-12345678"  # Hidden from LLM
+    })
 
     # ToolSet 2: Database queries with hidden connection string
     database_toolset = ToolSet(
@@ -136,10 +157,12 @@ def main():
                 }
             )
         ],
-        config={
-            "db_connection": "postgresql://user:pass@localhost/mydb"  # Hidden from LLM
-        }
+        config_schema=DatabaseConfig,
     )
+    # Set config using update_config() method
+    database_toolset.update_config({
+        "db_connection": "postgresql://user:pass@localhost/mydb"  # Hidden from LLM
+    })
 
     # ToolSet 3: User preferences with session context
     preferences_toolset = ToolSet(
@@ -160,11 +183,13 @@ def main():
                 }
             )
         ],
-        config={
-            "user_id": "user-12345",
-            "session_token": "sess-abcdefgh123456"
-        }
+        config_schema=UserPreferencesConfig,
     )
+    # Set config using update_config() method
+    preferences_toolset.update_config({
+        "user_id": "user-12345",
+        "session_token": "sess-abcdefgh123456"
+    })
 
     # Register all toolsets
     agent.register_toolset(weather_toolset)
