@@ -75,7 +75,7 @@ class Agent:
     ):
         """
         Create a new Agent configured to coordinate LLM calls, tool execution, retries, and conversation memory.
-        
+
         Parameters:
             llm_client: LLM client used for all model calls.
             system_prompt: Optional custom system instructions injected into the agent's system prompt.
@@ -196,13 +196,12 @@ class Agent:
         def _execute():
             """
             Invoke the current tool with the provided parameters and return its execution result.
-            
+
             Returns:
                 str: The tool's execution result string.
             """
             logger.debug(f"Executing tool: {tool.name} with parameters: {parameters}")
-            toolset_params = self.tool_registry.get_toolset_params(tool.name)
-            result = tool.execute(parameters, toolset_params)
+            result = tool.execute(parameters)
             logger.debug(f"Tool {tool.name} execution completed")
             return result
 

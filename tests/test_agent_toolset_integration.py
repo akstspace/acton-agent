@@ -52,14 +52,12 @@ def sample_toolset():
         name="func1",
         description="Function 1",
         func=sample_func_1,
-        schema={"type": "object", "properties": {}},
     )
 
     tool2 = FunctionTool(
         name="func2",
         description="Function 2",
         func=sample_func_2,
-        schema={"type": "object", "properties": {}},
     )
 
     return ToolSet(
@@ -114,7 +112,6 @@ def test_agent_register_multiple_toolsets(mock_llm_client):
                 name="tool1",
                 description="Tool 1",
                 func=lambda: "1",
-                schema={"type": "object", "properties": {}},
             )
         ],
     )
@@ -128,7 +125,6 @@ def test_agent_register_multiple_toolsets(mock_llm_client):
                 name="tool2",
                 description="Tool 2",
                 func=lambda: "2",
-                schema={"type": "object", "properties": {}},
             )
         ],
     )
@@ -161,7 +157,6 @@ def test_agent_register_toolset_and_individual_tools(mock_llm_client, sample_too
         name="standalone",
         description="Standalone tool",
         func=lambda: "standalone",
-        schema={"type": "object", "properties": {}},
     )
     agent.register_tool(standalone_tool)
 

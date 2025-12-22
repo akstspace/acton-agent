@@ -30,10 +30,17 @@ from .models import (
     StreamingEvent,
 )
 from .retry import RetryConfig
+from .streaming_util import (
+    AgentAnswer,
+    AgentStepState,
+    ToolExecution,
+    stream_agent_state,
+)
 
 
 __all__ = [
     "Agent",
+    "AgentAnswer",
     "AgentError",
     "AgentFinalResponse",
     "AgentFinalResponseEvent",
@@ -41,6 +48,7 @@ __all__ = [
     "AgentPlanEvent",
     "AgentStep",
     "AgentStepEvent",
+    "AgentStepState",
     "AgentStepUpdate",
     "AgentStreamEnd",
     "AgentStreamStart",
@@ -56,9 +64,11 @@ __all__ = [
     "StreamingEvent",
     "Tool",
     "ToolCall",
+    "ToolExecution",
     "ToolExecutionError",
     "ToolNotFoundError",
     "ToolRegistry",
     "ToolResult",
     "ToolSet",
+    "stream_agent_state",
 ]

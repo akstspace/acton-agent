@@ -47,9 +47,7 @@ class TestOptionalDependencies:
 
         with patch.dict(sys.modules, {"openai": None}):
             # Clear the already imported modules to force reimport
-            modules_to_clear = [
-                k for k in sys.modules if k.startswith("acton_agent.client")
-            ]
+            modules_to_clear = [k for k in sys.modules if k.startswith("acton_agent.client")]
             for module in modules_to_clear:
                 del sys.modules[module]
 

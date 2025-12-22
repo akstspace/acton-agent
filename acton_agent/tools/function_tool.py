@@ -8,8 +8,8 @@ from typing import Any
 
 from loguru import logger
 
-from ..agent.exceptions import InvalidToolSchemaError
 from .base import Tool
+from .models import ConfigSchema, ToolInputSchema
 
 
 class FunctionTool(Tool):
@@ -18,56 +18,47 @@ class FunctionTool(Tool):
 
     This is a convenient way to create tools from existing Python functions
     without having to create a custom Tool subclass.
+
+    Uses Pydantic-based input schemas and configuration.
     """
 
-    def __init__(self, name: str, description: str, func: Callable, schema: dict[str, Any]):
+    def __init__(
+        self,
+        name: str,
+        description: str,
+        func: Callable,
+        input_schema: type[ToolInputSchema] | None = None,
+        config: dict[str, Any] | None = None,
+        config_schema: type[ConfigSchema] | None = None,
+    ):
         """
-        Initialize a FunctionTool that wraps a Python callable together with a JSON Schema describing its parameters.
+        Initialize a FunctionTool that wraps a Python callable.
 
         Parameters:
             name (str): Unique tool name.
             description (str): Human-readable description of the tool.
             func (Callable): Callable invoked when the tool is executed.
-            schema (Dict[str, Any]): JSON Schema for the callable's parameters; must be a dict whose top-level `"type"` is `"object"`.
-
-        Raises:
-            InvalidToolSchemaError: If `schema` is not a dict, lacks a `"type"` field, or its `"type"` is not `"object"`.
+            input_schema (Type[ToolInputSchema] | None): Optional Pydantic model class defining input parameters.
+            config (dict[str, Any] | None): Configuration values for the tool.
+            config_schema (Type[ConfigSchema] | None): Optional Pydantic model class defining configuration requirements.
         """
-        super().__init__(name, description)
+        # Initialize base with config
+        super().__init__(
+            name=name,
+            description=description,
+            config=config,
+            config_schema=config_schema,
+            input_schema=input_schema,
+        )
+
         self.func = func
-        self.schema = schema
 
-        # Validate schema
-        self._validate_schema(schema)
-
-    def _validate_schema(self, schema: dict[str, Any]) -> None:
-        """
-        Ensure the provided JSON Schema describes an object; raise if it is invalid.
-
-        Parameters:
-            schema (Dict[str, Any]): JSON Schema for the tool's parameters.
-
-        Raises:
-            InvalidToolSchemaError: If `schema` is not a dict, if it lacks a `"type"` field,
-                or if `"type"` is not `"object"`.
-        """
-        if not isinstance(schema, dict):
-            raise InvalidToolSchemaError(self.name, "Schema must be a dictionary")
-
-        if "type" not in schema:
-            raise InvalidToolSchemaError(self.name, "Schema must have 'type' field")
-
-        if schema["type"] != "object":
-            raise InvalidToolSchemaError(self.name, "Schema type must be 'object'")
-
-    def execute(self, parameters: dict[str, Any], toolset_params: dict[str, Any] | None = None) -> str:
+    def execute(self, parameters: dict[str, Any]) -> str:
         """
         Run the wrapped function with the provided parameters.
 
         Parameters:
-            parameters (Dict[str, Any]): Mapping of argument names to values passed as keyword arguments to the wrapped function.
-            toolset_params (Optional[Dict[str, Any]]): Hidden parameters from the ToolSet that are automatically
-                injected during execution and merged with the user-provided parameters.
+            parameters (dict[str, Any]): Mapping of argument names to values passed as keyword arguments to the wrapped function.
 
         Returns:
             str: The wrapped function's return value as a string; non-string results are serialized to JSON.
@@ -76,10 +67,19 @@ class FunctionTool(Tool):
             Exception: Re-raises any exception raised by the wrapped function.
         """
         try:
-            # Merge toolset_params with parameters, with parameters taking precedence
+            # Validate input parameters if input_schema is provided
+            if self.input_schema is not None:
+                try:
+                    validated_params = self.input_schema(**parameters)
+                    # Convert Pydantic model back to dict for function call
+                    parameters = validated_params.model_dump()
+                except Exception as e:
+                    logger.error(f"Input validation failed for tool {self.name}: {e}")
+                    raise ValueError(f"Input validation failed: {e}") from e
+
+            # Merge config with parameters, with parameters taking precedence
             merged_params = {}
-            if toolset_params:
-                merged_params.update(toolset_params)
+            merged_params.update(self.config)
             merged_params.update(parameters)
 
             result = self.func(**merged_params)
@@ -96,8 +96,15 @@ class FunctionTool(Tool):
     def get_schema(self) -> dict[str, Any]:
         """
         Get the JSON Schema describing this tool's parameters.
-        
+
+        Returns the JSON schema generated from the Pydantic input_schema model,
+        or an empty object schema if no input_schema is defined.
+
         Returns:
             dict[str, Any]: The JSON Schema that describes the tool's parameters.
         """
-        return self.schema
+        if self.input_schema is not None:
+            # Generate JSON schema from Pydantic model
+            return self.input_schema.model_json_schema()
+        # Return empty object schema if no schema is defined
+        return {"type": "object", "properties": {}, "required": []}

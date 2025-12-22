@@ -15,22 +15,22 @@ from .agent import Agent
 from .client import LLMClient, OpenAIClient, OpenRouterClient
 from .memory import AgentMemory, SimpleAgentMemory
 from .parsers import ResponseParser, parse_streaming_events
-from .tools import FunctionTool, RequestsTool, Tool, ToolRegistry, ToolSet, create_api_tool
+from .tools import ConfigSchema, FunctionTool, Tool, ToolInputSchema, ToolRegistry, ToolSet
 
 
 __all__ = [
     "Agent",
     "AgentMemory",
+    "ConfigSchema",
     "FunctionTool",
     "LLMClient",
     "OpenAIClient",
     "OpenRouterClient",
-    "RequestsTool",
     "ResponseParser",
     "SimpleAgentMemory",
     "Tool",
+    "ToolInputSchema",
     "ToolRegistry",
     "ToolSet",
-    "create_api_tool",
     "parse_streaming_events",
 ]

@@ -4,22 +4,63 @@ Tool models for the AI Agent Framework.
 
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+
+class ConfigSchema(BaseModel):
+    """
+    Base class for tool and toolset configuration schemas.
+
+    This class should be subclassed to define specific configuration
+    requirements for tools or toolsets. Configuration is used for
+    injecting runtime values like API keys, credentials, or other
+    settings that should not be exposed to the LLM.
+
+    Example:
+        ```python
+        class MyToolConfig(ConfigSchema):
+            api_key: str = Field(..., description="API key for authentication")
+            timeout: int = Field(default=30, description="Request timeout in seconds")
+        ```
+    """
+
+    model_config = ConfigDict(extra="allow", arbitrary_types_allowed=True)
+
+
+class ToolInputSchema(BaseModel):
+    """
+    Base class for tool input parameter schemas.
+
+    This class should be subclassed to define the input parameters
+    that a tool expects from the LLM. These parameters will be validated
+    before the tool is executed.
+
+    Example:
+        ```python
+        class CalculatorInput(ToolInputSchema):
+            operation: Literal["add", "subtract", "multiply", "divide"]
+            a: float = Field(..., description="First number")
+            b: float = Field(..., description="Second number")
+        ```
+    """
+
+    model_config = ConfigDict(extra="forbid", arbitrary_types_allowed=True)
 
 
 class ToolSet(BaseModel):
     """
-    Represents a collection of related tools with a shared description.
+    Represents a collection of related tools with a shared description and configuration.
 
     ToolSets allow grouping related tools together and providing a general
-    description that applies to the entire group. This is useful for organizing
-    tools by domain or functionality.
+    description that applies to the entire group. Configuration can be defined
+    at the toolset level and will be passed to all tools in the set.
 
     Attributes:
         name: Unique name for the toolset
         description: General description of what this group of tools can do
         tools: List of Tool instances in this toolset
-        toolset_params: Hidden parameters automatically passed to tools during execution (not visible to LLM)
+        config: Configuration values passed to all tools during execution (not visible to LLM)
+        config_schema: Optional Pydantic model class defining the configuration schema
     """
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -27,10 +68,52 @@ class ToolSet(BaseModel):
     name: str = Field(..., description="Unique name for the toolset")
     description: str = Field(..., description="General description of what this group of tools can do")
     tools: list[Any] = Field(default_factory=list, description="List of Tool instances in this toolset")
-    toolset_params: dict[str, Any] = Field(
+    config: dict[str, Any] = Field(
         default_factory=dict,
-        description="Hidden parameters automatically passed to all tools in this toolset during execution (not visible to LLM)",
+        description="Configuration values automatically passed to all tools in this toolset during execution (not visible to LLM)",
     )
+    config_schema: type[ConfigSchema] | None = Field(
+        default=None,
+        description="Optional Pydantic model class defining the required and optional configuration parameters for this toolset",
+    )
+
+    @model_validator(mode="after")
+    def validate_config(self) -> "ToolSet":
+        """Validate that config matches config_schema if schema is provided."""
+        if self.config_schema is not None:
+            # Validate the config against the schema
+            try:
+                self.config_schema(**self.config)
+            except Exception as e:
+                raise ValueError(f"ToolSet config validation failed: {e}") from e
+        return self
+
+    @model_validator(mode="after")
+    def validate_tools_have_required_config(self) -> "ToolSet":
+        """
+        Validate that all tools in the toolset have access to required config variables.
+
+        This ensures that if a toolset defines a config schema with required fields,
+        those fields are present in the toolset's config. Optional fields can be omitted.
+        """
+        if self.config_schema is None:
+            return self
+
+        # Get required fields from the config schema
+        required_fields = set()
+        for field_name, field_info in self.config_schema.model_fields.items():
+            if field_info.is_required():
+                required_fields.add(field_name)
+
+        # Check that all required fields are in the config
+        missing_fields = required_fields - set(self.config.keys())
+        if missing_fields:
+            raise ValueError(
+                f"ToolSet '{self.name}' is missing required config fields: {missing_fields}. "
+                f"These fields are required by the config schema."
+            )
+
+        return self
 
 
 class ToolCall(BaseModel):
@@ -68,7 +151,7 @@ class ToolResult(BaseModel):
     def success(self) -> bool:
         """
         Indicates whether the tool execution completed without an error.
-        
+
         Returns:
             True if the tool produced no error, False otherwise.
         """

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Example: Using ToolSet Parameters for Hidden Configuration
+Example: Using ToolSet Configuration for Hidden Parameters
 
-This example demonstrates how to use toolset_params to pass hidden
+This example demonstrates how to use toolset config to pass hidden
 configuration (like API keys, credentials, or context) to tools without
 exposing them to the LLM.
 """
@@ -17,7 +17,7 @@ from acton_agent.client import OpenAIClient
 def fetch_weather(city: str, api_key: str) -> str:
     """Fetch weather data using an API key."""
     # In a real implementation, this would call an actual API
-    # The api_key is automatically injected from toolset_params
+    # The api_key is automatically injected from toolset config
     return f"Weather in {city}: Sunny, 72°F (authenticated with key: {api_key[:8]}...)"
 
 
@@ -29,7 +29,7 @@ def fetch_forecast(city: str, days: int, api_key: str) -> str:
 # Example 2: Database Connection Injection
 def query_user(user_id: int, db_connection: str) -> str:
     """Query user information from database."""
-    # db_connection is auto-injected from toolset_params
+    # db_connection is auto-injected from toolset config
     return f"User {user_id} data from {db_connection}: John Doe, john@example.com"
 
 
@@ -41,13 +41,13 @@ def query_orders(user_id: int, limit: int, db_connection: str) -> str:
 # Example 3: Session Context Injection
 def get_user_preferences(setting_name: str, user_id: str, session_token: str) -> str:
     """Get user preferences using session context."""
-    # user_id and session_token are auto-injected from toolset_params
+    # user_id and session_token are auto-injected from toolset config
     return f"Preference '{setting_name}' for user {user_id}: enabled (session: {session_token[:8]}...)"
 
 
 def main():
     """
-    Demonstrate toolset parameters with three different use cases:
+    Demonstrate toolset configuration with three different use cases:
     1. API key injection for weather tools
     2. Database connection injection for data query tools
     3. Session context injection for user preference tools
@@ -98,7 +98,7 @@ def main():
                 }
             )
         ],
-        toolset_params={
+        config={
             "api_key": "sk-weather-api-key-12345678"  # Hidden from LLM
         }
     )
@@ -136,7 +136,7 @@ def main():
                 }
             )
         ],
-        toolset_params={
+        config={
             "db_connection": "postgresql://user:pass@localhost/mydb"  # Hidden from LLM
         }
     )
@@ -160,7 +160,7 @@ def main():
                 }
             )
         ],
-        toolset_params={
+        config={
             "user_id": "user-12345",
             "session_token": "sess-abcdefgh123456"
         }
@@ -174,7 +174,7 @@ def main():
     print("\n" + "=" * 70)
     print("🔐 Welcome to the ToolSet Parameters Demo!")
     print("=" * 70)
-    print("\nThis demo shows how to use toolset_params to inject hidden configuration")
+    print("\nThis demo shows how to use config to inject hidden configuration")
     print("like API keys, database connections, and session data into tools.")
     print("\nThe LLM doesn't see these parameters - they're automatically injected!")
     print()
@@ -186,7 +186,7 @@ def main():
     print("☁️  Demo 1: Weather API with Hidden API Key")
     print("─" * 70)
     print("\nThe weather tools require an API key, but the LLM doesn't provide it.")
-    print("The API key is automatically injected from toolset_params.\n")
+    print("The API key is automatically injected from config.\n")
     query = "What's the weather in Seattle?"
     print(f"💬 You: {query}\n")
     print("🤖 Agent: ", end="", flush=True)
@@ -214,7 +214,7 @@ def main():
     print("👤 Demo 3: User Preferences with Session Context")
     print("─" * 70)
     print("\nThe preference tool needs user_id and session_token for authentication.")
-    print("These are injected automatically from toolset_params.\n")
+    print("These are injected automatically from config.\n")
     query = "What is my notification setting?"
     print(f"💬 You: {query}\n")
     print("🤖 Agent: ", end="", flush=True)
@@ -240,10 +240,10 @@ def main():
     print("✅ Demo completed!")
     print("=" * 70)
     print("\nKey Takeaways:")
-    print("• toolset_params keep sensitive data (API keys, credentials) hidden from LLM")
+    print("• config keep sensitive data (API keys, credentials) hidden from LLM")
     print("• Parameters are automatically merged with LLM-provided parameters")
     print("• Each toolset can have different hidden parameters")
-    print("• LLM parameters override toolset_params if there's a conflict")
+    print("• LLM parameters override config if there's a conflict")
     print("• Perfect for authentication, configuration, and runtime context")
     print()
 

@@ -6,7 +6,7 @@ import json
 
 import pytest
 
-from acton_agent.agent.exceptions import InvalidToolSchemaError, ToolNotFoundError
+from acton_agent.agent.exceptions import ToolNotFoundError
 from acton_agent.tools import FunctionTool, Tool, ToolRegistry
 
 
@@ -19,14 +19,14 @@ class SimpleTool(Tool):
         """
         super().__init__(name="simple", description="A simple test tool")
 
-    def execute(self, parameters: dict, toolset_params: dict | None = None) -> str:
+    def execute(self, parameters: dict, config: dict | None = None) -> str:
         """
         Format and return a result string using the "value" entry from parameters.
-        
+
         Parameters:
             parameters (dict): Mapping that may contain the key "value"; when absent, "default" is used.
-            toolset_params (dict | None): Optional toolset-level parameters; ignored by this tool.
-        
+            config (dict | None): Optional toolset-level parameters; ignored by this tool.
+
         Returns:
             str: The string "Result: {value}" where {value} is the resolved parameter.
         """
@@ -173,13 +173,7 @@ class TestFunctionTool:
             """
             return a + b
 
-        schema = {
-            "type": "object",
-            "properties": {"a": {"type": "number"}, "b": {"type": "number"}},
-            "required": ["a", "b"],
-        }
-
-        tool = FunctionTool(name="add", description="Add two numbers", func=add, schema=schema)
+        tool = FunctionTool(name="add", description="Add two numbers", func=add)
 
         assert tool.name == "add"
         assert tool.description == "Add two numbers"
@@ -196,16 +190,10 @@ class TestFunctionTool:
             """
             return a * b
 
-        schema = {
-            "type": "object",
-            "properties": {"a": {"type": "number"}, "b": {"type": "number"}},
-        }
-
         tool = FunctionTool(
             name="multiply",
             description="Multiply two numbers",
             func=multiply,
-            schema=schema,
         )
 
         result = tool.execute({"a": 5, "b": 3})
@@ -223,9 +211,7 @@ class TestFunctionTool:
             """
             return f"Hello, {name}!"
 
-        schema = {"type": "object", "properties": {"name": {"type": "string"}}}
-
-        tool = FunctionTool(name="greet", description="Greet someone", func=greet, schema=schema)
+        tool = FunctionTool(name="greet", description="Greet someone", func=greet)
 
         result = tool.execute({"name": "Alice"})
         assert result == "Hello, Alice!"
@@ -245,70 +231,12 @@ class TestFunctionTool:
             """
             return {"id": id, "status": "active"}
 
-        schema = {"type": "object", "properties": {"id": {"type": "number"}}}
-
-        tool = FunctionTool(name="get_info", description="Get info", func=get_info, schema=schema)
+        tool = FunctionTool(name="get_info", description="Get info", func=get_info)
 
         result = tool.execute({"id": 123})
         result_dict = json.loads(result)
         assert result_dict["id"] == 123
         assert result_dict["status"] == "active"
-
-    def test_invalid_schema_not_dict(self):
-        """
-        Ensure FunctionTool raises InvalidToolSchemaError when provided a schema that is not a dict.
-
-        Attempts to construct a FunctionTool with a non-dict schema value and expects InvalidToolSchemaError to be raised.
-        """
-
-        def dummy():
-            """
-            No-op placeholder used where a callable is required.
-            """
-
-        with pytest.raises(InvalidToolSchemaError):
-            FunctionTool(
-                name="test",
-                description="Test",
-                func=dummy,
-                schema="invalid",  # Not a dict
-            )
-
-    def test_invalid_schema_no_type(self):
-        """
-        Ensure creating a FunctionTool with a schema that lacks a top-level "type" field raises InvalidToolSchemaError.
-
-        Constructs a dummy function and attempts to create a FunctionTool with a schema containing only "properties", asserting that InvalidToolSchemaError is raised.
-        """
-
-        def dummy():
-            """
-            No-op placeholder used where a callable is required.
-            """
-
-        with pytest.raises(InvalidToolSchemaError):
-            FunctionTool(
-                name="test",
-                description="Test",
-                func=dummy,
-                schema={"properties": {}},  # No type field
-            )
-
-    def test_invalid_schema_wrong_type(self):
-        """Test that schema with non-object type raises error."""
-
-        def dummy():
-            """
-            No-op placeholder used where a callable is required.
-            """
-
-        with pytest.raises(InvalidToolSchemaError):
-            FunctionTool(
-                name="test",
-                description="Test",
-                func=dummy,
-                schema={"type": "string"},  # Must be object
-            )
 
 
 class TestToolAgentMd:

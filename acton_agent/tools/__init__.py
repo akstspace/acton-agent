@@ -7,18 +7,17 @@ that can be used with the agent framework.
 
 from .base import Tool
 from .function_tool import FunctionTool
-from .models import ToolCall, ToolResult, ToolSet
+from .models import ConfigSchema, ToolCall, ToolInputSchema, ToolResult, ToolSet
 from .registry import ToolRegistry
-from .requests_tool import RequestsTool, create_api_tool
 
 
 __all__ = [
+    "ConfigSchema",
     "FunctionTool",
-    "RequestsTool",
     "Tool",
     "ToolCall",
+    "ToolInputSchema",
     "ToolRegistry",
     "ToolResult",
     "ToolSet",
-    "create_api_tool",
 ]

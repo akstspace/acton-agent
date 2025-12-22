@@ -3,15 +3,30 @@ Tests for the process_output method in tools.
 """
 
 import json
-from unittest.mock import Mock, patch
+from typing import Any
 
 import pytest
+from pydantic import Field
 
-from acton_agent.tools import FunctionTool, RequestsTool, Tool
+from acton_agent.tools import FunctionTool, Tool
+from acton_agent.tools.models import ToolInputSchema
 
 
-class CustomProcessingTool(RequestsTool):
+class CustomProcessingTool(Tool):
     """Test tool that processes output by extracting specific fields."""
+
+    def __init__(self):
+        super().__init__(name="custom_processing", description="Custom processing tool")
+
+    def execute(self, parameters: dict[str, Any]) -> str:
+        """Return dummy JSON for testing."""
+        raw_output = json.dumps({"name": "test", "value": 123, "extra": "ignored"})
+        # Process the output before returning
+        return self.process_output(raw_output)
+
+    def get_schema(self) -> dict:
+        """Return schema."""
+        return {"type": "object", "properties": {}}
 
     def process_output(self, output: str) -> str:
         """Extract only 'name' and 'value' fields from JSON."""
@@ -31,14 +46,13 @@ class TestProcessOutputMethod:
 
         # Create a minimal Tool subclass for testing
         class MinimalTool(Tool):
-            def execute(self, parameters, toolset_params=None):
+            def execute(self, parameters: dict[str, Any]) -> str:
                 """
                 Return a fixed test output string.
-                
+
                 Parameters:
                     parameters: Ignored.
-                    toolset_params: Ignored.
-                
+
                 Returns:
                     str: The literal string "test output".
                 """
@@ -47,7 +61,7 @@ class TestProcessOutputMethod:
             def get_schema(self):
                 """
                 Provide the JSON Schema describing this tool's input parameters (default empty object).
-                
+
                 Returns:
                     dict: A JSON Schema for an object with no defined properties (i.e., {"type": "object", "properties": {}}).
                 """
@@ -63,14 +77,13 @@ class TestProcessOutputMethod:
         """Default process_output should return input unchanged."""
 
         class DefaultTool(Tool):
-            def execute(self, parameters, toolset_params=None):
+            def execute(self, parameters: dict[str, Any]) -> str:
                 """
                 Return a fixed placeholder result used by tests.
-                
+
                 Parameters:
                     parameters: Input parameters passed to the tool execution (ignored).
-                    toolset_params: Optional toolset-level parameters (ignored).
-                
+
                 Returns:
                     The string "result".
                 """
@@ -79,7 +92,7 @@ class TestProcessOutputMethod:
             def get_schema(self):
                 """
                 Provide the JSON Schema describing this tool's input parameters (default empty object).
-                
+
                 Returns:
                     dict: A JSON Schema for an object with no defined properties (i.e., {"type": "object", "properties": {}}).
                 """
@@ -94,73 +107,75 @@ class TestProcessOutputMethod:
 
     def test_custom_process_output_is_called(self):
         """Verify that custom process_output is invoked during execute."""
-        # Mock the requests library
-        with patch("acton_agent.tools.requests_tool.requests.request") as mock_request:
-            # Setup mock response
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "name": "test",
-                "value": 123,
-                "extra_field": "should be removed",
-            }
-            mock_response.raise_for_status = Mock()
-            mock_request.return_value = mock_response
+        # Create custom tool with process_output override
+        tool = CustomProcessingTool()
 
-            # Create custom tool
-            tool = CustomProcessingTool(
-                name="test_tool",
-                description="Test",
-                method="GET",
-                url_template="http://test.com/api",
-            )
+        # Execute the tool - it returns JSON with extra field
+        result = tool.execute({})
 
-            # Execute the tool
-            result = tool.execute({})
-
-            # Verify output was processed
-            result_data = json.loads(result)
-            assert "name" in result_data
-            assert "value" in result_data
-            assert "extra_field" not in result_data
-            assert result_data["name"] == "test"
-            assert result_data["value"] == 123
+        # Verify output was processed - extra field should be removed
+        result_data = json.loads(result)
+        assert "name" in result_data
+        assert "value" in result_data
+        assert "extra" not in result_data
+        assert result_data["name"] == "test"
+        assert result_data["value"] == 123
 
     def test_process_output_with_non_json_response(self):
         """Test that process_output handles non-JSON responses gracefully."""
-        with patch("acton_agent.tools.requests_tool.requests.request") as mock_request:
-            # Setup mock response with text (not JSON)
-            mock_response = Mock()
-            mock_response.json.side_effect = ValueError("Not JSON")
-            mock_response.text = "Plain text response"
-            mock_response.raise_for_status = Mock()
-            mock_request.return_value = mock_response
 
-            # Custom tool should handle this gracefully
-            tool = CustomProcessingTool(
-                name="test_tool",
-                description="Test",
-                method="GET",
-                url_template="http://test.com/api",
-            )
+        class PlainTextTool(Tool):
+            """Tool that returns plain text."""
 
-            result = tool.execute({})
+            def execute(self, parameters: dict[str, Any]) -> str:
+                """Return plain text."""
+                return "Plain text response"
 
-            # Should return the text as-is since JSON parsing fails
-            assert result == "Plain text response"
+            def get_schema(self) -> dict:
+                """Return schema."""
+                return {"type": "object", "properties": {}}
+
+        tool = PlainTextTool("text_tool", "Plain text tool")
+        result = tool.execute({})
+
+        # Should return the text as-is since no custom processing
+        assert result == "Plain text response"
 
     def test_multiple_tools_with_different_processing(self):
         """Test that different tool instances can have different processing."""
 
-        class UpperCaseTool(RequestsTool):
+        class UpperCaseTool(Tool):
+            """Tool that converts output to uppercase."""
+
+            def execute(self, parameters: dict[str, Any]) -> str:
+                """Return test string."""
+                return "test"
+
+            def get_schema(self) -> dict:
+                """Return schema."""
+                return {"type": "object", "properties": {}}
+
             def process_output(self, output: str) -> str:
+                """Convert to uppercase."""
                 return output.upper()
 
-        class LowerCaseTool(RequestsTool):
+        class LowerCaseTool(Tool):
+            """Tool that converts output to lowercase."""
+
+            def execute(self, parameters: dict[str, Any]) -> str:
+                """Return test string."""
+                return "TEST"
+
+            def get_schema(self) -> dict:
+                """Return schema."""
+                return {"type": "object", "properties": {}}
+
             def process_output(self, output: str) -> str:
+                """Convert to lowercase."""
                 return output.lower()
 
-        upper_tool = UpperCaseTool("upper", "Upper", "GET", "http://test.com")
-        lower_tool = LowerCaseTool("lower", "Lower", "GET", "http://test.com")
+        upper_tool = UpperCaseTool("upper", "Upper")
+        lower_tool = LowerCaseTool("lower", "Lower")
 
         # Each should process differently
         assert upper_tool.process_output("Test") == "TEST"
@@ -170,13 +185,19 @@ class TestProcessOutputMethod:
         """FunctionTool should also have default process_output behavior."""
 
         def test_func(param1: str) -> str:
+            """Test function."""
             return f"Result: {param1}"
+
+        class TestInputSchema(ToolInputSchema):
+            """Input schema for test function."""
+
+            param1: str = Field(description="Test parameter")
 
         tool = FunctionTool(
             name="test_func",
             description="Test function",
             func=test_func,
-            schema={"type": "object", "properties": {"param1": {"type": "string"}}},
+            input_schema=TestInputSchema,
         )
 
         # Should have process_output method
@@ -188,10 +209,37 @@ class TestProcessOutputMethod:
     def test_process_output_with_complex_transformation(self):
         """Test process_output with more complex data transformation."""
 
-        class SummaryTool(RequestsTool):
+        class SummaryTool(Tool):
             """Tool that creates summary from detailed response."""
 
+            def execute(self, parameters: dict[str, Any]) -> str:
+                """Return detailed JSON data."""
+                raw_output = json.dumps(
+                    {
+                        "items": [
+                            {
+                                "name": "Item1",
+                                "value": 10,
+                                "description": "Long description...",
+                            },
+                            {
+                                "name": "Item2",
+                                "value": 20,
+                                "description": "Another description...",
+                            },
+                            {"name": "Item3", "value": 30, "description": "More text..."},
+                        ]
+                    }
+                )
+                # Process the output before returning
+                return self.process_output(raw_output)
+
+            def get_schema(self) -> dict:
+                """Return schema."""
+                return {"type": "object", "properties": {}}
+
             def process_output(self, output: str) -> str:
+                """Create summary from detailed data."""
                 try:
                     data = json.loads(output)
                     items = data.get("items", [])
@@ -206,33 +254,13 @@ class TestProcessOutputMethod:
                 except (json.JSONDecodeError, KeyError, ZeroDivisionError):
                     return output
 
-        with patch("acton_agent.tools.requests_tool.requests.request") as mock_request:
-            mock_response = Mock()
-            mock_response.json.return_value = {
-                "items": [
-                    {
-                        "name": "Item1",
-                        "value": 10,
-                        "description": "Long description...",
-                    },
-                    {
-                        "name": "Item2",
-                        "value": 20,
-                        "description": "Another description...",
-                    },
-                    {"name": "Item3", "value": 30, "description": "More text..."},
-                ]
-            }
-            mock_response.raise_for_status = Mock()
-            mock_request.return_value = mock_response
+        tool = SummaryTool("summary", "Summary")
+        result = tool.execute({})
 
-            tool = SummaryTool("summary", "Summary", "GET", "http://test.com/api")
-            result = tool.execute({})
-
-            result_data = json.loads(result)
-            assert result_data["total"] == 3
-            assert result_data["names"] == ["Item1", "Item2", "Item3"]
-            assert result_data["average_value"] == 20.0
+        result_data = json.loads(result)
+        assert result_data["total"] == 3
+        assert result_data["names"] == ["Item1", "Item2", "Item3"]
+        assert result_data["average_value"] == 20.0
 
 
 if __name__ == "__main__":
