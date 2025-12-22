@@ -131,6 +131,9 @@ def test_registry_returns_none_for_standalone_tool():
 def test_function_tool_merges_config():
     """Test that FunctionTool correctly merges config with user params."""
 
+    class MyConfig(ConfigSchema):
+        api_key: str = Field(..., description="API key")
+
     def my_function(user_param: str, api_key: str | None = None) -> str:
         """
         Format a display string combining a user-provided value and an optional API key.
@@ -148,8 +151,11 @@ def test_function_tool_merges_config():
         name="test_func",
         description="Test function",
         func=my_function,
-        config={"api_key": "secret123"},
+        config_schema=MyConfig,
     )
+    
+    # Update config using the new API
+    tool.update_config({"api_key": "secret123"})
 
     # Execute - config should be merged from self.config
     result = tool.execute({"user_param": "hello"})
@@ -160,6 +166,9 @@ def test_function_tool_merges_config():
 
 def test_user_params_override_config():
     """Test that user-provided parameters override config."""
+
+    class MyConfig(ConfigSchema):
+        param: str = Field(..., description="Parameter value")
 
     def my_function(param: str) -> str:
         """
@@ -177,8 +186,11 @@ def test_user_params_override_config():
         name="test_func",
         description="Test function",
         func=my_function,
-        config={"param": "config_value"},
+        config_schema=MyConfig,
     )
+    
+    # Update config using the new API
+    tool.update_config({"param": "config_value"})
 
     # User param should override config
     result = tool.execute({"param": "user_value"})
@@ -269,6 +281,10 @@ def test_config_with_agent_execution(mock_llm_client):
 
     received_params = {}
 
+    class MyConfig(ConfigSchema):
+        api_key: str = Field(..., description="API key")
+        endpoint: str = Field(..., description="API endpoint")
+
     def capture_params(user_param: str, api_key: str | None = None, endpoint: str | None = None) -> str:
         """
         Record received parameters into the shared `received_params` mapping and return a short confirmation message.
@@ -290,17 +306,21 @@ def test_config_with_agent_execution(mock_llm_client):
         name="api_call",
         description="Make an API call",
         func=capture_params,
+        config_schema=MyConfig,
     )
 
     toolset = ToolSet(
         name="api_toolset",
         description="API tools",
         tools=[tool],
-        config={
-            "api_key": "hidden_key_123",
-            "endpoint": "https://api.example.com",
-        },
+        config_schema=MyConfig,
     )
+    
+    # Update config using the new API
+    toolset.update_config({
+        "api_key": "hidden_key_123",
+        "endpoint": "https://api.example.com",
+    })
 
     # Create agent and register toolset
     agent = Agent(llm_client=mock_llm_client)
@@ -427,18 +447,20 @@ def test_config_schema_validation():
         name="test_toolset",
         description="Test",
         tools=[],
-        config={"api_key": "secret123", "timeout": 60},
         config_schema=MyConfigSchema,
     )
-
+    
+    # Update with valid config
+    toolset.update_config({"api_key": "secret123", "timeout": 60})
     assert toolset.config == {"api_key": "secret123", "timeout": 60}
 
     # Missing required field should fail
+    toolset2 = ToolSet(
+        name="test_toolset2",
+        description="Test",
+        tools=[],
+        config_schema=MyConfigSchema,
+    )
+    
     with pytest.raises(ValueError, match="config validation failed"):
-        ToolSet(
-            name="test_toolset",
-            description="Test",
-            tools=[],
-            config={"timeout": 60},  # missing required api_key
-            config_schema=MyConfigSchema,
-        )
+        toolset2.update_config({"timeout": 60})  # missing required api_key
