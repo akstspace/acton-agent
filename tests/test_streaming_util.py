@@ -93,70 +93,48 @@ class TestAgentAnswer:
 
         assert answer.query == "Test query"
         assert len(answer.steps) == 0
-        assert answer.current_step is None
         assert answer.final_answer is None
         assert answer.is_complete is False
-        assert answer.error is None
 
-    def test_add_step(self):
-        """Test adding a step to agent answer."""
+    def test_get_or_create_step_new(self):
+        """Test creating a new step."""
         answer = AgentAnswer(query="Test")
 
-        step1 = AgentStepState(step_id="1", step_number=1)
-        answer.add_step(step1)
-
-        assert answer.current_step == step1
-        assert len(answer.steps) == 0  # Not moved to history yet
-
-    def test_complete_current_step(self):
-        """Test completing current step."""
-        answer = AgentAnswer(query="Test")
-
-        step1 = AgentStepState(step_id="1", step_number=1)
-        answer.add_step(step1)
-        answer.complete_current_step()
-
-        assert answer.current_step is None
-        assert len(answer.steps) == 1
-        assert answer.steps[0].is_complete is True
-
-    def test_get_or_create_current_step_new(self):
-        """Test getting or creating a new step."""
-        answer = AgentAnswer(query="Test")
-
-        step = answer.get_or_create_current_step("step-1")
+        step = answer.get_or_create_step("step-1")
 
         assert step.step_id == "step-1"
         assert step.step_number == 1
-        assert answer.current_step == step
+        assert len(answer.steps) == 1
+        assert answer.steps[0] == step
 
-    def test_get_or_create_current_step_existing(self):
+    def test_get_or_create_step_existing(self):
         """Test getting existing step."""
         answer = AgentAnswer(query="Test")
 
-        step1 = answer.get_or_create_current_step("step-1")
+        step1 = answer.get_or_create_step("step-1")
         step1.plan = "My plan"
 
-        step2 = answer.get_or_create_current_step("step-1")
+        step2 = answer.get_or_create_step("step-1")
 
         assert step1 is step2
         assert step2.plan == "My plan"
+        assert len(answer.steps) == 1
 
-    def test_get_or_create_current_step_different_id(self):
+    def test_get_or_create_step_different_id(self):
         """Test creating a new step when ID changes."""
         answer = AgentAnswer(query="Test")
 
-        step1 = answer.get_or_create_current_step("step-1")
+        step1 = answer.get_or_create_step("step-1")
         step1.plan = "Plan 1"
 
-        step2 = answer.get_or_create_current_step("step-2")
+        step2 = answer.get_or_create_step("step-2")
 
         assert step1 is not step2
         assert step2.step_id == "step-2"
         assert step2.step_number == 2
-        assert len(answer.steps) == 1
+        assert len(answer.steps) == 2
         assert answer.steps[0] == step1
-        assert answer.steps[0].is_complete is True
+        assert answer.steps[1] == step2
 
 
 class TestStreamAgentState:
@@ -171,18 +149,12 @@ class TestStreamAgentState:
 
         assert len(states) >= 1
 
-        # Check the first intermediate state (should have current_step)
+        # Check the state after plan event
         state = states[0]
         assert state.query == "Test query"
-        # After plan event but before completion, should have current_step
-        if state.current_step:
-            assert state.current_step.step_type == "plan"
-            assert state.current_step.plan == "My plan"
-        else:
-            # Or it was completed and moved to steps
-            assert len(state.steps) == 1
-            assert state.steps[0].step_type == "plan"
-            assert state.steps[0].plan == "My plan"
+        assert len(state.steps) == 1
+        assert state.steps[0].step_type == "plan"
+        assert state.steps[0].plan == "My plan"
 
     def test_stream_with_step_event(self):
         """Test streaming with step event."""
@@ -194,19 +166,12 @@ class TestStreamAgentState:
         states = list(stream_agent_state(iter(events), "Test query"))
 
         state = states[0]
-        # Check either current_step or completed steps
-        if state.current_step:
-            assert state.current_step.step_type == "execution"
-            assert state.current_step.thought == "My thought"
-            assert len(state.current_step.tool_executions) == 1
-            assert state.current_step.tool_executions[0].tool_name == "test_tool"
-        else:
-            assert len(state.steps) >= 1
-            step = state.steps[0]
-            assert step.step_type == "execution"
-            assert step.thought == "My thought"
-            assert len(step.tool_executions) == 1
-            assert step.tool_executions[0].tool_name == "test_tool"
+        assert len(state.steps) == 1
+        step = state.steps[0]
+        assert step.step_type == "execution"
+        assert step.thought == "My thought"
+        assert len(step.tool_executions) == 1
+        assert step.tool_executions[0].tool_name == "test_tool"
 
     def test_stream_with_final_response(self):
         """Test streaming with final response."""
@@ -223,6 +188,8 @@ class TestStreamAgentState:
 
         assert final_state.final_answer == "The answer is 42"
         assert final_state.is_complete is True
+        assert len(final_state.steps) == 1
+        assert final_state.steps[0].answer == "The answer is 42"
 
     def test_stream_with_tool_execution(self):
         """Test streaming with tool execution event."""
@@ -236,18 +203,11 @@ class TestStreamAgentState:
         states = list(stream_agent_state(iter(events), "Test query"))
 
         state = states[0]
-        # Check either current_step or completed steps
-        if state.current_step:
-            assert len(state.current_step.tool_executions) == 1
-            tool_exec = state.current_step.tool_executions[0]
-            assert tool_exec.status == "completed"
-            assert tool_exec.result == "Tool result"
-        else:
-            assert len(state.steps) >= 1
-            assert len(state.steps[0].tool_executions) == 1
-            tool_exec = state.steps[0].tool_executions[0]
-            assert tool_exec.status == "completed"
-            assert tool_exec.result == "Tool result"
+        assert len(state.steps) == 1
+        assert len(state.steps[0].tool_executions) == 1
+        tool_exec = state.steps[0].tool_executions[0]
+        assert tool_exec.status == "completed"
+        assert tool_exec.result == "Tool result"
 
     def test_stream_with_error(self):
         """Test streaming with error."""
@@ -260,8 +220,10 @@ class TestStreamAgentState:
 
         final_state = states[-1]
         assert final_state.is_complete is True
-        assert final_state.error is not None
-        assert "Test error" in final_state.error
+        assert len(final_state.steps) >= 1
+        # Error should be in the last step
+        assert final_state.steps[-1].error is not None
+        assert "Test error" in final_state.steps[-1].error
 
     def test_stream_complete_flow(self):
         """Test complete streaming flow."""
@@ -287,15 +249,4 @@ class TestStreamAgentState:
         final_state = states[-1]
         assert final_state.is_complete is True
         assert final_state.final_answer == "Done!"
-        assert len(final_state.steps) >= 2  # Should have historical steps
-
-    def test_stream_with_metadata(self):
-        """Test streaming with metadata."""
-        plan_event = AgentPlanEvent(step_id="step-1", plan=AgentPlan(plan="Plan"))
-
-        metadata = {"user_id": "123", "session": "abc"}
-        events = [plan_event]
-        states = list(stream_agent_state(iter(events), "Test", metadata=metadata))
-
-        state = states[0]
-        assert state.metadata == metadata
+        assert len(final_state.steps) == 3  # Should have 3 steps: plan, execution, and final response
