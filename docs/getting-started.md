@@ -220,6 +220,52 @@ agent = Agent(
 | `memory` | Memory management instance | SimpleAgentMemory(8000) |
 | `stream` | Enable streaming responses | False |
 | `timezone` | Timezone for system timestamps | "UTC" |
+| `verbose` | Enable logging output | False |
+
+### Logging Configuration
+
+Control logging output with the `verbose` parameter:
+
+```python
+# Disable logging (default - quiet operation)
+agent = Agent(llm_client=client, verbose=False)
+
+# Enable logging with default INFO level
+agent = Agent(llm_client=client, verbose=True)
+
+# Enable logging with custom level via environment variable
+import os
+os.environ['ACTON_LOG_LEVEL'] = 'DEBUG'
+agent = Agent(llm_client=client, verbose=True)
+```
+
+**Available Log Levels (set via `ACTON_LOG_LEVEL`):**
+- `TRACE` - Most detailed logging (traces every operation)
+- `DEBUG` - Detailed debugging information
+- `INFO` - General informational messages (default)
+- `SUCCESS` - Success messages
+- `WARNING` - Warning messages
+- `ERROR` - Error messages only
+- `CRITICAL` - Critical errors only
+
+**When to use logging:**
+- **Development**: Use `verbose=True` with `DEBUG` or `TRACE` level to understand agent behavior
+- **Production**: Use `verbose=False` (default) or `verbose=True` with `ERROR` level for minimal output
+- **Troubleshooting**: Enable `verbose=True` with `INFO` or `DEBUG` level to diagnose issues
+
+**Example:**
+```python
+# Development: verbose logging
+os.environ['ACTON_LOG_LEVEL'] = 'DEBUG'
+agent = Agent(llm_client=client, verbose=True)
+
+# Production: errors only
+os.environ['ACTON_LOG_LEVEL'] = 'ERROR'
+agent = Agent(llm_client=client, verbose=True)
+
+# Production: completely silent
+agent = Agent(llm_client=client, verbose=False)
+```
 
 ### Retry Configuration
 

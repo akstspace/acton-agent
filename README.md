@@ -137,6 +137,21 @@ from acton_agent import OpenRouterClient
 client = OpenRouterClient(api_key="your-key", model="anthropic/claude-3-opus")
 ```
 
+### 📝 **Configurable Logging**
+Control logging output with the `verbose` parameter and customize log levels via environment variables.
+```python
+# Disable logging (default - no output)
+agent = Agent(llm_client=client, verbose=False)
+
+# Enable logging at INFO level
+agent = Agent(llm_client=client, verbose=True)
+
+# Set custom log level via environment variable
+import os
+os.environ['ACTON_LOG_LEVEL'] = 'DEBUG'  # TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL
+agent = Agent(llm_client=client, verbose=True)
+```
+
 ## Documentation
 
 - **[Getting Started](https://github.com/akstspace/acton-agent/tree/main/docs/getting-started.md)** - Installation and first steps
@@ -151,6 +166,7 @@ Explore complete examples in the [`examples/`](https://github.com/akstspace/acto
 - **[Function Tools](https://github.com/akstspace/acton-agent/tree/main/examples/function_tool_example.py)** - Wrap Python functions as agent tools
 - **[Custom Tools](https://github.com/akstspace/acton-agent/tree/main/examples/custom_tool_example.py)** - Build custom tool classes
 - **[ToolSet Configuration](https://github.com/akstspace/acton-agent/tree/main/examples/config_example.py)** - Use hidden configuration for API keys and credentials
+- **[Logging Configuration](https://github.com/akstspace/acton-agent/tree/main/examples/logging_example.py)** - Control logging output and customize log levels
 
 ## License
 

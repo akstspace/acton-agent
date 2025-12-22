@@ -4,10 +4,9 @@ Tests for logging configuration.
 
 import os
 
-import pytest
 from loguru import logger
 
-from acton_agent.logging_config import configure_logging, _get_log_level_from_env
+from acton_agent.logging_config import _get_log_level_from_env, configure_logging
 
 
 class TestLoggingConfiguration:
