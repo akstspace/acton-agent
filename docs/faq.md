@@ -301,24 +301,23 @@ export PYTHONHTTPSVERIFY=0
            return f"Error: {str(e)}"
    ```
 
-### RequestsTool timeouts
+### HTTP Request timeouts
 
 **Problem:** HTTP requests timing out
 
 **Solutions:**
 
-1. **Increase timeout:**
+1. **Increase timeout in urllib:**
    ```python
-   tool = RequestsTool(
-       name="slow_api",
-       description="...",
-       url_template="...",
-       timeout=120  # 2 minutes
-   )
+   from urllib.request import urlopen
+   
+   def get_data(url: str) -> str:
+       with urlopen(url, timeout=120) as response:  # 2 minutes
+           return response.read().decode()
    ```
 
 2. **Check API availability:**
-   Test the endpoint directly with `curl` or Postman
+   Test the endpoint directly with `curl` or your browser
 
 3. **Add retries:**
    ```python

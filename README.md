@@ -64,13 +64,13 @@ from acton_agent import ToolSet, FunctionTool
 
 # Define tools that use an API key
 def get_weather(city: str, api_key: str) -> str:
-    # api_key will be automatically injected from toolset_params
+    # api_key will be automatically injected from toolset config
     return f"Weather in {city}: Sunny, 72°F"
 
 def get_forecast(city: str, days: int, api_key: str) -> str:
     return f"{days}-day forecast for {city}"
 
-# Group related tools with shared parameters
+# Group related tools with shared configuration
 weather_tools = ToolSet(
     name="weather",
     description="Weather data tools",
@@ -99,7 +99,7 @@ weather_tools = ToolSet(
             }
         )
     ],
-    toolset_params={"api_key": "secret-api-key"}  # Hidden from LLM, auto-injected
+    config={"api_key": "secret-api-key"}  # Hidden from LLM, auto-injected
 )
 agent.register_toolset(weather_tools)
 ```
@@ -150,9 +150,9 @@ client = OpenRouterClient(api_key="your-key", model="anthropic/claude-3-opus")
 Explore complete examples in the [`examples/`](https://github.com/akstspace/acton-agent/tree/main/examples/) directory:
 
 - **[Function Tools](https://github.com/akstspace/acton-agent/tree/main/examples/function_tool_example.py)** - Wrap Python functions as agent tools
-- **[API Integration](https://github.com/akstspace/acton-agent/tree/main/examples/requests_tool_example.py)** - Connect to REST APIs
+- **[HTTP Requests](https://github.com/akstspace/acton-agent/tree/main/examples/http_request_example.py)** - Make HTTP API calls using FunctionTool
 - **[Custom Tools](https://github.com/akstspace/acton-agent/tree/main/examples/custom_tool_example.py)** - Build custom tool classes
-- **[ToolSet Parameters](https://github.com/akstspace/acton-agent/tree/main/examples/toolset_params_example.py)** - Use hidden parameters for API keys and configuration
+- **[ToolSet Configuration](https://github.com/akstspace/acton-agent/tree/main/examples/config_example.py)** - Use hidden configuration for API keys and credentials
 
 ## License
 

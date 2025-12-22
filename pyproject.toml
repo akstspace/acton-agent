@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "acton-agent"
-version = "0.0.13"
+version = "0.0.14"
 description = "LLM Agent Framework with tool execution capabilities"
 readme = "README.md"
 authors = [
@@ -30,7 +30,6 @@ dependencies = [
     "pydantic>=2.0.0",
     "tenacity>=8.0.0",
     "loguru>=0.7.0",
-    "requests>=2.31.0",
     "jiter>=0.5.0",
     "openai>=2.0.0",
 ]

@@ -290,13 +290,6 @@ def test_config_with_agent_execution(mock_llm_client):
         name="api_call",
         description="Make an API call",
         func=capture_params,
-        schema={
-            "type": "object",
-            "properties": {
-                "user_param": {"type": "string"},
-            },
-            "required": ["user_param"],
-        },
     )
 
     toolset = ToolSet(
@@ -388,14 +381,14 @@ def test_multiple_toolsets_different_config():
         name="api_tool_1",
         description="API tool 1",
         func=api_function,
-        schema={"type": "object", "properties": {"user_input": {"type": "string"}}},
+        
     )
 
     tool2 = FunctionTool(
         name="api_tool_2",
         description="API tool 2",
         func=api_function,
-        schema={"type": "object", "properties": {"user_input": {"type": "string"}}},
+        
     )
 
     toolset1 = ToolSet(
