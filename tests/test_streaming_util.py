@@ -249,4 +249,4 @@ class TestStreamAgentState:
         final_state = states[-1]
         assert final_state.is_complete is True
         assert final_state.final_answer == "Done!"
-        assert len(final_state.steps) == 3  # Should have 3 steps
+        assert len(final_state.steps) == 3  # Should have 3 steps: plan, execution, and final response

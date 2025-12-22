@@ -146,7 +146,7 @@ def stream_agent_state(agent_stream: Generator, query: str) -> Generator[AgentAn
                 print(f"Answer: {state.final_answer}")
         ```
     """
-    # Initialize state once
+    # Initialize single state object that will be yielded repeatedly with updates
     state = AgentAnswer(query=query)
 
     # Track tool call ID mapping
