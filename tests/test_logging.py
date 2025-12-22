@@ -3,6 +3,7 @@ Tests for logging configuration.
 """
 
 import os
+from io import StringIO
 
 from loguru import logger
 
@@ -20,19 +21,30 @@ class TestLoggingConfiguration:
         # Reset logging to default state
         logger.remove()
 
-    def test_logging_disabled_by_default(self):
+    def test_logging_disabled_by_default(self, capsys):
         """Test that logging is disabled when verbose=False."""
         configure_logging(verbose=False)
 
-        # Check that logger has handlers but they are no-op
-        assert len(logger._core.handlers) > 0
+        # Try to log something
+        logger.info("This should not appear")
+        logger.debug("This should not appear")
+        logger.warning("This should not appear")
 
-    def test_logging_enabled_with_verbose_true(self):
+        # Capture output - should be empty
+        captured = capsys.readouterr()
+        assert "This should not appear" not in captured.err
+        assert "This should not appear" not in captured.out
+
+    def test_logging_enabled_with_verbose_true(self, capsys):
         """Test that logging is enabled when verbose=True."""
         configure_logging(verbose=True)
 
-        # Check that logger has real handlers
-        assert len(logger._core.handlers) > 0
+        # Log something at INFO level (default)
+        logger.info("Test info message")
+
+        # Capture output
+        captured = capsys.readouterr()
+        assert "Test info message" in captured.err
 
     def test_default_log_level_is_info(self):
         """Test that default log level is INFO when ACTON_LOG_LEVEL is not set."""
@@ -85,21 +97,42 @@ class TestLoggingConfiguration:
             level = _get_log_level_from_env()
             assert level == level_name
 
-    def test_reconfigure_logging(self):
+    def test_reconfigure_logging(self, capsys):
         """Test that logging can be reconfigured."""
         # First disable
         configure_logging(verbose=False)
-        initial_handler_count = len(logger._core.handlers)
+        logger.info("Should not appear 1")
+        captured = capsys.readouterr()
+        assert "Should not appear 1" not in captured.err
 
         # Then enable
         configure_logging(verbose=True)
-        enabled_handler_count = len(logger._core.handlers)
+        logger.info("Should appear")
+        captured = capsys.readouterr()
+        assert "Should appear" in captured.err
 
         # Then disable again
         configure_logging(verbose=False)
-        final_handler_count = len(logger._core.handlers)
+        logger.info("Should not appear 2")
+        captured = capsys.readouterr()
+        assert "Should not appear 2" not in captured.err
 
-        # All should have handlers, but different configurations
-        assert initial_handler_count > 0
-        assert enabled_handler_count > 0
-        assert final_handler_count > 0
+    def test_debug_level_shows_debug_messages(self, capsys):
+        """Test that DEBUG level shows debug messages."""
+        os.environ["ACTON_LOG_LEVEL"] = "DEBUG"
+        configure_logging(verbose=True)
+
+        logger.debug("Debug message")
+        captured = capsys.readouterr()
+        assert "Debug message" in captured.err
+
+    def test_warning_level_hides_info_messages(self, capsys):
+        """Test that WARNING level hides INFO messages."""
+        os.environ["ACTON_LOG_LEVEL"] = "WARNING"
+        configure_logging(verbose=True)
+
+        logger.info("Info message")
+        logger.warning("Warning message")
+        captured = capsys.readouterr()
+        assert "Info message" not in captured.err
+        assert "Warning message" in captured.err

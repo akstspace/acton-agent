@@ -85,17 +85,3 @@ def _get_log_level_from_env() -> str:
         pass
 
     return DEFAULT_LOG_LEVEL
-
-
-def is_logging_enabled() -> bool:
-    """
-    Check if logging is currently enabled.
-
-    Returns:
-        bool: True if logging is enabled, False otherwise.
-    """
-    # Check if there are any handlers configured
-    # If the only handler is our no-op handler, logging is disabled
-    return len(logger._core.handlers) > 0 and any(
-        handler._name != "<lambda>" for handler in logger._core.handlers.values()
-    )
