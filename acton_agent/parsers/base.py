@@ -7,6 +7,7 @@ into structured response objects.
 
 import json
 import re
+import uuid
 
 from loguru import logger
 
@@ -63,6 +64,8 @@ class ResponseParser:
                 # This is an AgentStep
                 # Convert tool_calls dicts to ToolCall objects
                 tool_calls = [ToolCall(**tc) if isinstance(tc, dict) else tc for tc in data.get("tool_calls", [])]
+                for tool_call in tool_calls:
+                    tool_call.id = str(uuid.uuid4())
                 data["tool_calls"] = tool_calls
                 response = AgentStep(**data)
                 logger.debug("Parsed as AgentStep")

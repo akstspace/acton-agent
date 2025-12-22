@@ -2,6 +2,7 @@
 Streaming parser for agent events.
 """
 
+import uuid
 from collections.abc import Generator
 from typing import Any, Literal
 
@@ -186,7 +187,7 @@ class StreamingTokenParser:
                         if isinstance(tc, dict) and "id" in tc and "tool_name" in tc:
                             tool_calls.append(
                                 ToolCall(
-                                    id=tc["id"],
+                                    id=str(uuid.uuid4()),
                                     tool_name=tc["tool_name"],
                                     parameters=tc.get("parameters", {}),
                                 )

@@ -16,7 +16,6 @@ from .models import (
     AgentPlanEvent,
     AgentStepEvent,
     AgentToolExecutionEvent,
-    AgentToolResultsEvent,
 )
 
 
@@ -174,9 +173,6 @@ def stream_agent_state(agent_stream: Generator, query: str) -> Generator[AgentAn
     # Initialize single state object that will be yielded repeatedly with updates
     state = AgentAnswer(query=query)
 
-    # Track tool call ID mapping
-    tool_call_id_map: dict[str, str] = {}
-
     try:
         for event in agent_stream:
             step_id = getattr(event, "step_id", "unknown")
@@ -201,15 +197,13 @@ def stream_agent_state(agent_stream: Generator, query: str) -> Generator[AgentAn
                         tool_exec.tool_name = tool_call.tool_name
                         tool_exec.parameters = tool_call.parameters
                         tool_exec.status = "pending"
-                        tool_call_id_map[tool_call.id] = tool_call.id
 
             elif isinstance(event, AgentToolExecutionEvent):
                 if step.step_type != "execution":
                     step.step_type = "execution"
 
                 # Get or create tool execution
-                tool_id = tool_call_id_map.get(event.tool_call_id, event.tool_call_id)
-                tool_exec = step.get_or_create_tool_execution(tool_id, event.tool_name)
+                tool_exec = step.get_or_create_tool_execution(event.tool_call_id, event.tool_name)
                 tool_exec.status = event.status
 
                 # Update result or error
@@ -218,20 +212,6 @@ def stream_agent_state(agent_stream: Generator, query: str) -> Generator[AgentAn
                         tool_exec.result = str(event.result.result)
                     else:
                         tool_exec.error = str(event.result.error)
-
-            elif isinstance(event, AgentToolResultsEvent):
-                if step.step_type != "execution":
-                    step.step_type = "execution"
-
-                # Update tool executions with results
-                for result in event.results:
-                    tool_id = result.tool_call_id
-                    tool_exec = step.get_or_create_tool_execution(tool_id)
-                    tool_exec.status = "completed" if result.success else "failed"
-                    if result.success:
-                        tool_exec.result = str(result.result)
-                    else:
-                        tool_exec.error = str(result.error)
 
             elif isinstance(event, AgentFinalResponseEvent):
                 step.step_type = "final"
