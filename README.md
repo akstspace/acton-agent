@@ -20,9 +20,8 @@ pip install acton-agent
 ```
 
 ```python
-from acton_agent import Agent
+from acton_agent import Agent, FunctionTool
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import FunctionTool
 
 # Create a simple calculator tool
 def calculate(a: float, b: float, operation: str) -> float:

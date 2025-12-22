@@ -657,7 +657,8 @@ agent = Agent(llm_client=client, memory=None)
 Implement the `AgentMemory` protocol:
 
 ```python
-from acton_agent.agent import AgentMemory, Message
+from acton_agent import AgentMemory
+from acton_agent.agent import Message
 from typing import List
 
 class SummarizingMemory(AgentMemory):

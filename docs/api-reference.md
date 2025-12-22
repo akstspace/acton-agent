@@ -144,7 +144,7 @@ def register_tool(self, tool: Tool) -> None
 
 **Example:**
 ```python
-from acton_agent.agent import FunctionTool
+from acton_agent import FunctionTool
 
 tool = FunctionTool(name="calc", description="Calculator", func=calculate, schema={...})
 agent.register_tool(tool)
@@ -163,9 +163,8 @@ def register_toolset(self, toolset: ToolSet) -> None
 
 **Example:**
 ```python
-from acton_agent import Agent, ToolSet
+from acton_agent import Agent, ToolSet, FunctionTool
 from acton_agent.client import OpenAIClient
-from acton_agent.agent import FunctionTool
 
 toolset = ToolSet(
     name="math_tools",
@@ -840,7 +839,7 @@ class SimpleAgentMemory(AgentMemory):
 
 **Example:**
 ```python
-from acton_agent.agent import SimpleAgentMemory
+from acton_agent import SimpleAgentMemory
 
 memory = SimpleAgentMemory(max_history_tokens=10000)
 agent = Agent(llm_client=client, memory=memory)
