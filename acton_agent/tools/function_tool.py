@@ -27,9 +27,8 @@ class FunctionTool(Tool):
         name: str,
         description: str,
         func: Callable,
-        input_schema: type[ToolInputSchema] | None = None,
-        config: dict[str, Any] | None = None,
         config_schema: type[ConfigSchema] | None = None,
+        input_schema: type[ToolInputSchema] | None = None,
     ):
         """
         Initialize a FunctionTool that wraps a Python callable.
@@ -38,15 +37,13 @@ class FunctionTool(Tool):
             name (str): Unique tool name.
             description (str): Human-readable description of the tool.
             func (Callable): Callable invoked when the tool is executed.
-            input_schema (Type[ToolInputSchema] | None): Optional Pydantic model class defining input parameters.
-            config (dict[str, Any] | None): Configuration values for the tool.
             config_schema (Type[ConfigSchema] | None): Optional Pydantic model class defining configuration requirements.
+            input_schema (Type[ToolInputSchema] | None): Optional Pydantic model class defining input parameters.
         """
-        # Initialize base with config
+        # Initialize base with config_schema
         super().__init__(
             name=name,
             description=description,
-            config=config,
             config_schema=config_schema,
             input_schema=input_schema,
         )

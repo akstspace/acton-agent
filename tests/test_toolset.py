@@ -3,9 +3,11 @@ Tests for ToolSet functionality.
 """
 
 import pytest
+from pydantic import Field
 
 from acton_agent.agent import FunctionTool, ToolSet
 from acton_agent.tools import ToolRegistry
+from acton_agent.tools.models import ConfigSchema
 
 
 def sample_function_1(param1: str) -> str:
@@ -234,3 +236,198 @@ def test_empty_toolset():
     registry.register_toolset(empty_toolset)
 
     assert "empty" in registry.list_toolsets()
+
+
+class TestToolSetConfiguration:
+    """Tests for ToolSet configuration functionality."""
+
+    def test_toolset_with_config_schema(self):
+        """Test creating a ToolSet with a config schema."""
+
+        class MyToolSetConfig(ConfigSchema):
+            api_key: str = Field(..., description="API key for all tools")
+            timeout: int = Field(default=30, description="Timeout for all tools")
+
+        def tool1_func(param: str, api_key: str = "", timeout: int = 30) -> str:
+            return f"Tool1: {param}, API: {api_key}, Timeout: {timeout}"
+
+        tool1 = FunctionTool(
+            name="tool1",
+            description="First tool",
+            func=tool1_func,
+            config_schema=MyToolSetConfig,
+        )
+
+        toolset = ToolSet(
+            name="api_toolset",
+            description="Tools that use API",
+            tools=[tool1],
+            config_schema=MyToolSetConfig,
+        )
+
+        assert toolset.config_schema == MyToolSetConfig
+        assert toolset.config == {}
+
+    def test_update_config_success(self):
+        """Test updating ToolSet configuration successfully."""
+
+        class MyToolSetConfig(ConfigSchema):
+            api_key: str = Field(..., description="API key")
+            timeout: int = Field(default=30, description="Timeout")
+
+        def tool1_func(param: str, api_key: str = "", timeout: int = 30) -> str:
+            return f"Tool1: {param}, API: {api_key}, Timeout: {timeout}"
+
+        tool1 = FunctionTool(
+            name="tool1",
+            description="First tool",
+            func=tool1_func,
+            config_schema=MyToolSetConfig,
+        )
+
+        toolset = ToolSet(
+            name="api_toolset",
+            description="Tools that use API",
+            tools=[tool1],
+            config_schema=MyToolSetConfig,
+        )
+
+        # Update config
+        toolset.update_config({"api_key": "secret123", "timeout": 60})
+
+        assert toolset.config["api_key"] == "secret123"
+        assert toolset.config["timeout"] == 60
+
+        # Config should be propagated to tools
+        assert tool1.config["api_key"] == "secret123"
+        assert tool1.config["timeout"] == 60
+
+    def test_update_config_without_schema_raises_error(self):
+        """Test that updating config without schema raises error."""
+
+        def tool_func(param: str) -> str:
+            return f"Result: {param}"
+
+        tool = FunctionTool(
+            name="tool1",
+            description="A tool",
+            func=tool_func,
+        )
+
+        toolset = ToolSet(
+            name="my_toolset",
+            description="A toolset",
+            tools=[tool],
+        )
+
+        with pytest.raises(ValueError, match="does not have a config schema configured"):
+            toolset.update_config({"api_key": "value"})
+
+    def test_update_config_validation_failure(self):
+        """Test that invalid config raises validation error."""
+
+        class MyToolSetConfig(ConfigSchema):
+            api_key: str = Field(..., description="API key")
+            timeout: int = Field(..., description="Timeout")
+
+        toolset = ToolSet(
+            name="my_toolset",
+            description="A toolset",
+            tools=[],
+            config_schema=MyToolSetConfig,
+        )
+
+        # Missing required field 'api_key'
+        with pytest.raises(ValueError, match="config validation failed"):
+            toolset.update_config({"timeout": 60})
+
+    def test_update_config_missing_required_fields(self):
+        """Test that missing required fields raises error."""
+
+        class MyToolSetConfig(ConfigSchema):
+            api_key: str = Field(..., description="API key")
+            endpoint: str = Field(..., description="API endpoint")
+
+        toolset = ToolSet(
+            name="my_toolset",
+            description="A toolset",
+            tools=[],
+            config_schema=MyToolSetConfig,
+        )
+
+        # Missing 'endpoint' - should fail validation
+        with pytest.raises(ValueError, match="config validation failed"):
+            toolset.update_config({"api_key": "secret"})
+
+    def test_toolset_config_propagation_to_multiple_tools(self):
+        """Test that ToolSet config is propagated to all tools."""
+
+        class MyToolSetConfig(ConfigSchema):
+            api_key: str = Field(..., description="API key")
+
+        def tool1_func(param: str, api_key: str = "") -> str:
+            return f"Tool1: {param}, API: {api_key}"
+
+        def tool2_func(value: int, api_key: str = "") -> str:
+            return f"Tool2: {value}, API: {api_key}"
+
+        tool1 = FunctionTool(
+            name="tool1",
+            description="First tool",
+            func=tool1_func,
+            config_schema=MyToolSetConfig,
+        )
+
+        tool2 = FunctionTool(
+            name="tool2",
+            description="Second tool",
+            func=tool2_func,
+            config_schema=MyToolSetConfig,
+        )
+
+        toolset = ToolSet(
+            name="api_toolset",
+            description="API tools",
+            tools=[tool1, tool2],
+            config_schema=MyToolSetConfig,
+        )
+
+        toolset.update_config({"api_key": "shared_key"})
+
+        # Both tools should have the config
+        assert tool1.config["api_key"] == "shared_key"
+        assert tool2.config["api_key"] == "shared_key"
+
+    def test_toolset_config_merging_with_tool_config(self):
+        """Test that tool config takes precedence over toolset config."""
+
+        class MyToolSetConfig(ConfigSchema):
+            api_key: str = Field(..., description="API key")
+            timeout: int = Field(default=30, description="Timeout")
+
+        def tool1_func(param: str, api_key: str = "", timeout: int = 30) -> str:
+            return f"Tool1: {param}, API: {api_key}, Timeout: {timeout}"
+
+        tool1 = FunctionTool(
+            name="tool1",
+            description="First tool",
+            func=tool1_func,
+            config_schema=MyToolSetConfig,
+        )
+
+        # Set tool-specific config first
+        tool1.update_config({"api_key": "tool_specific", "timeout": 10})
+
+        toolset = ToolSet(
+            name="api_toolset",
+            description="API tools",
+            tools=[tool1],
+            config_schema=MyToolSetConfig,
+        )
+
+        # Update toolset config
+        toolset.update_config({"api_key": "toolset_key", "timeout": 60})
+
+        # Tool config should take precedence (merged after toolset config)
+        assert tool1.config["api_key"] == "tool_specific"
+        assert tool1.config["timeout"] == 10
