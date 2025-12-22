@@ -281,7 +281,7 @@ print(f"Available toolsets: {toolsets}")  # ["weather_tools"]
 - Register/unregister multiple tools at once
 - Improve LLM understanding of tool relationships
 
-### ToolSet Parameters (Hidden Configuration)
+### ToolSet Configuration (Hidden Parameters)
 
 Pass hidden parameters to tools using `config`. This is perfect for API keys, credentials, or configuration that shouldn't be exposed to the LLM:
 

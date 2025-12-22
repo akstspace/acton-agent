@@ -326,5 +326,5 @@ Now that you have a basic agent running, explore:
 
 ### Quick Links
 
-- [Creating Custom Tools](core-concepts.md#creating-tools)
+- [Tools](core-concepts.md#tools)
 - [Memory Management](core-concepts.md#memory-management)
