@@ -74,6 +74,11 @@ class AgentStepState(BaseModel):
         If found, returns it. If not found, creates a new tool execution,
         appends it to tool_executions, and returns it.
 
+        This method ensures that duplicate ToolExecution objects are never created
+        for the same tool_id. When processing multiple events for the same tool
+        (e.g., started -> completed), this method returns the same ToolExecution
+        object which is then updated in place.
+
         Args:
             tool_id: The tool call ID to find or create
             tool_name: Name of the tool (used only when creating new execution)
@@ -81,12 +86,12 @@ class AgentStepState(BaseModel):
         Returns:
             The found or newly created tool execution
         """
-        # Search for existing tool execution
+        # Search for existing tool execution by tool_id to prevent duplicates
         for tool_exec in self.tool_executions:
             if tool_exec.tool_id == tool_id:
                 return tool_exec
 
-        # Create new tool execution
+        # Create new tool execution only if not found
         new_tool_exec = ToolExecution(tool_id=tool_id, tool_name=tool_name, status="pending")
         self.tool_executions.append(new_tool_exec)
         return new_tool_exec
@@ -191,6 +196,7 @@ def stream_agent_state(agent_stream: Generator, query: str) -> Generator[AgentAn
                     step.thought = event.step.tool_thought
 
                 # Add or update tool calls
+                # Using get_or_create_tool_execution ensures no duplicates are created
                 if event.step.tool_calls:
                     for tool_call in event.step.tool_calls:
                         tool_exec = step.get_or_create_tool_execution(tool_call.id, tool_call.tool_name)
@@ -202,7 +208,7 @@ def stream_agent_state(agent_stream: Generator, query: str) -> Generator[AgentAn
                 if step.step_type != "execution":
                     step.step_type = "execution"
 
-                # Get or create tool execution
+                # Get or create tool execution (prevents duplicates by searching for existing tool_id)
                 tool_exec = step.get_or_create_tool_execution(event.tool_call_id, event.tool_name)
                 tool_exec.status = event.status
 
