@@ -83,6 +83,80 @@ class TestAgentStepState:
         assert len(step.tool_executions) == 1
         assert step.tool_executions[0].tool_name == "test_tool"
 
+    def test_get_or_create_tool_execution_new(self):
+        """Test creating a new tool execution."""
+        step = AgentStepState(step_id="step-1", step_number=1, step_type="execution")
+
+        tool_exec = step.get_or_create_tool_execution("tool-1", "calculator")
+
+        assert tool_exec.tool_id == "tool-1"
+        assert tool_exec.tool_name == "calculator"
+        assert tool_exec.status == "pending"
+        assert len(step.tool_executions) == 1
+
+    def test_get_or_create_tool_execution_existing(self):
+        """Test getting an existing tool execution by ID."""
+        step = AgentStepState(step_id="step-1", step_number=1, step_type="execution")
+
+        # Create first tool execution
+        tool_exec1 = step.get_or_create_tool_execution("tool-1", "calculator")
+        tool_exec1.status = "completed"
+        tool_exec1.result = "42"
+
+        # Get the same tool execution again
+        tool_exec2 = step.get_or_create_tool_execution("tool-1", "calculator")
+
+        # Should be the same object
+        assert tool_exec1 is tool_exec2
+        assert tool_exec2.status == "completed"
+        assert tool_exec2.result == "42"
+        assert len(step.tool_executions) == 1
+
+    def test_get_or_create_tool_execution_different_ids(self):
+        """Test creating multiple tool executions with different IDs."""
+        step = AgentStepState(step_id="step-1", step_number=1, step_type="execution")
+
+        # Create two different tool executions
+        tool_exec1 = step.get_or_create_tool_execution("tool-1", "calculator")
+        tool_exec2 = step.get_or_create_tool_execution("tool-2", "weather")
+
+        assert tool_exec1 is not tool_exec2
+        assert tool_exec1.tool_id == "tool-1"
+        assert tool_exec2.tool_id == "tool-2"
+        assert len(step.tool_executions) == 2
+
+    def test_get_or_create_tool_execution_does_not_update_name(self):
+        """Test that tool_name is NOT updated when getting an existing execution."""
+        step = AgentStepState(step_id="step-1", step_number=1, step_type="execution")
+
+        # Create with initial name
+        tool_exec1 = step.get_or_create_tool_execution("tool-1", "calculator")
+
+        # Get with different name
+        tool_exec2 = step.get_or_create_tool_execution("tool-1", "different_name")
+
+        assert tool_exec1 is tool_exec2
+        # The name should NOT have been updated (keeps original name)
+        assert tool_exec2.tool_name == "calculator"
+        assert len(step.tool_executions) == 1
+
+    def test_get_or_create_tool_execution_preserves_state(self):
+        """Test that get_or_create preserves state when retrieving existing execution."""
+        step = AgentStepState(step_id="step-1", step_number=1, step_type="execution")
+
+        # Create and update a tool execution
+        tool_exec1 = step.get_or_create_tool_execution("tool-1", "calculator")
+        tool_exec1.status = "running"
+        tool_exec1.parameters = {"a": 5, "b": 3}
+
+        # Get it again
+        tool_exec2 = step.get_or_create_tool_execution("tool-1", "calculator")
+
+        # State should be preserved
+        assert tool_exec2.status == "running"
+        assert tool_exec2.parameters == {"a": 5, "b": 3}
+        assert len(step.tool_executions) == 1
+
 
 class TestAgentAnswer:
     """Tests for AgentAnswer model."""
