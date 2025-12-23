@@ -548,7 +548,7 @@ class Agent:
                 return
 
             # Parse response (could be AgentPlan, AgentStep, or AgentFinalResponse)
-            agent_response = self.response_parser.parse(llm_response_text)
+            agent_response = self.response_parser.parse(llm_response_text, use_uuid=not self.stream)
 
             # Add to history
             self.conversation_history.append(Message(role="assistant", content=llm_response_text))

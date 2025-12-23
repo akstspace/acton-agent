@@ -28,7 +28,6 @@ from ..tools.models import ToolCall
 
 EventType = Literal["plan", "step", "final_response", "unknown"]
 
-# Pre-compiled constants for faster checks
 MARKDOWN_START = b"```"
 MARKDOWN_JSON_START = b"```json"
 MARKDOWN_END = b"```"
@@ -224,6 +223,42 @@ class StreamingTokenParser:
         return None
 
 
+def _replace_tool_ids_in_event(event: StreamingEvent, tool_id_map: dict[str, str], step_id: str) -> StreamingEvent:
+    """
+    Replace tool call IDs in an event with stable UUIDs from the tool_id_map.
+
+    Parameters:
+        event (StreamingEvent): The event to process
+        tool_id_map (dict[str, str]): Map of step_id_tool_id to stable UUID
+        step_id (str): Current step ID
+
+    Returns:
+        StreamingEvent: Event with replaced tool IDs
+    """
+    if isinstance(event, AgentStepEvent):
+        # Replace IDs in tool_calls in place
+        if event.step.tool_calls:
+            for tc in event.step.tool_calls:
+                map_key = f"{step_id}_{tc.id}"
+                if map_key in tool_id_map:
+                    tc.id = tool_id_map[map_key]
+
+    elif isinstance(event, AgentToolExecutionEvent):
+        # Replace tool_call_id in place
+        map_key = f"{step_id}_{event.tool_call_id}"
+        if map_key in tool_id_map:
+            event.tool_call_id = tool_id_map[map_key]
+
+    elif isinstance(event, AgentToolResultsEvent) and event.results:
+        # Replace tool_call_id in results in place
+        for result in event.results:
+            map_key = f"{step_id}_{result.tool_call_id}"
+            if map_key in tool_id_map:
+                result.tool_call_id = tool_id_map[map_key]
+
+    return event
+
+
 def parse_streaming_events(
     agent_stream: Generator[StreamingEvent, None, None],
 ) -> Generator[StreamingEvent, None, None]:
@@ -285,7 +320,9 @@ def parse_streaming_events(
                 AgentToolExecutionEvent,
             ),
         ):
-            yield event
+            # Replace tool IDs with stable UUIDs before yielding
+            processed_event = _replace_tool_ids_in_event(event, parser.tool_id_map, event.step_id)
+            yield processed_event
 
         else:
             logger.debug(f"➡️ Passing through: {type(event).__name__}")
