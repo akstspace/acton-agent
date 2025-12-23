@@ -13,6 +13,7 @@ from acton_agent.agent.models import (
     AgentToken,
     AgentToolResultsEvent,
 )
+from acton_agent.parsers.streaming_util import AgentAnswer
 from acton_agent.tools import Tool
 
 
@@ -217,3 +218,117 @@ class TestAgentStreamingEvents:
 
         for event in events:
             assert isinstance(event, valid_event_types), f"Invalid event type: {type(event)}"
+
+    def test_stream_state_yields_agent_answer(self, mock_llm_client_with_responses):
+        """Test that stream_state yields AgentAnswer objects."""
+        response = """```json
+{
+  "final_answer": "The answer is 42"
+}
+```"""
+
+        client = mock_llm_client_with_responses([response])
+        agent = Agent(llm_client=client)
+
+        states = list(agent.stream_state("What is the answer?"))
+
+        # Should have at least one state
+        assert len(states) > 0
+
+        for state in states:
+            assert isinstance(state, AgentAnswer)
+
+        # Final state should be complete with final answer
+        final_state = states[-1]
+        assert final_state.is_complete
+        assert final_state.final_answer == "The answer is 42"
+        assert final_state.query == "What is the answer?"
+
+    def test_stream_state_with_tools(self, mock_llm_client_with_responses):
+        """Test that stream_state properly tracks tool executions."""
+        step_response = """```json
+{
+  "tool_thought": "I need to calculate",
+  "tool_calls": [
+    {
+      "id": "call_123",
+      "tool_name": "calculator",
+      "parameters": {"a": 5, "b": 3, "operation": "add"}
+    }
+  ]
+}
+```"""
+        final_response = """```json
+{
+  "final_answer": "The result is 8"
+}
+```"""
+
+        client = mock_llm_client_with_responses([step_response, final_response])
+        agent = Agent(llm_client=client)
+        agent.register_tool(SimpleCalculatorTool())
+
+        states = list(agent.stream_state("What is 5 + 3?"))
+
+        # Find the state with tool executions
+        states_with_tools = [s for s in states if s.steps and any(step.tool_executions for step in s.steps)]
+        assert len(states_with_tools) > 0
+
+        # Check tool execution details
+        tool_state = states_with_tools[0]
+        assert len(tool_state.steps) > 0
+
+        # Find step with tool executions
+        step_with_tools = next(step for step in tool_state.steps if step.tool_executions)
+        assert len(step_with_tools.tool_executions) > 0
+
+        tool_exec = step_with_tools.tool_executions[0]
+        assert tool_exec.tool_name == "calculator"
+        assert tool_exec.parameters == {"a": 5, "b": 3, "operation": "add"}
+
+        # Final state should have the answer
+        final_state = states[-1]
+        assert final_state.is_complete
+        assert final_state.final_answer == "The result is 8"
+
+    def test_stream_state_with_plan(self, mock_llm_client_with_responses):
+        """Test that stream_state properly tracks plan events."""
+        plan_response = """```json
+{
+  "plan": "Step 1: Analyze the question\\nStep 2: Provide the answer"
+}
+```"""
+        final_response = """```json
+{
+  "final_answer": "The answer is ready"
+}
+```"""
+
+        client = mock_llm_client_with_responses([plan_response, final_response])
+        agent = Agent(llm_client=client)
+
+        states = list(agent.stream_state("What is your plan?"))
+
+        # Should have at least one state
+        assert len(states) > 0
+
+        # All states should be AgentAnswer objects
+        for state in states:
+            assert isinstance(state, AgentAnswer)
+
+        # Find states with plan
+        states_with_plan = [s for s in states if s.steps and any(step.plan for step in s.steps)]
+        assert len(states_with_plan) > 0
+
+        # Check plan details
+        plan_state = states_with_plan[0]
+        step_with_plan = next(step for step in plan_state.steps if step.plan)
+        assert "Step 1" in step_with_plan.plan
+        assert "Step 2" in step_with_plan.plan
+        assert step_with_plan.step_type == "plan"
+
+        # Final state should be complete
+        final_state = states[-1]
+        assert final_state.is_complete
+        assert final_state.final_answer == "The answer is ready"
+        assert final_state.query == "What is your plan?"
