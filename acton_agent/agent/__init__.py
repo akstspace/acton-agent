@@ -4,6 +4,12 @@ AI Agent subpackage - Experimental LLM Agent Framework
 
 from acton_agent.tools import FunctionTool, Tool, ToolCall, ToolRegistry, ToolResult, ToolSet
 
+from ..parsers.streaming_util import (
+    AgentAnswer,
+    AgentStepState,
+    ToolExecution,
+    stream_agent_state,
+)
 from .agent import Agent
 from .exceptions import (
     AgentError,
@@ -30,12 +36,6 @@ from .models import (
     StreamingEvent,
 )
 from .retry import RetryConfig
-from .streaming_util import (
-    AgentAnswer,
-    AgentStepState,
-    ToolExecution,
-    stream_agent_state,
-)
 
 
 __all__ = [
