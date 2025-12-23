@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "acton-agent"
-version = "0.0.20"
+version = "0.0.21"
 description = "LLM Agent Framework with tool execution capabilities"
 readme = "README.md"
 authors = [

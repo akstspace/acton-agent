@@ -65,7 +65,8 @@ class ResponseParser:
                 # Convert tool_calls dicts to ToolCall objects
                 tool_calls = [ToolCall(**tc) if isinstance(tc, dict) else tc for tc in data.get("tool_calls", [])]
                 for tool_call in tool_calls:
-                    tool_call.id = str(uuid.uuid4())
+                    if not tool_call.id or not ResponseParser._is_valid_uuid(tool_call.id):
+                        tool_call.id = str(uuid.uuid4())
                 data["tool_calls"] = tool_calls
                 response = AgentStep(**data)
                 logger.debug("Parsed as AgentStep")
@@ -85,6 +86,22 @@ class ResponseParser:
             logger.debug(f"Raw response text: {response_text[:200]}...")
             # Last resort fallback
             return AgentFinalResponse(final_answer=f"Error parsing response: {e!s}")
+
+    def _is_valid_uuid(self, uuid_to_test: str, version: int = 4) -> bool:
+        """
+        Check if a string is a valid UUID.
+
+        Parameters:
+            uuid_to_test (str): The string to test.
+            version (int): The UUID version to test against.
+        Returns:
+            bool: `true` if the string is a valid UUID, `false` otherwise.
+        """
+        try:
+            uuid_obj = uuid.UUID(uuid_to_test, version=version)
+        except ValueError:
+            return False
+        return str(uuid_obj) == uuid_to_test
 
     @staticmethod
     def _extract_json_from_markdown(text: str) -> str:
