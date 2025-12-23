@@ -78,15 +78,14 @@ class StreamingTokenParser:
         """
         Remove and discard any accumulated token buffer and detected event type for the given step.
 
+        Note: Does NOT clear tool_id_map because tool result events may arrive after stream ends.
+
         Parameters:
             step_id (str): Identifier of the step whose buffer and detected event type should be removed.
         """
         self.step_buffers.pop(step_id, None)
         self.detected_types.pop(step_id, None)
-        # Clear tool ID mappings for this step
-        keys_to_remove = [key for key in self.tool_id_map if key.startswith(f"{step_id}_")]
-        for key in keys_to_remove:
-            self.tool_id_map.pop(key, None)
+        # DO NOT clear tool_id_map here - tool result events come after stream ends
 
     def _extract_json_from_markdown(self, data: bytes) -> bytes:
         """
@@ -235,28 +234,28 @@ def _replace_tool_ids_in_event(event: StreamingEvent, tool_id_map: dict[str, str
     Returns:
         StreamingEvent: Event with replaced tool IDs
     """
-    if isinstance(event, AgentStepEvent):
+    copied_event = event.model_copy(deep=True)
+    if isinstance(copied_event, AgentStepEvent):
         # Replace IDs in tool_calls in place
-        if event.step.tool_calls:
-            for tc in event.step.tool_calls:
+        if copied_event.step.tool_calls:
+            for tc in copied_event.step.tool_calls:
                 map_key = f"{step_id}_{tc.id}"
                 if map_key in tool_id_map:
                     tc.id = tool_id_map[map_key]
 
-    elif isinstance(event, AgentToolExecutionEvent):
+    elif isinstance(copied_event, AgentToolExecutionEvent):
         # Replace tool_call_id in place
-        map_key = f"{step_id}_{event.tool_call_id}"
+        map_key = f"{step_id}_{copied_event.tool_call_id}"
         if map_key in tool_id_map:
-            event.tool_call_id = tool_id_map[map_key]
-
-    elif isinstance(event, AgentToolResultsEvent) and event.results:
+            copied_event.tool_call_id = tool_id_map[map_key]
+    elif isinstance(copied_event, AgentToolResultsEvent) and copied_event.results:
         # Replace tool_call_id in results in place
-        for result in event.results:
+        for result in copied_event.results:
             map_key = f"{step_id}_{result.tool_call_id}"
             if map_key in tool_id_map:
                 result.tool_call_id = tool_id_map[map_key]
 
-    return event
+    return copied_event
 
 
 def parse_streaming_events(
