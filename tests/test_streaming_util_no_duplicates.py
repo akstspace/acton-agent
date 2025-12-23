@@ -267,10 +267,7 @@ class TestNoDuplicateToolExecutions:
                 tool_name="test_tool",
                 status="failed",
                 result=ToolResult(
-                    tool_call_id="tool-1",
-                    tool_name="test_tool",
-                    result="",
-                    error="Something went wrong"
+                    tool_call_id="tool-1", tool_name="test_tool", result="", error="Something went wrong"
                 ),
             ),
         ]

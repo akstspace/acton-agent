@@ -8,9 +8,13 @@ tool execution, and conversation management.
 import uuid
 from collections.abc import Generator
 from datetime import datetime
+from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo
 
 from loguru import logger
+
+from acton_agent.parsers.streaming import parse_streaming_events
+from acton_agent.parsers.streaming_util import stream_agent_state
 
 from ..client import LLMClient
 from ..logging_config import configure_logging
@@ -35,6 +39,10 @@ from .models import (
 )
 from .prompts import build_system_prompt, get_default_format_instructions
 from .retry import RetryConfig
+
+
+if TYPE_CHECKING:
+    from ..parsers.streaming_util import AgentAnswer
 
 
 class Agent:
@@ -585,6 +593,33 @@ class Agent:
 
         logger.warning("Agent reached maximum iterations without final answer")
         raise MaxIterationsError(max_iterations=self.max_iterations)
+
+    def stream_state(self, user_input: str) -> Generator["AgentAnswer", None, None]:
+        """
+        Stream the agent's execution as simplified state objects suitable for UI rendering.
+
+        This method wraps run_stream() and maintains a progressive state object that is
+        yielded after each event. The same AgentAnswer object is yielded repeatedly with
+        updates, making it easy to build UIs that show real-time progress.
+
+        Parameters:
+            user_input (str): The user's question or request to process.
+
+        Yields:
+            AgentAnswer: Progressively updated state containing all steps, tool executions,
+                        and final answer. The same object reference is yielded multiple times.
+
+        Example:
+            ```python
+            agent = Agent(...)
+            for state in agent.stream_state("What's the weather?"):
+                print(f"Steps: {len(state.steps)}")
+                print(f"Complete: {state.is_complete}")
+                if state.final_answer:
+                    print(f"Answer: {state.final_answer}")
+            ```
+        """
+        yield from stream_agent_state(parse_streaming_events(self.run_stream(user_input)), user_input)
 
     def run(self, user_input: str) -> str:
         """
