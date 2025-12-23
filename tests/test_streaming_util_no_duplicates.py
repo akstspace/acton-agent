@@ -15,7 +15,7 @@ from acton_agent.agent.models import (
     AgentStepEvent,
     AgentToolExecutionEvent,
 )
-from acton_agent.agent.streaming_util import stream_agent_state
+from acton_agent.parsers.streaming_util import stream_agent_state
 from acton_agent.tools import ToolCall, ToolResult
 
 
@@ -267,10 +267,7 @@ class TestNoDuplicateToolExecutions:
                 tool_name="test_tool",
                 status="failed",
                 result=ToolResult(
-                    tool_call_id="tool-1",
-                    tool_name="test_tool",
-                    result="",
-                    error="Something went wrong"
+                    tool_call_id="tool-1", tool_name="test_tool", result="", error="Something went wrong"
                 ),
             ),
         ]

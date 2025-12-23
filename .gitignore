@@ -221,3 +221,4 @@ dist/
 build/
 *.egg-info/
 localtests/
+.vscode/

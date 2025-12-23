@@ -11,7 +11,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from .models import (
+from ..agent.models import (
     AgentFinalResponseEvent,
     AgentPlanEvent,
     AgentStepEvent,
@@ -151,6 +151,10 @@ def stream_agent_state(agent_stream: Generator, query: str) -> Generator[AgentAn
     is yielded repeatedly with progressive updates, making it easy to build UIs
     that show real-time progress.
 
+    Note: This is a low-level utility function. Most users should use the
+    Agent.stream_state() method instead, which provides the same functionality
+    with a simpler API.
+
     Args:
         agent_stream: Generator yielding streaming events from agent.run_stream()
         query: The original user query
@@ -160,19 +164,22 @@ def stream_agent_state(agent_stream: Generator, query: str) -> Generator[AgentAn
 
     Example:
         ```python
-        from acton_agent.agent import parse_streaming_events
-
+        # Recommended: Use Agent.stream_state() instead
         agent = Agent(...)
-        raw_stream = agent.run_stream("What's the weather?")
+        for state in agent.stream_state("What's the weather?"):
+            print(f"Steps: {len(state.steps)}")
+            print(f"Complete: {state.is_complete}")
+            if state.final_answer:
+                print(f"Answer: {state.final_answer}")
 
+        # Low-level usage (not recommended for most use cases)
+        from acton_agent.parsers.streaming import parse_streaming_events
+        raw_stream = agent.run_stream("What's the weather?")
         for state in stream_agent_state(
             parse_streaming_events(raw_stream),
             "What's the weather?"
         ):
             print(f"Steps: {len(state.steps)}")
-            print(f"Complete: {state.is_complete}")
-            if state.final_answer:
-                print(f"Answer: {state.final_answer}")
         ```
     """
     # Initialize single state object that will be yielded repeatedly with updates

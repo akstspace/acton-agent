@@ -131,6 +131,42 @@ for event in agent.run_stream("Tell me a story"):
         print(f"\n\nDone: {event.response.final_answer}")
 ```
 
+##### stream_state
+
+Stream the agent's execution as simplified state objects suitable for UI rendering.
+
+```python
+def stream_state(self, user_input: str) -> Generator[AgentAnswer, None, None]
+```
+
+**Parameters:**
+- `user_input` (str): The user's query or request
+
+**Yields:**
+- `AgentAnswer`: Progressively updated state object containing all steps, tool executions, and final answer
+
+**Description:**
+This method wraps `run_stream()` and maintains a progressive state object that is yielded after each event. The same `AgentAnswer` object is yielded repeatedly with updates, making it easy to build UIs that show real-time progress without manually processing individual events.
+
+**Example:**
+```python
+for state in agent.stream_state("What's the weather?"):
+    print(f"Steps: {len(state.steps)}")
+    print(f"Complete: {state.is_complete}")
+
+    # Show current step
+    if state.steps:
+        current_step = state.steps[-1]
+        if current_step.plan:
+            print(f"Plan: {current_step.plan}")
+        if current_step.tool_executions:
+            for tool in current_step.tool_executions:
+                print(f"Tool: {tool.tool_name} - Status: {tool.status}")
+
+    if state.final_answer:
+        print(f"Answer: {state.final_answer}")
+```
+
 ##### register_tool
 
 Register a tool with the agent.
