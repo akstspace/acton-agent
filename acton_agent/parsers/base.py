@@ -87,7 +87,8 @@ class ResponseParser:
             # Last resort fallback
             return AgentFinalResponse(final_answer=f"Error parsing response: {e!s}")
 
-    def _is_valid_uuid(self, uuid_to_test: str, version: int = 4) -> bool:
+    @staticmethod
+    def _is_valid_uuid(uuid_to_test: str, version: int = 4) -> bool:
         """
         Check if a string is a valid UUID.
 
