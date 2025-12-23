@@ -173,7 +173,7 @@ def stream_agent_state(agent_stream: Generator, query: str) -> Generator[AgentAn
                 print(f"Answer: {state.final_answer}")
 
         # Low-level usage (not recommended for most use cases)
-        from acton_agent.agent import parse_streaming_events
+        from acton_agent.parsers.streaming import parse_streaming_events
         raw_stream = agent.run_stream("What's the weather?")
         for state in stream_agent_state(
             parse_streaming_events(raw_stream),
