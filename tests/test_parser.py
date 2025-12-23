@@ -2,6 +2,8 @@
 Tests for the parser module.
 """
 
+import uuid
+
 from acton_agent.agent.models import (
     AgentFinalResponse,
     AgentPlan,
@@ -174,3 +176,87 @@ class TestExtractThought:
         response = AgentFinalResponse(final_answer="answer")
         thought = ResponseParser.extract_thought(response)
         assert thought is None
+
+
+class TestUUIDValidation:
+    """Tests for UUID validation in ResponseParser."""
+
+    def test_is_valid_uuid_with_valid_uuid4(self):
+        """Test _is_valid_uuid with a valid UUID4."""
+        valid_uuid = str(uuid.uuid4())
+        assert ResponseParser._is_valid_uuid(valid_uuid)
+
+    def test_is_valid_uuid_with_invalid_string(self):
+        """Test _is_valid_uuid with an invalid string."""
+        assert not ResponseParser._is_valid_uuid("not-a-uuid")
+
+    def test_is_valid_uuid_with_empty_string(self):
+        """Test _is_valid_uuid with an empty string."""
+        assert not ResponseParser._is_valid_uuid("")
+
+    def test_is_valid_uuid_with_partial_uuid(self):
+        """Test _is_valid_uuid with a partial UUID."""
+        assert not ResponseParser._is_valid_uuid("123e4567-e89b-12d3")
+
+    def test_is_valid_uuid_with_wrong_format(self):
+        """Test _is_valid_uuid with wrong format (but correct length)."""
+        assert not ResponseParser._is_valid_uuid("123e4567-e89b-12d3-a456-42661417400g")
+
+    def test_is_valid_uuid_with_uppercase(self):
+        """Test _is_valid_uuid with uppercase UUID (should fail as str comparison is case-sensitive)."""
+        valid_uuid = str(uuid.uuid4())
+        assert not ResponseParser._is_valid_uuid(valid_uuid.upper())
+
+    def test_is_valid_uuid_version_3(self):
+        """Test _is_valid_uuid with a UUID3."""
+        uuid3 = uuid.uuid3(uuid.NAMESPACE_DNS, "example.com")
+        assert ResponseParser._is_valid_uuid(str(uuid3), version=3)
+
+    def test_is_valid_uuid_version_5(self):
+        """Test _is_valid_uuid with a UUID5."""
+        uuid5 = uuid.uuid5(uuid.NAMESPACE_DNS, "example.com")
+        assert ResponseParser._is_valid_uuid(str(uuid5), version=5)
+
+    def test_parse_step_generates_uuid_for_invalid_id(self):
+        """Test that parse() generates a valid UUID when tool_call.id is invalid."""
+        response_text = """```json
+{
+  "tool_thought": "Need to calculate",
+  "tool_calls": [
+    {
+      "id": "invalid-id",
+      "tool_name": "calculator",
+      "parameters": {"a": 5, "b": 3}
+    }
+  ]
+}
+```"""
+
+        result = ResponseParser.parse(response_text)
+        assert isinstance(result, AgentStep)
+        assert len(result.tool_calls) == 1
+        # The invalid ID should be replaced with a valid UUID
+        assert ResponseParser._is_valid_uuid(result.tool_calls[0].id)
+        assert result.tool_calls[0].id != "invalid-id"
+
+    def test_parse_step_keeps_valid_uuid(self):
+        """Test that parse() keeps a valid UUID unchanged."""
+        valid_uuid = str(uuid.uuid4())
+        response_text = f"""```json
+{{
+  "tool_thought": "Need to calculate",
+  "tool_calls": [
+    {{
+      "id": "{valid_uuid}",
+      "tool_name": "calculator",
+      "parameters": {{"a": 5, "b": 3}}
+    }}
+  ]
+}}
+```"""
+
+        result = ResponseParser.parse(response_text)
+        assert isinstance(result, AgentStep)
+        assert len(result.tool_calls) == 1
+        # The valid UUID should remain unchanged
+        assert result.tool_calls[0].id == valid_uuid
