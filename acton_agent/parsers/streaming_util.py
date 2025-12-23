@@ -152,7 +152,7 @@ def stream_agent_state(agent_stream: Generator, query: str) -> Generator[AgentAn
     that show real-time progress.
 
     Note: This is a low-level utility function. Most users should use the
-    Agent.run_with_state() method instead, which provides the same functionality
+    Agent.stream_state() method instead, which provides the same functionality
     with a simpler API.
 
     Args:
