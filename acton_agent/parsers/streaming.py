@@ -44,7 +44,7 @@ COLON = ord(":")
 class StreamingTokenParser:
     """Parser for accumulating and progressively parsing streaming tokens with early event detection."""
 
-    __slots__ = ("detected_types", "step_buffers")
+    __slots__ = ("detected_types", "step_buffers", "tool_id_map")
 
     def __init__(self):
         """
@@ -53,9 +53,11 @@ class StreamingTokenParser:
         Initializes:
         - step_buffers (Dict[str, bytearray]): per-step byte buffers used to accumulate incoming tokens efficiently.
         - detected_types (Dict[str, EventType]): map of step_id to a heuristically detected event type ("plan", "step", "final_response", or "unknown").
+        - tool_id_map (Dict[str, str]): map of step_id_tool_id to stable UUID for tool calls.
         """
         self.step_buffers: dict[str, bytearray] = {}
         self.detected_types: dict[str, EventType] = {}
+        self.tool_id_map: dict[str, str] = {}
 
     def add_token(self, step_id: str, token: str) -> None:
         """Add a token to the buffer for a specific step."""
@@ -82,6 +84,10 @@ class StreamingTokenParser:
         """
         self.step_buffers.pop(step_id, None)
         self.detected_types.pop(step_id, None)
+        # Clear tool ID mappings for this step
+        keys_to_remove = [key for key in self.tool_id_map if key.startswith(f"{step_id}_")]
+        for key in keys_to_remove:
+            self.tool_id_map.pop(key, None)
 
     def _extract_json_from_markdown(self, data: bytes) -> bytes:
         """
@@ -185,9 +191,14 @@ class StreamingTokenParser:
                     # Batch process tool calls
                     for tc in tool_calls_data:
                         if isinstance(tc, dict) and "id" in tc and "tool_name" in tc:
+                            # Generate stable UUID for this tool call
+                            map_key = f"{step_id}_{tc['id']}"
+                            if map_key not in self.tool_id_map:
+                                self.tool_id_map[map_key] = str(uuid.uuid4())
+
                             tool_calls.append(
                                 ToolCall(
-                                    id=str(uuid.uuid4()),
+                                    id=self.tool_id_map[map_key],
                                     tool_name=tc["tool_name"],
                                     parameters=tc.get("parameters", {}),
                                 )
