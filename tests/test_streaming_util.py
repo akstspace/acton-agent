@@ -11,7 +11,7 @@ from acton_agent.agent.models import (
     AgentStepEvent,
     AgentToolExecutionEvent,
 )
-from acton_agent.agent.streaming_util import (
+from acton_agent.parsers.streaming_util import (
     AgentAnswer,
     AgentStepState,
     ToolExecution,

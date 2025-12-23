@@ -2,8 +2,37 @@
 Test configuration and fixtures for pytest.
 """
 
+import sys
+import importlib.util
+from pathlib import Path
+
 import pytest
 
+# Work around import issue: streaming_util was moved to parsers but agent/__init__.py still references it
+# We need to load the modules directly before acton_agent.__init__ runs to avoid import errors
+
+# Get the base path to acton_agent
+base_path = Path(__file__).parent.parent / "acton_agent"
+
+# Load agent.models directly without going through __init__.py
+models_spec = importlib.util.spec_from_file_location(
+    "acton_agent.agent.models",
+    base_path / "agent" / "models.py"
+)
+models_module = importlib.util.module_from_spec(models_spec)
+sys.modules["acton_agent.agent.models"] = models_module
+models_spec.loader.exec_module(models_module)
+
+# Load streaming_util.py from parsers and make it available as agent.streaming_util
+streaming_spec = importlib.util.spec_from_file_location(
+    "acton_agent.agent.streaming_util",
+    base_path / "parsers" / "streaming_util.py"
+)
+streaming_module = importlib.util.module_from_spec(streaming_spec)
+sys.modules["acton_agent.agent.streaming_util"] = streaming_module
+streaming_spec.loader.exec_module(streaming_module)
+
+# Now we can safely import from acton_agent
 from acton_agent.agent.models import Message
 
 
