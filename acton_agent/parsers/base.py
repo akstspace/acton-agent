@@ -63,10 +63,18 @@ class ResponseParser:
             if "tool_calls" in data and len(data.get("tool_calls", [])) > 0:
                 # This is an AgentStep
                 # Convert tool_calls dicts to ToolCall objects
-                tool_calls = [ToolCall(**tc) if isinstance(tc, dict) else tc for tc in data.get("tool_calls", [])]
-                for tool_call in tool_calls:
-                    if not tool_call.id or not ResponseParser._is_valid_uuid(tool_call.id):
-                        tool_call.id = str(uuid.uuid4())
+                tool_calls = []
+                for tc in data.get("tool_calls", []):
+                    if isinstance(tc, dict):
+                        # Ensure the dict has a valid UUID id before creating ToolCall
+                        if "id" not in tc or not tc["id"] or not ResponseParser._is_valid_uuid(tc["id"]):
+                            tc["id"] = str(uuid.uuid4())
+                        tool_calls.append(ToolCall(**tc))
+                    else:
+                        # Already a ToolCall object, check and fix id if needed
+                        if not tc.id or not ResponseParser._is_valid_uuid(tc.id):
+                            tc.id = str(uuid.uuid4())
+                        tool_calls.append(tc)
                 data["tool_calls"] = tool_calls
                 response = AgentStep(**data)
                 logger.debug("Parsed as AgentStep")
@@ -87,7 +95,8 @@ class ResponseParser:
             # Last resort fallback
             return AgentFinalResponse(final_answer=f"Error parsing response: {e!s}")
 
-    def _is_valid_uuid(self, uuid_to_test: str, version: int = 4) -> bool:
+    @staticmethod
+    def _is_valid_uuid(uuid_to_test: str, version: int = 4) -> bool:
         """
         Check if a string is a valid UUID.
 
